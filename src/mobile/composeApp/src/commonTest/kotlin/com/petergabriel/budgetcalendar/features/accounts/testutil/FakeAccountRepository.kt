@@ -110,11 +110,12 @@ class FakeAccountRepository : IAccountRepository {
         _balanceChangedTrigger.emit(Unit)
     }
 
-    fun seedAccounts(vararg seededAccounts: Account) {
+    suspend fun seedAccounts(vararg seededAccounts: Account) {
         accounts.clear()
         accounts.addAll(seededAccounts)
         nextId = ((seededAccounts.maxOfOrNull { account -> account.id } ?: 0L) + 1L)
         emitAccounts()
+        _balanceChangedTrigger.emit(Unit)
     }
 
     fun setHasTransactions(accountId: Long, hasTransactions: Boolean) {

@@ -1,0 +1,36 @@
+getAllSnapshots:
+SELECT id, name, description, created_at, last_accessed_at, initial_safe_to_spend
+FROM sandbox_snapshots
+ORDER BY last_accessed_at DESC;
+
+getSnapshotById:
+SELECT id, name, description, created_at, last_accessed_at, initial_safe_to_spend
+FROM sandbox_snapshots
+WHERE id = ?;
+
+insertSnapshot:
+INSERT INTO sandbox_snapshots(
+  name,
+  description,
+  created_at,
+  last_accessed_at,
+  initial_safe_to_spend
+)
+VALUES (?, ?, ?, ?, ?);
+
+updateSnapshotLastAccessed:
+UPDATE sandbox_snapshots
+SET last_accessed_at = ?
+WHERE id = ?;
+
+deleteSnapshot:
+DELETE FROM sandbox_snapshots
+WHERE id = ?;
+
+getExpiredSnapshots:
+SELECT id, name, description, created_at, last_accessed_at, initial_safe_to_spend
+FROM sandbox_snapshots
+WHERE last_accessed_at < ?;
+
+getLastInsertedSnapshotId:
+SELECT last_insert_rowid();

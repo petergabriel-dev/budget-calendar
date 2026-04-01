@@ -1,0 +1,81 @@
+CREATE TABLE recurring_transactions (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  destination_account_id INTEGER REFERENCES accounts(id) ON DELETE CASCADE,
+  amount INTEGER NOT NULL CHECK(amount > 0),
+  day_of_month INTEGER NOT NULL CHECK(day_of_month >= 1 AND day_of_month <= 31),
+  type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'transfer')),
+  description TEXT,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  CHECK(
+    (type = 'transfer' AND destination_account_id IS NOT NULL AND account_id != destination_account_id) OR
+    (type IN ('income', 'expense') AND destination_account_id IS NULL)
+  )
+);
+
+CREATE INDEX idx_recurring_active ON recurring_transactions(is_active);
+CREATE INDEX idx_recurring_day ON recurring_transactions(day_of_month);
+CREATE INDEX idx_recurring_account ON recurring_transactions(account_id);
+
+getAllRecurringTransactions:
+SELECT id, account_id, destination_account_id, amount, day_of_month, type, description, is_active, created_at, updated_at
+FROM recurring_transactions
+ORDER BY day_of_month, created_at ASC;
+
+getActiveRecurringTransactions:
+SELECT id, account_id, destination_account_id, amount, day_of_month, type, description, is_active, created_at, updated_at
+FROM recurring_transactions
+WHERE is_active = 1
+ORDER BY day_of_month, created_at ASC;
+
+getRecurringTransactionById:
+SELECT id, account_id, destination_account_id, amount, day_of_month, type, description, is_active, created_at, updated_at
+FROM recurring_transactions
+WHERE id = ?;
+
+getRecurringTransactionsByAccount:
+SELECT id, account_id, destination_account_id, amount, day_of_month, type, description, is_active, created_at, updated_at
+FROM recurring_transactions
+WHERE account_id = ?
+ORDER BY day_of_month, created_at ASC;
+
+insertRecurringTransaction:
+INSERT INTO recurring_transactions(
+  account_id,
+  destination_account_id,
+  amount,
+  day_of_month,
+  type,
+  description,
+  is_active,
+  created_at,
+  updated_at
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateRecurringTransaction:
+UPDATE recurring_transactions
+SET account_id = ?,
+    destination_account_id = ?,
+    amount = ?,
+    day_of_month = ?,
+    type = ?,
+    description = ?,
+    is_active = ?,
+    updated_at = ?
+WHERE id = ?;
+
+toggleRecurringActive:
+UPDATE recurring_transactions
+SET is_active = ?,
+    updated_at = ?
+WHERE id = ?;
+
+deleteRecurringTransaction:
+DELETE FROM recurring_transactions
+WHERE id = ?;
+
+getLastInsertedRecurringTransactionId:
+SELECT last_insert_rowid();

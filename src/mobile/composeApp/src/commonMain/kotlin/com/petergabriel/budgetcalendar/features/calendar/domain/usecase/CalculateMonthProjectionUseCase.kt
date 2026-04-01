@@ -19,14 +19,15 @@ class CalculateMonthProjectionUseCase(
     private val accountRepository: IAccountRepository,
 ) {
     operator fun invoke(yearMonth: YearMonth): Flow<Long> {
+        val timeZone = TimeZone.currentSystemDefault()
         val startOfMonthMillis = yearMonth
             .firstDay()
-            .atStartOfDayIn(TimeZone.UTC)
+            .atStartOfDayIn(timeZone)
             .toEpochMilliseconds()
         val endOfMonthMillis = yearMonth
             .firstDay()
             .plus(DatePeriod(months = 1))
-            .atStartOfDayIn(TimeZone.UTC)
+            .atStartOfDayIn(timeZone)
             .toEpochMilliseconds() - 1L
 
         return accountRepository.balanceChangedTrigger

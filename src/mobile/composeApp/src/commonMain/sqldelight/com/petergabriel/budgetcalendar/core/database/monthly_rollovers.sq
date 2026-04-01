@@ -1,0 +1,17 @@
+getRolloverByMonth:
+SELECT id, year, month, rollover_amount, created_at
+FROM monthly_rollovers
+WHERE year = ? AND month = ?;
+
+getAllRollovers:
+SELECT id, year, month, rollover_amount, created_at
+FROM monthly_rollovers
+ORDER BY year DESC, month DESC;
+
+insertRollover:
+INSERT INTO monthly_rollovers(year, month, rollover_amount, created_at)
+VALUES (?, ?, ?, ?);
+
+upsertRollover:
+INSERT OR REPLACE INTO monthly_rollovers(year, month, rollover_amount, created_at)
+VALUES (?, ?, ?, ?);

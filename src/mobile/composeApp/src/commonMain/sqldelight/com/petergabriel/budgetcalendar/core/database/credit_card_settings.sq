@@ -1,0 +1,43 @@
+getAllCreditCardSettings:
+SELECT id, account_id, credit_limit, statement_balance, due_date, created_at, updated_at
+FROM credit_card_settings
+ORDER BY created_at DESC;
+
+getCreditCardSettingsByAccountId:
+SELECT id, account_id, credit_limit, statement_balance, due_date, created_at, updated_at
+FROM credit_card_settings
+WHERE account_id = ?;
+
+insertCreditCardSettings:
+INSERT INTO credit_card_settings(account_id, credit_limit, statement_balance, due_date, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+updateCreditCardSettings:
+UPDATE credit_card_settings
+SET credit_limit = ?,
+    statement_balance = ?,
+    due_date = ?,
+    updated_at = ?
+WHERE account_id = ?;
+
+deleteCreditCardSettings:
+DELETE FROM credit_card_settings
+WHERE account_id = ?;
+
+getCreditCardReservedAmount:
+SELECT CAST(COALESCE(SUM(amount), 0) AS INTEGER)
+FROM transactions
+WHERE account_id = ?
+  AND type = 'expense'
+  AND status IN ('pending', 'overdue')
+  AND is_sandbox = 0;
+
+getAllCreditCardReservedAmounts:
+SELECT t.account_id, CAST(COALESCE(SUM(t.amount), 0) AS INTEGER) AS reserved
+FROM transactions t
+JOIN accounts a ON t.account_id = a.id
+WHERE a.type = 'credit_card'
+  AND t.type = 'expense'
+  AND t.status IN ('pending', 'overdue')
+  AND t.is_sandbox = 0
+GROUP BY t.account_id;

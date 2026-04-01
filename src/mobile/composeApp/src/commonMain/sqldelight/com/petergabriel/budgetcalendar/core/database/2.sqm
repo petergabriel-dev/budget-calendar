@@ -1,0 +1,20 @@
+CREATE TABLE recurring_transactions (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  destination_account_id INTEGER REFERENCES accounts(id) ON DELETE CASCADE,
+  amount INTEGER NOT NULL CHECK(amount > 0),
+  day_of_month INTEGER NOT NULL CHECK(day_of_month >= 1 AND day_of_month <= 31),
+  type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'transfer')),
+  description TEXT,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  CHECK(
+    (type = 'transfer' AND destination_account_id IS NOT NULL AND account_id != destination_account_id) OR
+    (type IN ('income', 'expense') AND destination_account_id IS NULL)
+  )
+);
+
+CREATE INDEX idx_recurring_active ON recurring_transactions(is_active);
+CREATE INDEX idx_recurring_day ON recurring_transactions(day_of_month);
+CREATE INDEX idx_recurring_account ON recurring_transactions(account_id);

@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS monthly_rollovers (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  year INTEGER NOT NULL,
+  month INTEGER NOT NULL,
+  rollover_amount INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  UNIQUE(year, month)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rollovers_year_month ON monthly_rollovers(year, month);
+
+CREATE TABLE IF NOT EXISTS credit_card_settings (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  credit_limit INTEGER,
+  statement_balance INTEGER,
+  due_date INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(account_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cc_settings_account ON credit_card_settings(account_id);

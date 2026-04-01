@@ -1,0 +1,47 @@
+getAllAccounts:
+SELECT id, name, type, balance, is_in_spending_pool, description, created_at, updated_at
+FROM accounts
+ORDER BY created_at DESC;
+
+getAccountById:
+SELECT id, name, type, balance, is_in_spending_pool, description, created_at, updated_at
+FROM accounts
+WHERE id = :id;
+
+getSpendingPoolAccounts:
+SELECT id, name, type, balance, is_in_spending_pool, description, created_at, updated_at
+FROM accounts
+WHERE is_in_spending_pool = 1
+ORDER BY name;
+
+insertAccount:
+INSERT INTO accounts(name, type, balance, is_in_spending_pool, description, created_at, updated_at)
+VALUES (:name, :type, :balance, :is_in_spending_pool, :description, :created_at, :updated_at);
+
+updateAccount:
+UPDATE accounts
+SET name = :name,
+    type = :type,
+    balance = :balance,
+    is_in_spending_pool = :is_in_spending_pool,
+    description = :description,
+    updated_at = :updated_at
+WHERE id = :id;
+
+deleteAccount:
+DELETE FROM accounts
+WHERE id = ?;
+
+getTotalSpendingPoolBalance:
+SELECT CAST(COALESCE(SUM(balance), 0) AS INTEGER)
+FROM accounts
+WHERE is_in_spending_pool = 1;
+
+adjustAccountBalance:
+UPDATE accounts 
+SET balance = balance + :delta, 
+    updated_at = :updated_at 
+WHERE id = :id;
+
+getLastInsertedAccountId:
+SELECT last_insert_rowid();

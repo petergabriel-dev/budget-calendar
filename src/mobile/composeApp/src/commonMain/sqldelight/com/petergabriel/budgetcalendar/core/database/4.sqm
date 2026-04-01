@@ -1,0 +1,29 @@
+CREATE TABLE IF NOT EXISTS sandbox_snapshots (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at INTEGER NOT NULL,
+  last_accessed_at INTEGER NOT NULL,
+  initial_safe_to_spend INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_snapshots_created ON sandbox_snapshots(created_at);
+CREATE INDEX IF NOT EXISTS idx_snapshots_last_accessed ON sandbox_snapshots(last_accessed_at);
+
+CREATE TABLE IF NOT EXISTS sandbox_transactions (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  snapshot_id INTEGER NOT NULL REFERENCES sandbox_snapshots(id) ON DELETE CASCADE,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  amount INTEGER NOT NULL CHECK(amount > 0),
+  date INTEGER NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'transfer')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'confirmed', 'overdue', 'cancelled')),
+  description TEXT,
+  category TEXT,
+  original_transaction_id INTEGER REFERENCES transactions(id),
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sandbox_snapshot ON sandbox_transactions(snapshot_id);
+CREATE INDEX IF NOT EXISTS idx_sandbox_date ON sandbox_transactions(date);

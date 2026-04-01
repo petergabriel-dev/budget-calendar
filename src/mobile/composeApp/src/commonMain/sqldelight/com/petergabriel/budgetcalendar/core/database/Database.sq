@@ -1,0 +1,88 @@
+CREATE TABLE accounts (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('checking', 'savings', 'credit_card', 'cash', 'investment')),
+  balance INTEGER NOT NULL DEFAULT 0,
+  is_in_spending_pool INTEGER NOT NULL DEFAULT 0,
+  description TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_accounts_spending_pool ON accounts(is_in_spending_pool);
+
+CREATE TABLE transactions (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  destination_account_id INTEGER REFERENCES accounts(id),
+  amount INTEGER NOT NULL,
+  date INTEGER NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'transfer')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'confirmed', 'overdue', 'cancelled')),
+  description TEXT,
+  category TEXT,
+  linked_transaction_id INTEGER REFERENCES transactions(id),
+  is_sandbox INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_transactions_account ON transactions(account_id);
+CREATE INDEX idx_transactions_date ON transactions(date);
+CREATE INDEX idx_transactions_status ON transactions(status);
+CREATE INDEX idx_transactions_sandbox ON transactions(is_sandbox);
+CREATE INDEX idx_transactions_date_type ON transactions(date, type);
+
+CREATE TABLE monthly_rollovers (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  year INTEGER NOT NULL,
+  month INTEGER NOT NULL,
+  rollover_amount INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  UNIQUE(year, month)
+);
+
+CREATE INDEX idx_rollovers_year_month ON monthly_rollovers(year, month);
+
+CREATE TABLE credit_card_settings (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  credit_limit INTEGER,
+  statement_balance INTEGER,
+  due_date INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(account_id)
+);
+
+CREATE INDEX idx_cc_settings_account ON credit_card_settings(account_id);
+
+CREATE TABLE sandbox_snapshots (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at INTEGER NOT NULL,
+  last_accessed_at INTEGER NOT NULL,
+  initial_safe_to_spend INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_snapshots_created ON sandbox_snapshots(created_at);
+CREATE INDEX idx_snapshots_last_accessed ON sandbox_snapshots(last_accessed_at);
+
+CREATE TABLE sandbox_transactions (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  snapshot_id INTEGER NOT NULL REFERENCES sandbox_snapshots(id) ON DELETE CASCADE,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  amount INTEGER NOT NULL CHECK(amount > 0),
+  date INTEGER NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'transfer')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'confirmed', 'overdue', 'cancelled')),
+  description TEXT,
+  category TEXT,
+  original_transaction_id INTEGER REFERENCES transactions(id),
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_sandbox_snapshot ON sandbox_transactions(snapshot_id);
+CREATE INDEX idx_sandbox_date ON sandbox_transactions(date);

@@ -1,0 +1,124 @@
+getTransactionsByAccount:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE account_id = ?
+ORDER BY date DESC, created_at DESC;
+
+getTransactionsByDateRange:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE date BETWEEN ? AND ?
+ORDER BY date ASC, created_at DESC;
+
+getTransactionsByDate:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE date = ?
+ORDER BY created_at DESC;
+
+getPendingTransactions:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE status = 'pending' AND is_sandbox = 0
+ORDER BY date ASC;
+
+getOverdueTransactions:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE status = 'overdue' AND is_sandbox = 0
+ORDER BY date ASC;
+
+getConfirmedTransactions:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE status = 'confirmed' AND is_sandbox = 0
+ORDER BY date DESC;
+
+getTransactionById:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE id = ?;
+
+insertTransaction:
+INSERT INTO transactions(
+  account_id,
+  destination_account_id,
+  amount,
+  date,
+  type,
+  status,
+  description,
+  category,
+  linked_transaction_id,
+  is_sandbox,
+  created_at,
+  updated_at
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateTransactionStatus:
+UPDATE transactions
+SET status = ?,
+    updated_at = ?
+WHERE id = ?;
+
+updateLinkedTransactionId:
+UPDATE transactions
+SET linked_transaction_id = ?,
+    updated_at = ?
+WHERE id = ?;
+
+deleteTransaction:
+DELETE FROM transactions
+WHERE id = ?;
+
+getTransactionByLinkedId:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE linked_transaction_id = ?
+LIMIT 1;
+
+countTransactionsByAccount:
+SELECT COUNT(*)
+FROM transactions
+WHERE account_id = ? OR destination_account_id = ?;
+
+getPendingTransactionsForSpendingPool:
+SELECT t.id, t.account_id, t.destination_account_id, t.amount, t.date, t.type, t.status, t.description, t.category, t.linked_transaction_id, t.is_sandbox, t.created_at, t.updated_at
+FROM transactions t
+JOIN accounts a ON t.account_id = a.id
+WHERE a.is_in_spending_pool = 1
+  AND t.status IN ('pending', 'overdue')
+  AND t.is_sandbox = 0
+ORDER BY t.date ASC;
+
+getPendingAndOverdueForSpendingPoolInRange:
+SELECT t.*
+FROM transactions t
+JOIN accounts a ON t.account_id = a.id
+WHERE t.status IN ('pending', 'overdue')
+  AND t.date >= :startMillis
+  AND t.date <= :endMillis
+  AND a.is_in_spending_pool = 1
+  AND t.is_sandbox = 0
+ORDER BY t.date ASC;
+
+getConfirmedTransactionsByDateRange:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE status = 'confirmed'
+  AND is_sandbox = 0
+  AND date BETWEEN ? AND ?
+ORDER BY date ASC;
+
+getPendingAndOverdueExpensesByAccount:
+SELECT id, account_id, destination_account_id, amount, date, type, status, description, category, linked_transaction_id, is_sandbox, created_at, updated_at
+FROM transactions
+WHERE account_id = ?
+  AND type = 'expense'
+  AND status IN ('pending', 'overdue')
+  AND is_sandbox = 0
+ORDER BY date ASC;
+
+getLastInsertedTransactionId:
+SELECT last_insert_rowid();

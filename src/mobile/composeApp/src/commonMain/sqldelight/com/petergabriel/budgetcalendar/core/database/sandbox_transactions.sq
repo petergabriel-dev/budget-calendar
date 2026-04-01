@@ -1,0 +1,48 @@
+getSandboxTransactionsBySnapshot:
+SELECT id, snapshot_id, account_id, amount, date, type, status, description, category, original_transaction_id, created_at, updated_at
+FROM sandbox_transactions
+WHERE snapshot_id = ?
+ORDER BY date ASC, created_at DESC;
+
+insertSandboxTransaction:
+INSERT INTO sandbox_transactions(
+  snapshot_id,
+  account_id,
+  amount,
+  date,
+  type,
+  status,
+  description,
+  category,
+  original_transaction_id,
+  created_at,
+  updated_at
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteSandboxTransaction:
+DELETE FROM sandbox_transactions
+WHERE id = ?;
+
+deleteSandboxTransactionsBySnapshot:
+DELETE FROM sandbox_transactions
+WHERE snapshot_id = ?;
+
+getSandboxBalanceDeltaBySnapshot:
+SELECT COALESCE(SUM(
+  CASE
+    WHEN type = 'income' THEN amount
+    WHEN type = 'expense' THEN -amount
+    ELSE 0
+  END
+), 0)
+FROM sandbox_transactions
+WHERE snapshot_id = ?;
+
+getSandboxTransactionById:
+SELECT id, snapshot_id, account_id, amount, date, type, status, description, category, original_transaction_id, created_at, updated_at
+FROM sandbox_transactions
+WHERE id = ?;
+
+getLastInsertedSandboxTransactionId:
+SELECT last_insert_rowid();

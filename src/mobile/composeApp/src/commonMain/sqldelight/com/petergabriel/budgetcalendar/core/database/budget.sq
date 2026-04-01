@@ -1,0 +1,37 @@
+getTotalSpendingPoolBalance:
+SELECT CAST(COALESCE(SUM(balance), 0) AS INTEGER)
+FROM accounts
+WHERE is_in_spending_pool = 1;
+
+getPendingAndOverdueForSpendingPool:
+SELECT t.status, CAST(t.amount AS INTEGER) AS amount
+FROM transactions t
+JOIN accounts a ON t.account_id = a.id
+WHERE a.is_in_spending_pool = 1
+  AND t.status IN ('pending', 'overdue')
+  AND t.type = 'expense'
+  AND t.is_sandbox = 0
+ORDER BY t.date ASC;
+
+getCreditCardReservedAmount:
+SELECT CAST(COALESCE(SUM(t.amount), 0) AS INTEGER)
+FROM transactions t
+JOIN accounts a ON t.account_id = a.id
+WHERE a.type = 'credit_card'
+  AND t.type = 'expense'
+  AND t.status IN ('pending', 'overdue')
+  AND t.is_sandbox = 0;
+
+getCreditCardReservations:
+SELECT
+  a.id AS account_id,
+  a.name AS account_name,
+  CAST(COALESCE(SUM(t.amount), 0) AS INTEGER) AS reserved_amount
+FROM accounts a
+LEFT JOIN transactions t ON t.account_id = a.id
+  AND t.type = 'expense'
+  AND t.status IN ('pending', 'overdue')
+  AND t.is_sandbox = 0
+WHERE a.type = 'credit_card'
+GROUP BY a.id, a.name
+ORDER BY a.name ASC;

@@ -1,20 +1,18 @@
 package com.petergabriel.budgetcalendar.features.calendar.domain.usecase
 
+import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
 import com.petergabriel.budgetcalendar.features.accounts.testutil.FakeAccountRepository
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.CreateTransactionRequest
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
+import com.petergabriel.budgetcalendar.features.transactions.domain.model.UpdateTransactionStatusRequest
+import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.UpdateTransactionStatusUseCase
 import com.petergabriel.budgetcalendar.features.transactions.testutil.FakeTransactionRepository
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.number
-import kotlinx.datetime.toLocalDateTime
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,6 +21,7 @@ class CalendarProjectionUseCasesTest {
     private lateinit var accountRepository: FakeAccountRepository
     private lateinit var transactionRepository: FakeTransactionRepository
     private lateinit var calculateMonthProjectionUseCase: CalculateMonthProjectionUseCase
+    private lateinit var updateTransactionStatusUseCase: UpdateTransactionStatusUseCase
 
     @BeforeTest
     fun setUp() {
@@ -32,25 +31,19 @@ class CalendarProjectionUseCasesTest {
             transactionRepository,
             accountRepository,
         )
-    }
-
-    private fun currentYearMonth(): kotlinx.datetime.YearMonth {
-        val nowMillis = System.currentTimeMillis()
-        val localDate = Instant.fromEpochMilliseconds(nowMillis)
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .date
-        return kotlinx.datetime.YearMonth(localDate.year, localDate.month.number)
-    }
-
-    private fun localDateMillis(year: Int, month: Int, day: Int): Long {
-        return LocalDate(year, month, day)
-            .atStartOfDayIn(TimeZone.currentSystemDefault())
-            .toEpochMilliseconds()
+        updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(
+            transactionRepository,
+            accountRepository,
+        )
     }
 
     @Test
     fun calculateMonthProjection_withPendingExpense_returnsCorrectProjection() = runBlocking {
         // Arrange
+        val today = DateUtils.startOfDayMillis(DateUtils.nowMillis())
+        val (year, month) = DateUtils.currentYearMonth()
+        val yearMonth = kotlinx.datetime.YearMonth(year, month)
+        
         val spendingPoolAccount = Account(
             id = 1L,
             name = "Test Checking",
@@ -58,29 +51,28 @@ class CalendarProjectionUseCasesTest {
             balance = 500_00L, // $500
             isInSpendingPool = true,
             description = null,
-            createdAt = 0L,
-            updatedAt = 0L,
+            createdAt = today,
+            updatedAt = today,
         )
-        accountRepository.seedAccounts(spendingPoolAccount)
-
-        val yearMonth = currentYearMonth()
-        val startMillis = localDateMillis(yearMonth.year, yearMonth.month.number, 1)
-        val endMillis = localDateMillis(yearMonth.year, yearMonth.month.number, 28)
-
+        
+        // Create transaction FIRST (before seeding account)
         val pendingExpense = CreateTransactionRequest(
             accountId = 1L,
             amount = 75_00L, // $75
             type = TransactionType.EXPENSE,
             status = TransactionStatus.PENDING,
-            date = startMillis,
+            date = today,
             description = "Pending expense",
             category = null,
             isSandbox = false,
             linkedTransactionId = null,
         )
         transactionRepository.createTransaction(pendingExpense)
-
-        // Act
+        
+        // Seed account and trigger
+        accountRepository.seedAccounts(spendingPoolAccount)
+        
+        // Collect the projection - it should reflect the pending expense
         val projection = calculateMonthProjectionUseCase(yearMonth).first()
 
         // Assert
@@ -89,8 +81,12 @@ class CalendarProjectionUseCasesTest {
     }
 
     @Test
-    fun calculateMonthProjection_afterBalanceAdjust_stillReturnsCorrectProjection() = runBlocking {
+    fun calculateMonthProjection_afterExpenseConfirmed_doesNotDoubleCount() = runBlocking {
         // Arrange
+        val today = DateUtils.startOfDayMillis(DateUtils.nowMillis())
+        val (year, month) = DateUtils.currentYearMonth()
+        val yearMonth = kotlinx.datetime.YearMonth(year, month)
+        
         val spendingPoolAccount = Account(
             id = 1L,
             name = "Test Checking",
@@ -98,44 +94,34 @@ class CalendarProjectionUseCasesTest {
             balance = 500_00L, // $500
             isInSpendingPool = true,
             description = null,
-            createdAt = 0L,
-            updatedAt = 0L,
+            createdAt = today,
+            updatedAt = today,
         )
-        accountRepository.seedAccounts(spendingPoolAccount)
-
-        val yearMonth = currentYearMonth()
-        val startMillis = localDateMillis(yearMonth.year, yearMonth.month.number, 1)
-        val endMillis = localDateMillis(yearMonth.year, yearMonth.month.number, 28)
-
+        
         val pendingExpense = CreateTransactionRequest(
             accountId = 1L,
             amount = 75_00L, // $75
             type = TransactionType.EXPENSE,
             status = TransactionStatus.PENDING,
-            date = startMillis,
+            date = today,
             description = "Pending expense",
             category = null,
             isSandbox = false,
             linkedTransactionId = null,
         )
-        transactionRepository.createTransaction(pendingExpense)
+        val transaction = transactionRepository.createTransaction(pendingExpense)
+        
+        accountRepository.seedAccounts(spendingPoolAccount)
 
-        // Simulate the expense being confirmed and balance adjusted
-        // (in real app, UpdateTransactionStatusUseCase calls adjustBalance)
-        accountRepository.adjustBalance(1L, -75_00L)
-        // After adjustBalance to $425 and pending still there, the projection should NOT double count
-        // The projection = poolBalance + signedTransactionSum
-        // poolBalance = $425 (new balance after adjustBalance)
-        // signedTransactionSum = -$75 (pending expense still in the system)
-        // projection = $425 + (-$75) = $350 if double-counted OR $425 if properly handled
+        // Confirm the expense - this calls adjustBalance internally
+        updateTransactionStatusUseCase(transaction.id, UpdateTransactionStatusRequest(TransactionStatus.CONFIRMED))
 
         // Act
         val projection = calculateMonthProjectionUseCase(yearMonth).first()
 
         // Assert
-        // After adjustBalance to $425 and pending still there, we should NOT double count
-        // The projection should use current balance, and pending expenses should be 0 extra deduction
-        // since balance already reflects the confirmed expense
+        // After confirmation, balance is $425 and pending is gone
+        // Projection should just be the balance since no more pending transactions
         assertEquals(425_00L, projection)
     }
 }
