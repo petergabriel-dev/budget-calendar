@@ -57,6 +57,11 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        androidUnitTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.kotlin.testJunit)
+            implementation(libs.sqldelight.sqlite.driver)
+        }
     }
 }
 

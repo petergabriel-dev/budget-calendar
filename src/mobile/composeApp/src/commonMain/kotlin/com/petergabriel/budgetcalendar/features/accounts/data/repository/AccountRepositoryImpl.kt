@@ -17,7 +17,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlin.math.abs
 
 class AccountRepositoryImpl(
@@ -30,11 +32,13 @@ class AccountRepositoryImpl(
     override val balanceChangedTrigger: SharedFlow<Unit> = _balanceChangedTrigger.asSharedFlow()
 
     override fun getAllAccounts(): Flow<List<Account>> {
-        return database.accountsQueries
+        val accountsFlow = database.accountsQueries
             .getAllAccounts(::toEntity)
             .asFlow()
             .mapToList(dispatcher)
             .map { entities -> entities.map(accountMapper::toDomain) }
+        return accountsFlow
+            .combine(balanceChangedTrigger.onStart { emit(Unit) }) { accounts, _ -> accounts }
     }
 
     override suspend fun getAccountById(id: Long): Account? {
@@ -45,11 +49,13 @@ class AccountRepositoryImpl(
     }
 
     override fun getSpendingPoolAccounts(): Flow<List<Account>> {
-        return database.accountsQueries
+        val spendingPoolFlow = database.accountsQueries
             .getSpendingPoolAccounts(::toEntity)
             .asFlow()
             .mapToList(dispatcher)
             .map { entities -> entities.map(accountMapper::toDomain) }
+        return spendingPoolFlow
+            .combine(balanceChangedTrigger.onStart { emit(Unit) }) { accounts, _ -> accounts }
     }
 
     override suspend fun createAccount(request: CreateAccountRequest): Account {

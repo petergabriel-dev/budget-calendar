@@ -104,7 +104,7 @@ val databaseModule = module {
 val repositoryModule = module {
     single { AccountRepositoryImpl(get(), get()) } bind IAccountRepository::class
     single { TransactionRepositoryImpl(get(), get()) } bind ITransactionRepository::class
-    single { BudgetRepositoryImpl(get(), get()) } bind IBudgetRepository::class
+    single { BudgetRepositoryImpl(get(), get(), get()) } bind IBudgetRepository::class
     single { MonthlyRolloverRepositoryImpl(get(), get()) } bind IMonthlyRolloverRepository::class
     single { RecurringTransactionRepositoryImpl(get(), get()) } bind IRecurringTransactionRepository::class
     single { SandboxRepositoryImpl(get(), get()) } bind ISandboxRepository::class

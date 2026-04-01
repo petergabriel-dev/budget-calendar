@@ -14,6 +14,9 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.repository.I
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 
 class TransactionRepositoryImpl(
@@ -21,6 +24,9 @@ class TransactionRepositoryImpl(
     private val transactionMapper: TransactionMapper,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ITransactionRepository {
+
+    private val _transactionChangedTrigger = MutableSharedFlow<Unit>(replay = 1)
+    override val transactionChangedTrigger: SharedFlow<Unit> = _transactionChangedTrigger.asSharedFlow()
 
     override fun getTransactionsByAccount(accountId: Long): Flow<List<Transaction>> {
         return database.transactionsQueries
@@ -136,6 +142,7 @@ class TransactionRepositoryImpl(
         )
 
         val insertedId = database.transactionsQueries.getLastInsertedTransactionId().executeAsOne()
+        _transactionChangedTrigger.emit(Unit)
         return checkNotNull(getTransactionById(insertedId)) {
             "Failed to load newly inserted transaction"
         }
@@ -147,6 +154,7 @@ class TransactionRepositoryImpl(
             DateUtils.nowMillis(),
             id,
         )
+        _transactionChangedTrigger.emit(Unit)
         return getTransactionById(id)
     }
 
@@ -161,6 +169,7 @@ class TransactionRepositoryImpl(
 
     override suspend fun deleteTransaction(id: Long) {
         database.transactionsQueries.deleteTransaction(id)
+        _transactionChangedTrigger.emit(Unit)
     }
 
     override suspend fun getTransactionByLinkedId(linkedTransactionId: Long): Transaction? {

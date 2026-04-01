@@ -7,13 +7,18 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transa
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.domain.repository.ITransactionRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 
 class FakeTransactionRepository : ITransactionRepository {
     private val transactions = mutableListOf<Transaction>()
     private val transactionsFlow = MutableStateFlow<List<Transaction>>(emptyList())
     private var nextId = 1L
+    private val _transactionChangedTrigger = MutableSharedFlow<Unit>(replay = 1)
+    override val transactionChangedTrigger: SharedFlow<Unit> = _transactionChangedTrigger.asSharedFlow()
 
     override fun getTransactionsByAccount(accountId: Long): Flow<List<Transaction>> {
         return transactionsFlow.map { allTransactions ->
@@ -144,6 +149,7 @@ class FakeTransactionRepository : ITransactionRepository {
 
         transactions += transaction
         emitTransactions()
+        _transactionChangedTrigger.emit(Unit)
         return transaction
     }
 
@@ -159,6 +165,7 @@ class FakeTransactionRepository : ITransactionRepository {
         )
         transactions[index] = updated
         emitTransactions()
+        _transactionChangedTrigger.emit(Unit)
         return updated
     }
 
@@ -173,12 +180,14 @@ class FakeTransactionRepository : ITransactionRepository {
             updatedAt = DateUtils.nowMillis(),
         )
         emitTransactions()
+        _transactionChangedTrigger.emit(Unit)
         return true
     }
 
     override suspend fun deleteTransaction(id: Long) {
         transactions.removeAll { transaction -> transaction.id == id }
         emitTransactions()
+        _transactionChangedTrigger.emit(Unit)
     }
 
     override suspend fun getTransactionByLinkedId(linkedTransactionId: Long): Transaction? {
@@ -201,6 +210,7 @@ class FakeTransactionRepository : ITransactionRepository {
 
         if (overdueCount > 0) {
             emitTransactions()
+            _transactionChangedTrigger.emit(Unit)
         }
 
         return overdueCount
@@ -211,6 +221,7 @@ class FakeTransactionRepository : ITransactionRepository {
         transactions.addAll(seededTransactions)
         nextId = ((seededTransactions.maxOfOrNull { transaction -> transaction.id } ?: 0L) + 1L)
         emitTransactions()
+        _transactionChangedTrigger.tryEmit(Unit)
     }
 
     fun allTransactions(): List<Transaction> = transactions.toList()

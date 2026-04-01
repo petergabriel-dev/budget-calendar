@@ -5,8 +5,11 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transa
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
 
 interface ITransactionRepository {
+    val transactionChangedTrigger: SharedFlow<Unit>
+
     fun getTransactionsByAccount(accountId: Long): Flow<List<Transaction>>
     fun getTransactionsByDateRange(startDate: Long, endDate: Long, typeFilter: TransactionType? = null): Flow<List<Transaction>>
     fun getTransactionsByDate(date: Long): Flow<List<Transaction>>
