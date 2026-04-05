@@ -1,6 +1,7 @@
 package com.petergabriel.budgetcalendar.features.calendar.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,8 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
-import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.features.calendar.domain.model.CalendarDay
+
+internal const val CALENDAR_DAY_CELL_TINT_ALPHA = 0.2f
 
 @Composable
 fun CalendarDayCell(
@@ -38,14 +40,20 @@ fun CalendarDayCell(
     val radius = BudgetCalendarTheme.radius
 
     val selectedBackground = colors.bgDark
-    val todayBackground = colors.colorSuccess.copy(alpha = 0.2f)
+    val successTintBackground = colors.colorSuccess.copy(alpha = CALENDAR_DAY_CELL_TINT_ALPHA)
+    val errorTintBackground = colors.colorError.copy(alpha = CALENDAR_DAY_CELL_TINT_ALPHA)
     val baseBackground = Color.Transparent
+    val cellShape = RoundedCornerShape(radius.lg)
 
-    val background = when {
-        day.isSelected -> selectedBackground
-        day.isToday -> todayBackground
-        else -> baseBackground
-    }
+    val background = resolveCalendarDayCellBackground(
+        isSelected = day.isSelected,
+        isToday = day.isToday,
+        netAmount = day.dailySummary?.netAmount,
+        selectedBackground = selectedBackground,
+        successTint = successTintBackground,
+        errorTint = errorTintBackground,
+        baseBackground = baseBackground,
+    )
 
     val contentColor = if (day.isSelected) {
         colors.textInverted
@@ -53,21 +61,15 @@ fun CalendarDayCell(
         colors.textSecondary
     }
 
-    val netAmount = day.dailySummary?.netAmount
-    val netText = netAmount?.let { amount ->
-        CurrencyUtils.formatCents(amount, includePlusSign = true)
-    } ?: "—"
-
-    val netColor = when {
-        day.isSelected -> colors.textInverted
-        netAmount == null || netAmount == 0L -> colors.textTertiary
-        netAmount > 0L -> colors.colorSuccess
-        else -> colors.colorError
-    }
+    val borderColor = resolveCalendarDayCellBorderColor(
+        isToday = day.isToday,
+        todayBorder = colors.bgDark,
+    )
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(radius.lg))
+            .clip(cellShape)
+            .border(width = 1.5.dp, color = borderColor, shape = cellShape)
             .background(background)
             .clickable(onClick = onTap)
             .alpha(if (day.isCurrentMonth) 1f else 0.4f)
@@ -80,16 +82,6 @@ fun CalendarDayCell(
             style = typography.calendarDay,
             fontWeight = if (day.isSelected) FontWeight.Black else FontWeight.Medium,
             color = contentColor,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.End,
-        )
-
-        Text(
-            text = netText,
-            style = typography.calendarAmount,
-            fontWeight = FontWeight.SemiBold,
-            color = netColor,
-            maxLines = 1,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.End,
         )
@@ -117,6 +109,34 @@ fun CalendarDayCell(
             }
         }
     }
+}
+
+internal fun resolveCalendarDayCellBackground(
+    isSelected: Boolean,
+    isToday: Boolean,
+    netAmount: Long?,
+    selectedBackground: Color,
+    successTint: Color,
+    errorTint: Color,
+    baseBackground: Color,
+): Color {
+    val resolvedNetAmount = netAmount ?: 0L
+
+    return when {
+        isSelected -> selectedBackground
+        isToday && resolvedNetAmount < 0L -> errorTint
+        isToday -> successTint
+        !isToday && resolvedNetAmount > 0L -> successTint
+        !isToday && resolvedNetAmount < 0L -> errorTint
+        else -> baseBackground
+    }
+}
+
+internal fun resolveCalendarDayCellBorderColor(
+    isToday: Boolean,
+    todayBorder: Color,
+): Color {
+    return if (isToday) todayBorder else Color.Transparent
 }
 
 @Composable
