@@ -99,14 +99,6 @@ fun CalendarDayCell(
             if (day.dailySummary?.hasOverdue == true) {
                 StateDot(color = colors.colorError)
             }
-            if (day.dailySummary?.hasConfirmed == true) {
-                Text(
-                    text = "✓",
-                    color = if (day.isSelected) colors.textInverted else colors.colorSuccess,
-                    style = typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
         }
     }
 }
