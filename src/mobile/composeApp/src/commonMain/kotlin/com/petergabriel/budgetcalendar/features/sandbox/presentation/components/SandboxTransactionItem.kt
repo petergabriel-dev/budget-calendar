@@ -7,8 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -20,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.petergabriel.budgetcalendar.core.designsystem.component.BadgeVariant
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcBadge
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
@@ -30,20 +31,19 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SandboxTransactionItem(
     transaction: SandboxTransaction,
     modifier: Modifier = Modifier,
-    onPromote: (SandboxTransaction) -> Unit,
-    onRemove: (SandboxTransaction) -> Unit,
+    onPromote: (Long) -> Unit,
+    onRemove: (Long) -> Unit,
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
     val spacing = BudgetCalendarTheme.spacing
     val radius = BudgetCalendarTheme.radius
 
-    var showPromoteSheet by remember { mutableStateOf(false) }
+    var showPromoteConfirm by remember { mutableStateOf(false) }
     val signedAmount = when (transaction.type) {
         TransactionType.INCOME -> transaction.amount
         TransactionType.EXPENSE -> -transaction.amount
@@ -70,6 +70,11 @@ fun SandboxTransactionItem(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
+                BcBadge(
+                    text = if (transaction.type == TransactionType.INCOME) "Income" else "Expense",
+                    variant = if (transaction.type == TransactionType.INCOME) BadgeVariant.Success else BadgeVariant.Error,
+                )
+
                 Text(
                     text = transaction.category ?: "Uncategorized",
                     style = typography.bodyMedium,
@@ -106,62 +111,42 @@ fun SandboxTransactionItem(
             horizontalArrangement = Arrangement.End,
         ) {
             if (transaction.originalTransactionId == null) {
-                TextButton(onClick = { showPromoteSheet = true }) {
-                    Text("Promote", color = colors.colorInfo)
-                }
+                BcButton(
+                    text = "Promote",
+                    onClick = { showPromoteConfirm = true },
+                    variant = ButtonVariant.Ghost,
+                )
             }
 
-            TextButton(
-                onClick = { onRemove(transaction) },
-            ) {
-                Text("Remove", color = colors.colorError)
-            }
+            BcButton(
+                text = "Remove",
+                onClick = { onRemove(transaction.id) },
+                variant = ButtonVariant.Destructive,
+            )
         }
     }
 
-    if (showPromoteSheet) {
-        ModalBottomSheet(onDismissRequest = { showPromoteSheet = false }) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(spacing.spacing4),
-                verticalArrangement = Arrangement.spacedBy(spacing.spacing3),
-            ) {
-                Text(
-                    text = "Promote transaction to real data?",
-                    style = typography.section,
-                    fontWeight = FontWeight.SemiBold,
-                    color = colors.textPrimary,
-                )
-                Text(
-                    text = "This will add it to your real transactions and remove it from this sandbox.",
-                    style = typography.bodyMedium,
-                    color = colors.textSecondary,
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(spacing.spacing2),
-                ) {
-                    BcButton(
-                        text = "Cancel",
-                        onClick = { showPromoteSheet = false },
-                        modifier = Modifier.weight(1f),
-                        variant = ButtonVariant.Outline,
-                    )
-
-                    BcButton(
-                        text = "Promote",
-                        onClick = {
-                            onPromote(transaction)
-                            showPromoteSheet = false
-                        },
-                        modifier = Modifier.weight(1f),
-                        variant = ButtonVariant.Primary,
-                    )
+    if (showPromoteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showPromoteConfirm = false },
+            title = { Text("Promote transaction?") },
+            text = { Text("This adds the transaction to real data and removes it from sandbox.") },
+            dismissButton = {
+                TextButton(onClick = { showPromoteConfirm = false }) {
+                    Text("Cancel")
                 }
-            }
-        }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onPromote(transaction.id)
+                        showPromoteConfirm = false
+                    },
+                ) {
+                    Text("Promote")
+                }
+            },
+        )
     }
 }
 

@@ -39,8 +39,21 @@ class CreateTransactionUseCase(
         return if (request.type == TransactionType.TRANSFER) {
             createTransferPair(request)
         } else {
-            Result.success(transactionRepository.createTransaction(request))
+            createSingleTransaction(request)
         }
+    }
+
+    private suspend fun createSingleTransaction(request: CreateTransactionRequest): Result<Transaction> {
+        val created = transactionRepository.createTransaction(
+            request.copy(
+                signedAmount = when (request.type) {
+                    TransactionType.INCOME -> request.amount
+                    TransactionType.EXPENSE -> -request.amount
+                    TransactionType.TRANSFER -> request.signedAmount
+                },
+            ),
+        )
+        return Result.success(created)
     }
 
     private suspend fun createTransferPair(request: CreateTransactionRequest): Result<Transaction> {
@@ -50,6 +63,7 @@ class CreateTransactionUseCase(
             request.copy(
                 linkedTransactionId = null,
                 destinationAccountId = destinationId,
+                signedAmount = -request.amount,
             ),
         )
 
@@ -58,6 +72,7 @@ class CreateTransactionUseCase(
                 accountId = destinationId,
                 destinationAccountId = request.accountId,
                 linkedTransactionId = source.id,
+                signedAmount = request.amount,
             ),
         )
 

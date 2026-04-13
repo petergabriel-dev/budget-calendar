@@ -4,23 +4,30 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.budget.domain.usecase.CalculateSafeToSpendUseCase
-import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SimulationInput
+import com.petergabriel.budgetcalendar.features.sandbox.domain.model.AddSandboxTransactionRequest
+import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxSnapshot
+import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxTransaction
+import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.AddSimulationTransactionUseCase
+import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.CheckAndExpireSandboxesUseCase
+import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.CompareSandboxWithRealityUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.CreateSandboxUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.DeleteSandboxUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.GetSandboxByIdUseCase
+import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.GetSandboxSafeToSpendUseCase
+import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.GetSandboxTransactionsUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.GetSandboxesUseCase
-import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.RunSimulationUseCase
+import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.PromoteTransactionUseCase
+import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.RemoveSimulationTransactionUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.UpdateSnapshotLastAccessedUseCase
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.number
-import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
@@ -29,65 +36,69 @@ class SandboxViewModel(
     private val getSandboxesUseCase: GetSandboxesUseCase,
     private val getSandboxByIdUseCase: GetSandboxByIdUseCase,
     private val deleteSandboxUseCase: DeleteSandboxUseCase,
-    private val runSimulationUseCase: RunSimulationUseCase,
+    private val addSimulationTransactionUseCase: AddSimulationTransactionUseCase,
+    private val removeSimulationTransactionUseCase: RemoveSimulationTransactionUseCase,
+    private val getSandboxTransactionsUseCase: GetSandboxTransactionsUseCase,
+    private val getSandboxSafeToSpendUseCase: GetSandboxSafeToSpendUseCase,
+    private val compareSandboxWithRealityUseCase: CompareSandboxWithRealityUseCase,
+    private val promoteTransactionUseCase: PromoteTransactionUseCase,
     private val updateSnapshotLastAccessedUseCase: UpdateSnapshotLastAccessedUseCase,
+    private val checkAndExpireSandboxesUseCase: CheckAndExpireSandboxesUseCase,
     private val calculateSafeToSpendUseCase: CalculateSafeToSpendUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SandboxHomeUiState())
     val uiState = _uiState.asStateFlow()
+    private var selectedSnapshotJob: Job? = null
 
     fun setSandboxMode(enabled: Boolean) {
         if (enabled) {
-            _uiState.update { it.copy(isSandboxMode = true, error = null) }
-            refreshCurrentDailyRate()
-            loadAvailableSnapshots()
+            _uiState.update {
+                it.copy(
+                    isSandboxMode = true,
+                    isLoading = true,
+                    error = null,
+                )
+            }
+            viewModelScope.launch {
+                checkAndExpireSandboxesUseCase()
+                    .onFailure { throwable ->
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = throwable.message,
+                            )
+                        }
+                        return@launch
+                    }
+                loadAvailableSnapshots(autoSelect = true)
+            }
             return
         }
 
-        clearSimulation()
+        selectedSnapshotJob?.cancel()
+        selectedSnapshotJob = null
         _uiState.update {
             it.copy(
                 isSandboxMode = false,
                 isSnapshotSheetVisible = false,
+                isAddTransactionSheetVisible = false,
+                activeSnapshot = null,
+                sandboxTransactions = emptyList(),
+                projectedSafeToSpend = 0L,
+                currentDailyRate = 0L,
+                comparison = null,
+                isLoading = false,
                 error = null,
             )
         }
     }
 
-    fun loadAvailableSnapshots() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
-            runCatching {
-                getSandboxesUseCase().first()
-            }.onSuccess { snapshots ->
-                var shouldResetSimulation = false
-                _uiState.update { state ->
-                    val keptActive = state.activeSnapshot?.id?.let { activeId ->
-                        snapshots.firstOrNull { snapshot -> snapshot.id == activeId }
-                    }
-                    val resolvedActive = keptActive ?: snapshots.firstOrNull()
-                    shouldResetSimulation = state.activeSnapshot?.id != resolvedActive?.id
-                    state.copy(
-                        availableSnapshots = snapshots,
-                        activeSnapshot = resolvedActive,
-                        projectedSafeToSpend = resolvedActive?.initialSafeToSpend ?: 0L,
-                        isLoading = false,
-                    )
-                }
-                if (shouldResetSimulation) {
-                    clearSimulation()
-                }
-            }.onFailure { throwable ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = throwable.message,
-                    )
-                }
-            }
-        }
+    fun loadAvailableSnapshots(autoSelect: Boolean = false) {
+        loadAvailableSnapshots(
+            autoSelect = autoSelect,
+            preferredSnapshotId = null,
+        )
     }
 
     fun selectSnapshot(id: Long) {
@@ -142,12 +153,16 @@ class SandboxViewModel(
                 it.copy(
                     activeSnapshot = resolved,
                     availableSnapshots = snapshots,
+                    sandboxTransactions = emptyList(),
                     projectedSafeToSpend = resolved.initialSafeToSpend,
+                    comparison = null,
                     isSnapshotSheetVisible = false,
                     isLoading = false,
+                    error = null,
                 )
             }
-            clearSimulation()
+
+            observeSelectedSnapshot(id)
         }
     }
 
@@ -159,58 +174,116 @@ class SandboxViewModel(
         _uiState.update { it.copy(isSnapshotSheetVisible = false) }
     }
 
-    fun updateSimulationInput(input: SimulationInput) {
+    fun showAddTransactionSheet() {
         _uiState.update {
             it.copy(
-                simulationInput = input,
-                consequencesResult = null,
+                isAddTransactionSheetVisible = true,
                 error = null,
             )
         }
     }
 
-    fun runSimulation() {
-        val state = uiState.value
-        val snapshot = state.activeSnapshot
+    fun hideAddTransactionSheet() {
+        _uiState.update { it.copy(isAddTransactionSheetVisible = false) }
+    }
+
+    fun addTransaction(request: AddSandboxTransactionRequest) {
+        val snapshot = uiState.value.activeSnapshot
             ?: run {
                 _uiState.update { it.copy(error = "Please select a sandbox snapshot") }
                 return
             }
 
-        if (state.simulationInput.purchaseName.isBlank()) {
-            _uiState.update { it.copy(error = "Purchase name is required") }
+        val normalizedCategory = request.category.trim()
+        if (normalizedCategory.isBlank()) {
+            _uiState.update { it.copy(error = "Name is required") }
             return
         }
 
-        if (state.simulationInput.amount <= 0L) {
-            _uiState.update { it.copy(error = "Amount must be greater than 0") }
-            return
-        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
-        val result = runSimulationUseCase(
-            simulationInput = state.simulationInput,
-            activeSnapshot = snapshot,
-            currentDailyRate = state.currentDailyRate,
-            daysRemainingInMonth = daysRemainingInMonth(),
-        )
-
-        _uiState.update {
-            it.copy(
-                consequencesResult = result,
-                error = null,
-            )
+            addSimulationTransactionUseCase(
+                request.copy(
+                    snapshotId = snapshot.id,
+                    category = normalizedCategory,
+                    description = request.description?.trim()?.ifBlank { null },
+                ),
+            ).onSuccess {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isAddTransactionSheetVisible = false,
+                        error = null,
+                    )
+                }
+            }.onFailure { throwable ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = throwable.message,
+                    )
+                }
+            }
         }
     }
 
-    fun clearSimulation() {
-        _uiState.update {
-            it.copy(
-                simulationInput = SimulationInput(
-                    purchaseName = "",
-                    amount = 0L,
-                ),
-                consequencesResult = null,
-            )
+    fun removeTransaction(transactionId: Long) {
+        val snapshotId = uiState.value.activeSnapshot?.id
+            ?: run {
+                _uiState.update { it.copy(error = "Please select a sandbox snapshot") }
+                return
+            }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            removeSimulationTransactionUseCase(snapshotId, transactionId)
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = null,
+                        )
+                    }
+                }
+                .onFailure { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = throwable.message,
+                        )
+                    }
+                }
+        }
+    }
+
+    fun promoteTransaction(transactionId: Long) {
+        val transaction = uiState.value.sandboxTransactions.firstOrNull { item -> item.id == transactionId }
+            ?: run {
+                _uiState.update { it.copy(error = "Sandbox transaction with id=$transactionId was not found") }
+                return
+            }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            promoteTransactionUseCase(transaction)
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = null,
+                        )
+                    }
+                }
+                .onFailure { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = throwable.message,
+                        )
+                    }
+                }
         }
     }
 
@@ -234,22 +307,10 @@ class SandboxViewModel(
                 description = null,
                 currentSafeToSpend = currentSafeToSpend,
             ).onSuccess { snapshot ->
-                val snapshots = runCatching {
-                    getSandboxesUseCase().first()
-                }.getOrDefault(emptyList())
-
-                val resolved = snapshots.firstOrNull { item -> item.id == snapshot.id } ?: snapshot
-                _uiState.update {
-                    it.copy(
-                        availableSnapshots = snapshots,
-                        activeSnapshot = resolved,
-                        projectedSafeToSpend = resolved.initialSafeToSpend,
-                        isSnapshotSheetVisible = false,
-                        isLoading = false,
-                        error = null,
-                    )
-                }
-                clearSimulation()
+                loadAvailableSnapshots(
+                    autoSelect = true,
+                    preferredSnapshotId = snapshot.id,
+                )
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(
@@ -267,24 +328,7 @@ class SandboxViewModel(
 
             deleteSandboxUseCase(id)
                 .onSuccess {
-                    val snapshots = runCatching {
-                        getSandboxesUseCase().first()
-                    }.getOrDefault(emptyList())
-
-                    _uiState.update { state ->
-                        val resolvedActive = state.activeSnapshot?.takeIf { snapshot -> snapshot.id != id }
-                            ?: snapshots.firstOrNull()
-                        state.copy(
-                            availableSnapshots = snapshots,
-                            activeSnapshot = resolvedActive,
-                            projectedSafeToSpend = resolvedActive?.initialSafeToSpend ?: 0L,
-                            isLoading = false,
-                            error = null,
-                        )
-                    }
-                    if (uiState.value.activeSnapshot?.id != id) {
-                        clearSimulation()
-                    }
+                    loadAvailableSnapshots(autoSelect = true)
                 }
                 .onFailure { throwable ->
                     _uiState.update {
@@ -301,35 +345,119 @@ class SandboxViewModel(
         _uiState.update { it.copy(error = null) }
     }
 
-    private fun refreshCurrentDailyRate() {
-        viewModelScope.launch {
-            val currentSafeToSpend = fetchCurrentSafeToSpend().getOrElse { throwable ->
-                _uiState.update { it.copy(error = throwable.message) }
-                return@launch
-            }
-            val daysRemaining = daysRemainingInMonth()
-            val dailyRate = if (daysRemaining > 0) {
-                currentSafeToSpend / daysRemaining
-            } else {
-                currentSafeToSpend
-            }
+    override fun onCleared() {
+        selectedSnapshotJob?.cancel()
+        selectedSnapshotJob = null
+        super.onCleared()
+    }
 
-            _uiState.update { it.copy(currentDailyRate = dailyRate) }
+    private fun observeSelectedSnapshot(snapshotId: Long) {
+        selectedSnapshotJob?.cancel()
+        selectedSnapshotJob = viewModelScope.launch {
+            combine(
+                getSandboxTransactionsUseCase(snapshotId),
+                getSandboxSafeToSpendUseCase(snapshotId),
+                compareSandboxWithRealityUseCase(snapshotId),
+            ) { transactions, projectedSafeToSpend, comparison ->
+                Triple(transactions, projectedSafeToSpend, comparison)
+            }
+                .catch { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = throwable.message,
+                        )
+                    }
+                }
+                .collect { (transactions, projectedSafeToSpend, comparison) ->
+                    if (!uiState.value.isSandboxMode || uiState.value.activeSnapshot?.id != snapshotId) {
+                        return@collect
+                    }
+
+                    val dailyRate = projectedSafeToSpend / daysRemainingInMonth()
+                    _uiState.update {
+                        it.copy(
+                            sandboxTransactions = transactions,
+                            projectedSafeToSpend = projectedSafeToSpend,
+                            comparison = comparison,
+                            currentDailyRate = dailyRate,
+                            isLoading = false,
+                            error = null,
+                        )
+                    }
+                }
         }
     }
 
-    private suspend fun fetchCurrentSafeToSpend(): Result<Long> {
-        return runCatching {
-            calculateSafeToSpendUseCase().first().availableToSpend
+    private fun loadAvailableSnapshots(
+        autoSelect: Boolean,
+        preferredSnapshotId: Long?,
+    ) {
+        viewModelScope.launch {
+            val snapshots = runCatching { getSandboxesUseCase().first() }
+                .getOrElse { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = throwable.message,
+                        )
+                    }
+                    return@launch
+                }
+
+            _uiState.update { state ->
+                val activeSnapshot = preferredSnapshotId?.let { id ->
+                    snapshots.firstOrNull { snapshot -> snapshot.id == id }
+                } ?: state.activeSnapshot?.id?.let { activeId ->
+                    snapshots.firstOrNull { snapshot -> snapshot.id == activeId }
+                }
+
+                state.copy(
+                    availableSnapshots = snapshots,
+                    activeSnapshot = activeSnapshot,
+                    sandboxTransactions = if (activeSnapshot == null) emptyList() else state.sandboxTransactions,
+                    projectedSafeToSpend = activeSnapshot?.initialSafeToSpend ?: 0L,
+                    comparison = if (activeSnapshot == null) null else state.comparison,
+                    isLoading = false,
+                    error = null,
+                )
+            }
+
+            if (!autoSelect) {
+                return@launch
+            }
+
+            val idToSelect = preferredSnapshotId
+                ?: snapshots.firstOrNull()?.id
+
+            if (idToSelect == null) {
+                selectedSnapshotJob?.cancel()
+                selectedSnapshotJob = null
+                _uiState.update {
+                    it.copy(
+                        activeSnapshot = null,
+                        sandboxTransactions = emptyList(),
+                        projectedSafeToSpend = 0L,
+                        currentDailyRate = 0L,
+                        comparison = null,
+                        isSnapshotSheetVisible = false,
+                        isAddTransactionSheetVisible = false,
+                    )
+                }
+                return@launch
+            }
+
+            selectSnapshot(idToSelect)
         }
+    }
+
+    private suspend fun fetchCurrentSafeToSpend(): Result<Long> = runCatching {
+        calculateSafeToSpendUseCase().first().availableToSpend
     }
 
     private fun daysRemainingInMonth(nowMillis: Long = DateUtils.nowMillis()): Int {
         val timeZone = TimeZone.currentSystemDefault()
         val today = Instant.fromEpochMilliseconds(nowMillis).toLocalDateTime(timeZone).date
-        val firstDayOfMonth = LocalDate(today.year, today.month.number, 1)
-        val firstDayNextMonth = firstDayOfMonth.plus(DatePeriod(months = 1))
-        val remaining = firstDayNextMonth.toEpochDays() - today.toEpochDays()
-        return remaining.toInt().coerceAtLeast(1)
+        return DateUtils.daysRemainingInMonth(today = today, tz = timeZone)
     }
 }

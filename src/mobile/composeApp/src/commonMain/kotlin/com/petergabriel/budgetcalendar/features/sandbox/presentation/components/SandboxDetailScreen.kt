@@ -111,8 +111,8 @@ fun SandboxDetailScreen(
                     items(sandboxTransactions, key = { transaction -> transaction.id }) { transaction ->
                         SandboxTransactionItem(
                             transaction = transaction,
-                            onPromote = onPromoteTransaction,
-                            onRemove = onRemoveSimulation,
+                            onPromote = { onPromoteTransaction(transaction) },
+                            onRemove = { onRemoveSimulation(transaction) },
                         )
                     }
                 }

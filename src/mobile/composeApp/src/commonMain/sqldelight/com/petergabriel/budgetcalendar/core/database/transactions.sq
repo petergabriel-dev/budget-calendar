@@ -44,6 +44,7 @@ INSERT INTO transactions(
   account_id,
   destination_account_id,
   amount,
+  signed_amount,
   date,
   type,
   status,
@@ -54,7 +55,7 @@ INSERT INTO transactions(
   created_at,
   updated_at
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateTransactionStatus:
 UPDATE transactions
@@ -93,7 +94,20 @@ WHERE a.is_in_spending_pool = 1
 ORDER BY t.date ASC;
 
 getPendingAndOverdueForSpendingPoolInRange:
-SELECT t.*
+SELECT
+  t.id,
+  t.account_id,
+  t.destination_account_id,
+  t.amount,
+  t.date,
+  t.type,
+  t.status,
+  t.description,
+  t.category,
+  t.linked_transaction_id,
+  t.is_sandbox,
+  t.created_at,
+  t.updated_at
 FROM transactions t
 JOIN accounts a ON t.account_id = a.id
 WHERE t.status IN ('pending', 'overdue')

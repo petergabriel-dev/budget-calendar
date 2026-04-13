@@ -146,13 +146,13 @@ Calendar View provides the primary user interface for visualizing financial acti
 | Rule | Description | Priority |
 |------|-------------|----------|
 | CAL-001 | Calendar displays a month grid with 7 columns (Sunday to Saturday) | Required |
-| CAL-002 | Each day cell shows: date number, daily net change (+income, -expenses) | Required |
-| CAL-003 | Visual indicators: dot for pending, red dot for overdue, checkmark for confirmed | Required |
+| CAL-002 | Each day cell shows: date number, a tinted background indicating net sign for non-today cells (green = positive, red = negative, transparent = zero/empty), and state dots | Required |
+| CAL-003 | Visual indicators: amber dot for pending, red dot for overdue; no confirmed indicator — the tinted background communicates confirmed transactions | Required |
 | CAL-004 | Tapping a day opens transaction list for that date | Required |
 | CAL-005 | Month navigation via left/right arrows or swipe gesture | Required |
-| CAL-006 | Current day is highlighted with distinct background color | Required |
+| CAL-006 | Current day always has a bgDark (black) border as the exclusive "today" indicator — no other cell gets a colored border; background is colorError @ 20% when netAmount < 0, colorSuccess @ 20% otherwise | Required |
 | CAL-007 | Days from adjacent months are shown as grayed out | Required |
-| CAL-008 | Empty days (no transactions) show "—" | Required |
+| CAL-008 | Empty days (no transactions) show no border and no state indicators | Required |
 | CAL-009 | Calendar fetches transactions for visible months plus one month buffer | Required |
 | CAL-010 | Daily summary shows separate income and expense totals | Required |
 | CAL-011 | Calendar screen does NOT show a page header, search bar, segmented control, or Safe to Spend card | Required |
@@ -196,9 +196,13 @@ Calendar View provides the primary user interface for visualizing financial acti
 
 ## Feature: Safe to Spend Calculation
 
+**Shadow Spec:** `specs/shadow/Budget.shadow.md`
+
 ### Description
 
 Safe to Spend is the central calculation that shows users how much money is actually available for spending. This feature aggregates all accounts in the spending pool, accounts for pending transactions, and implements monthly rollover logic. The calculation provides a real-time view of available funds, helping users make informed spending decisions.
+
+The **Daily Velocity Display** is part of this feature: the Home screen shows a dynamic `₱X / day · N days left` figure below the STS amount, computed as `availableToSpend / daysRemainingInMonth` (where today counts as a remaining day). On the last day of the month the figure turns red with a `⚠` icon and a tappable tooltip warning. This requires `DateUtils.daysRemainingInMonth()` and updates to `HeroSafeToSpend`.
 
 ### Business Rules
 
@@ -252,60 +256,68 @@ Safe to Spend is the central calculation that shows users how much money is actu
 
 ## Feature: Sandbox Mode (What-If)
 
+**Shadow Spec:** `specs/shadow/Sandbox.shadow.md`
+**Status:** In Progress (domain layer complete; UI layer pending)
+
 ### Description
 
-Sandbox Mode allows users to create hypothetical financial scenarios without affecting their real financial data. Users can simulate future income, expenses, and financial decisions to see how they would impact their Safe to Spend. This feature is particularly useful for budget planning, goal setting, and understanding the financial implications of major purchases.
+Sandbox Mode is a persistent, multi-transaction budget planning scratchpad. Users create a named snapshot of their current Safe to Spend, then stack hypothetical income and expense transactions on top of it. Projected STS updates reactively after each addition. A comparison delta shows how the sandbox STS differs from reality. Plans persist between sessions and individual sandbox transactions can be promoted to real pending transactions.
 
 ### Business Rules
 
 | Rule | Description | Priority |
 |------|-------------|----------|
-| SAN-001 | Sandbox creates a point-in-time snapshot of all real data | Required |
-| SAN-002 | Sandbox transactions are isolated and do not affect real Safe to Spend | Required |
-| SAN-003 | Users can add hypothetical income/expenses in sandbox | Required |
-| SAN-004 | Sandbox can be compared against reality | Required |
-| SAN-005 | Multiple sandboxes can exist simultaneously | Required |
-| SAN-006 | Sandbox inherits real account configurations at creation | Required |
-| SAN-007 | Sandbox balance starts as real Safe to Spend at snapshot time | Required |
-| SAN-008 | Sandbox can be deleted without affecting real data | Required |
-| SAN-009 | Sandbox transactions can be promoted to real transactions | Required |
-| SAN-010 | Sandbox expires after 30 days of inactivity | Required |
-| SAN-011 | Home screen segmented control shows "Live Budget" \| "Sandbox" (not "Active"/"Inactive"); selecting "Sandbox" replaces home content with sandbox view | Required |
-| SAN-012 | Sandbox view shows: snapshot selector pill, Projected Spend hero, Simulate Expense form, Consequences section (hidden until Run Simulation tapped) | Required |
-| SAN-013 | Simulate Expense form is ephemeral — simulation state resets on leave, nothing is persisted to DB | Required |
-| SAN-014 | Consequences section shows 4 rows: New Safe to Spend (always, red if negative), Daily Velocity Impact, Days of Runway (0 if STS negative), Affordability verdict | Required |
-| SAN-015 | Snapshot selector pill opens a bottom sheet of all snapshots (ordered by last_accessed_at DESC) with a "Create New" option | Required |
+| SAN-001 | Sandbox creates a point-in-time snapshot storing the real STS value at creation | Required |
+| SAN-002 | Sandbox transactions are isolated and never affect real Safe to Spend | Required |
+| SAN-003 | Users can add both hypothetical income and expense transactions to a sandbox | Required |
+| SAN-004 | Projected STS updates reactively (no manual refresh) after every sandbox transaction add or remove | Required |
+| SAN-005 | Comparison delta (sandbox STS vs real STS) is shown inline on the sandbox home view | Required |
+| SAN-006 | Multiple sandboxes can exist simultaneously | Required |
+| SAN-007 | Sandbox inherits real account list at creation for use in the Add Transaction account selector | Required |
+| SAN-008 | Projected STS = initialSafeToSpend + sum(income amounts) - sum(expense amounts) | Required |
+| SAN-009 | Sandbox can be deleted without affecting real data; deletion cascades to sandbox_transactions | Required |
+| SAN-010 | Individual sandbox transactions can be promoted to real PENDING transactions | Required |
+| SAN-011 | Sandbox expires after 30 days of inactivity; expiry runs at app start only | Required |
+| SAN-012 | Home screen segmented control labels are "Live Budget" (left) and "Sandbox" (right) | Required |
+| SAN-013 | Selecting "Sandbox" replaces home content with: snapshot selector pill, projected STS hero, comparison delta row, sandbox transaction list with Add button | Required |
+| SAN-014 | Sandbox data persists in DB across sessions; leaving sandbox mode does not clear sandbox data | Required |
+| SAN-015 | Snapshot selector pill opens a bottom sheet of all snapshots ordered by last_accessed_at DESC with a "Create New" option | Required |
 
 ### Validation
 
 | Field | Type | Rules | Error Message |
 |-------|------|-------|---------------|
-| name | string | required, max(50), min(1), unique per user | "Sandbox name is required and must be unique" |
+| name | string | required, max(50), min(1) | "Sandbox name is required (max 50 characters)" |
 | description | string | optional, max(200) | "Description cannot exceed 200 characters" |
+| amount | Long (cents) | required, > 0 | "Amount must be greater than zero" |
+| category | string | required, max(50) | "Category is required" |
+| type | enum | INCOME or EXPENSE only | "Transaction type must be Income or Expense" |
 
 ### Dependencies
 
 | Feature | Relationship | Integration Point |
 |---------|--------------|-------------------|
-| Account Management | copies from | Sandbox inherits real accounts |
-| Transaction Management | derives from | Sandbox copies real transactions |
-| Safe to Spend Calculation | uses | sandbox_id parameter |
-| Calendar View | uses | Toggle to view sandbox |
+| Account Management | uses | Account list for Add Transaction account selector |
+| Transaction Management | uses | PromoteTransaction inserts into real transactions table |
+| Safe to Spend Calculation | uses | Real STS value needed at snapshot creation and for comparison |
 
 ### State Management
 
-- **Persistent State:** SQLite table `sandboxes` with columns: id, user_id, name, description, created_at, last_accessed_at; `sandbox_transactions` table mirrors transactions with sandbox_id
-- **Session State:** Currently active sandbox ID, comparison mode
-- **UI State:** Diff highlighting between real and sandbox |
+- **Persistent State:** `sandbox_snapshots` (id, name, description, initial_safe_to_spend, created_at, last_accessed_at); `sandbox_transactions` (snapshot_id FK, amount, type, status, category, description, account_id, original_transaction_id)
+- **Session State:** Currently active snapshot ID; Flow subscriptions for transactions, projected STS, comparison
+- **UI State:** isAddTransactionSheetVisible, isSnapshotSheetVisible, isLoading, error
 
 ### Edge Cases
 
 | Case | Condition | Handling |
 |------|-----------|----------|
-| Real data changes while sandbox | New transactions in real system | Show "Real data updated" notice |
-| Delete sandbox with transactions | sandbox_transactions not empty | Confirm deletion |
-| Empty sandbox | No hypothetical transactions added | Show copy of real data |
-| Promote sandbox transaction | Convert to real | Create real transaction |
+| No snapshots exist | First-time sandbox entry | Show empty state with "Create New" CTA |
+| projectedSafeToSpend negative | Expenses exceed initialSafeToSpend | Show in colorError with warning icon; do not block further additions |
+| Real data changes while sandbox active | New real transactions added/confirmed | comparison.realSafeToSpend updates reactively; delta refreshes automatically |
+| Delete sandbox with transactions | sandbox_transactions not empty | Show confirm dialog; cascade handles DB cleanup |
+| Promote transaction | sandboxTransactionId valid | Create real PENDING transaction, remove from sandbox, reactive update |
+| Sandbox expiration | last_accessed_at older than 30 days at app start | Auto-delete silently; clear selection if it was active |
+| Empty sandbox | No transactions added | Show projectedSafeToSpend = initialSafeToSpend with empty state and prominent Add button |
 
 ---
 

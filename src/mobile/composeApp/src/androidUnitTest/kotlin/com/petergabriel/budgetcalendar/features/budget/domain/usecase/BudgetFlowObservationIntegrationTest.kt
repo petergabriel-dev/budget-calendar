@@ -91,6 +91,50 @@ class BudgetFlowObservationIntegrationTest {
     }
 
     @Test
+    fun createConfirmedExpense_deductsAccountBalance() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val account = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Primary Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 500_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+
+            val created = fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = account.id,
+                    amount = 75_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.CONFIRMED,
+                    description = "Confirmed expense",
+                    category = "Food",
+                ),
+            )
+            assertTrue(created.isSuccess)
+            assertEquals(TransactionStatus.CONFIRMED, created.getOrThrow().status)
+
+            val summary = withTimeout(5_000) {
+                fixture.calculateSafeToSpendUseCase().first { sts ->
+                    sts.pendingReservations == 0L &&
+                        sts.availableToSpend == 425_00L &&
+                        sts.confirmedSpending == 75_00L
+                }
+            }
+
+            assertEquals(425_00L, summary.availableToSpend)
+            assertEquals(75_00L, summary.confirmedSpending)
+            assertEquals(425_00L, fixture.accountRepository.getAccountById(account.id)?.balance)
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
+    @Test
     fun confirmingPendingExpense_updatesAccountBalance_andKeepsSafeToSpendStable() = runBlocking {
         val fixture = createFixture()
 
@@ -147,8 +191,8 @@ class BudgetFlowObservationIntegrationTest {
         BudgetCalendarDatabase.Schema.create(driver)
         val database = BudgetCalendarDatabase(driver)
 
-        val accountRepository = AccountRepositoryImpl(database, AccountMapper())
         val transactionRepository = TransactionRepositoryImpl(database, TransactionMapper())
+        val accountRepository = AccountRepositoryImpl(database, AccountMapper(), transactionRepository)
         val budgetMapper = BudgetMapper()
         val budgetRepository = BudgetRepositoryImpl(database, budgetMapper, transactionRepository)
         val monthlyRolloverRepository = MonthlyRolloverRepositoryImpl(database, budgetMapper)
@@ -158,7 +202,7 @@ class BudgetFlowObservationIntegrationTest {
             accountRepository = accountRepository,
             createAccountUseCase = CreateAccountUseCase(accountRepository),
             createTransactionUseCase = CreateTransactionUseCase(transactionRepository),
-            updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(transactionRepository, accountRepository),
+            updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(transactionRepository),
             calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(
                 budgetRepository,
                 monthlyRolloverRepository,

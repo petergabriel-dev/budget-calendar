@@ -126,13 +126,14 @@ Constraint: Description optional, max 200 characters
 User Input |> validateTransactionInput |> CreateTransactionUseCase.execute()
   |> If (type == TRANSFER) |> CreateLinkedTransactions
   |> TransactionRepository.insert()
+  |> If (status == CONFIRMED) |> AccountRepository.adjustBalance()
   |> If (isInSpendingPool and status != CANCELLED) |> UpdateSafeToSpend
   |> Return Transaction
   |> Update TransactionUiState
 
 // Confirm Transaction Flow
-User Confirm |> ConfirmTransactionUseCase.execute(id)
-  |> TransactionRepository.updateStatus(CONFIRMED)
+User Confirm |> UpdateTransactionStatusUseCase.execute(id)
+  |> AccountRepository.adjustBalance()
   |> RecalculateSafeToSpend
   |> Return Updated Transaction
 

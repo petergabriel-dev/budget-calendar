@@ -42,18 +42,11 @@ class CalculateSafeToSpendUseCase(
                 .filter { transaction -> transaction.type == TransactionType.EXPENSE }
                 .sumOf { transaction -> transaction.amount }
             
-            // Bugfix (2026-04-01): Subtract confirmedSpending from STS to account for 
-            // confirmed transactions that may not yet be reflected in totalBalance.
-            // This ensures STS correctly decreases when expenses are confirmed.
-            // Note: If adjustBalance() works correctly (updates totalBalance when confirming),
-            // this could lead to double-deduction. The confirmedSpending subtraction is
-            // a safeguard for the case where adjustBalance hasn't propagated.
             val availableToSpend = (
                 budgetData.totalBalance -
                     budgetData.pendingReservations -
                     budgetData.overdueReservations -
-                    budgetData.creditCardReserved -
-                    confirmedSpending
+                    budgetData.creditCardReserved
                 ).coerceAtLeast(0L)
             
             val latestRollover = budgetData.rollovers.firstOrNull()?.rolloverAmount ?: 0L

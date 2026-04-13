@@ -130,6 +130,7 @@ class TransactionRepositoryImpl(
             request.accountId,
             request.destinationAccountId,
             request.amount,
+            request.signedAmount,
             request.date,
             request.type.dbValue,
             request.status.dbValue,

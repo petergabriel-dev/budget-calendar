@@ -162,7 +162,6 @@ fun AccountScreen(
                             request = UpdateAccountRequest(
                                 name = name,
                                 type = type,
-                                balance = balance,
                                 isInSpendingPool = isInSpendingPool,
                                 description = description,
                             ),

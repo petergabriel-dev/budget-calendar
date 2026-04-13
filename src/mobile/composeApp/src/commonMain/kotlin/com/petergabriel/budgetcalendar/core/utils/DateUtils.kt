@@ -4,6 +4,7 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
 import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
@@ -37,6 +38,20 @@ object DateUtils {
     fun currentYearMonth(nowMillis: Long = nowMillis(), timeZone: TimeZone = TimeZone.currentSystemDefault()): Pair<Int, Int> {
         val localDate = Instant.fromEpochMilliseconds(nowMillis).toLocalDateTime(timeZone).date
         return localDate.year to localDate.month.number
+    }
+
+    fun daysRemainingInMonth(
+        today: LocalDate,
+        tz: TimeZone = TimeZone.currentSystemDefault(),
+    ): Int {
+        val normalizedToday = today.atStartOfDayIn(tz).toLocalDateTime(tz).date
+        val firstDayOfMonth = LocalDate(normalizedToday.year, normalizedToday.month.number, 1)
+        val lastDayOfMonth = firstDayOfMonth
+            .plus(DatePeriod(months = 1))
+            .minus(DatePeriod(days = 1))
+            .day
+
+        return (lastDayOfMonth - normalizedToday.day + 1).coerceAtLeast(1)
     }
 
     fun previousMonth(year: Int, month: Int): Pair<Int, Int> {

@@ -4,6 +4,7 @@ import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxTran
 import com.petergabriel.budgetcalendar.features.sandbox.domain.repository.ISandboxRepository
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.CreateTransactionRequest
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
+import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.domain.repository.ITransactionRepository
 
 class PromoteTransactionUseCase(
@@ -30,6 +31,11 @@ class PromoteTransactionUseCase(
                     status = sandboxTransaction.status,
                     description = sandboxTransaction.description,
                     category = sandboxTransaction.category,
+                    signedAmount = when (sandboxTransaction.type) {
+                        TransactionType.INCOME -> sandboxTransaction.amount
+                        TransactionType.EXPENSE -> -sandboxTransaction.amount
+                        TransactionType.TRANSFER -> -sandboxTransaction.amount
+                    },
                     isSandbox = false,
                 ),
             )
@@ -43,4 +49,3 @@ class PromoteTransactionUseCase(
         return Result.success(promoted)
     }
 }
-

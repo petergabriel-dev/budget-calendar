@@ -29,13 +29,9 @@ DELETE FROM sandbox_transactions
 WHERE snapshot_id = ?;
 
 getSandboxBalanceDeltaBySnapshot:
-SELECT COALESCE(SUM(
-  CASE
-    WHEN type = 'income' THEN amount
-    WHEN type = 'expense' THEN -amount
-    ELSE 0
-  END
-), 0)
+SELECT
+  COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) -
+  COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0)
 FROM sandbox_transactions
 WHERE snapshot_id = ?;
 

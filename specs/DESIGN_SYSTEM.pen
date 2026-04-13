@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
@@ -833,7 +833,75 @@
               "type": "ref",
               "ref": "EZOJk",
               "width": "fill_container",
-              "name": "dbPill"
+              "name": "dbPill",
+              "x": 21,
+              "y": 12,
+              "descendants": {
+                "EkTMO": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 4,
+                  "y": 3
+                },
+                "F0iMl": {
+                  "x": 26,
+                  "y": 8
+                },
+                "4f4bd": {
+                  "x": 22,
+                  "y": 34
+                },
+                "NCUfT": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 78,
+                  "y": 3
+                },
+                "qE13q": {
+                  "x": 26,
+                  "y": 8
+                },
+                "y5hHn": {
+                  "x": 14,
+                  "y": 34
+                },
+                "ihvi2": {
+                  "x": 152,
+                  "y": 3
+                },
+                "TGPIh": {
+                  "x": 16,
+                  "y": 16
+                },
+                "KrFfO": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 208,
+                  "y": 3
+                },
+                "daWvk": {
+                  "x": 26,
+                  "y": 8
+                },
+                "p7DaL": {
+                  "x": 14.5,
+                  "y": 34
+                },
+                "T5EGC": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 282,
+                  "y": 3
+                },
+                "bR3QB": {
+                  "x": 26,
+                  "y": 8
+                },
+                "oNWsa": {
+                  "x": 29,
+                  "y": 34
+                }
+              }
             }
           ]
         }
@@ -1810,9 +1878,10 @@
             {
               "type": "frame",
               "id": "0eVGh",
-              "name": "metricsRow",
+              "name": "metricsStack",
               "width": "fill_container",
-              "gap": 12,
+              "layout": "vertical",
+              "gap": 6,
               "children": [
                 {
                   "type": "frame",
@@ -1838,22 +1907,88 @@
                 {
                   "type": "frame",
                   "id": "iO42D",
-                  "name": "secondaryMetricWrap",
+                  "name": "dailyVelocityWrap",
                   "layout": "vertical",
-                  "gap": 6,
-                  "alignItems": "end",
                   "children": [
                     {
                       "type": "text",
                       "id": "X9HGS",
-                      "name": "secondaryMetric",
-                      "fill": "$--text-primary",
-                      "content": "₱500/day",
-                      "lineHeight": 0.9,
-                      "fontFamily": "Outfit",
-                      "fontSize": 24,
-                      "fontWeight": "300",
-                      "letterSpacing": -0.5
+                      "name": "dailyVelocity",
+                      "fill": "#71717A",
+                      "content": "₱500 / day · 10 days left",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "300"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "yN3bh",
+              "x": 0,
+              "y": 0,
+              "name": "lastDayWarningState",
+              "enabled": false,
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ST3cw",
+                  "name": "warningVelocityRow",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "N9SpQ",
+                      "name": "warningIcon",
+                      "width": 16,
+                      "height": 16,
+                      "iconFontName": "triangle-alert",
+                      "iconFontFamily": "lucide",
+                      "fill": "#EF4444"
+                    },
+                    {
+                      "type": "text",
+                      "id": "FJYlR",
+                      "name": "warningVelocityText",
+                      "fill": "#EF4444",
+                      "content": "₱15,000 / day · 1 day left",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "300"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "h0nAL",
+                  "name": "warningTooltip",
+                  "fill": "#000000",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    8
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EgtNz",
+                      "name": "warningTooltipText",
+                      "fill": "#FFFFFF",
+                      "textGrowth": "fixed-width",
+                      "width": 260,
+                      "content": "You have 1 day left this month. This is your full Safe to Spend balance.",
+                      "lineHeight": 1.33,
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
                     }
                   ]
                 }
@@ -1918,12 +2053,19 @@
                   "ref": "c9XFF",
                   "width": "fill_container",
                   "name": "i1",
+                  "height": "fit_content",
                   "descendants": {
                     "JrrKN": {
                       "content": "Purchase Name"
                     },
+                    "8ZYjn": {
+                      "width": "fill_container",
+                      "y": 24
+                    },
                     "R5BBE": {
-                      "content": "e.g. MacBook Pro"
+                      "content": "e.g. MacBook Pro",
+                      "x": 16,
+                      "y": 15.5
                     }
                   }
                 },
@@ -1940,12 +2082,19 @@
                       "ref": "c9XFF",
                       "width": 100,
                       "name": "i2",
+                      "height": "fit_content",
                       "descendants": {
                         "JrrKN": {
                           "content": "Amount"
                         },
+                        "8ZYjn": {
+                          "width": "fill_container",
+                          "y": 24
+                        },
                         "R5BBE": {
-                          "content": "₱ 80,000"
+                          "content": "₱ 80,000",
+                          "x": 16,
+                          "y": 15.5
                         }
                       }
                     }
@@ -1959,9 +2108,13 @@
               "ref": "mbxe4",
               "width": "fill_container",
               "name": "btn",
+              "x": 24,
+              "y": 112,
               "descendants": {
                 "yp3OZ": {
-                  "content": "Run Simulation"
+                  "content": "Run Simulation",
+                  "x": 121,
+                  "y": 14
                 }
               }
             }
@@ -1982,20 +2135,33 @@
               "ref": "Ks9uf",
               "width": "fill_container",
               "name": "r1",
+              "height": "fit_content",
               "descendants": {
+                "GW1u1": {
+                  "x": 16,
+                  "y": 22.5
+                },
                 "EHJ3z": {
                   "width": "fill_container",
-                  "clip": false
+                  "clip": false,
+                  "height": "fit_content",
+                  "x": 56,
+                  "y": 16
                 },
                 "ZiVFY": {
-                  "content": "Daily Velocity Impact"
+                  "content": "Daily Velocity Impact",
+                  "width": "fill_container"
                 },
                 "8SWtk": {
-                  "content": "Safe to spend drops significantly"
+                  "content": "Safe to spend drops significantly",
+                  "width": "fill_container",
+                  "y": 22
                 },
                 "vNcDy": {
                   "content": "-₱2,666/day",
-                  "fontSize": 16
+                  "fontSize": 16,
+                  "x": 292,
+                  "y": 23.5
                 }
               }
             },
@@ -2013,15 +2179,32 @@
               "ref": "Ks9uf",
               "width": "fill_container",
               "name": "r2",
+              "height": "fit_content",
+              "y": 70,
               "descendants": {
+                "GW1u1": {
+                  "x": 16,
+                  "y": 22.5
+                },
+                "EHJ3z": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 56,
+                  "y": 16
+                },
                 "ZiVFY": {
-                  "content": "Checking Balance"
+                  "content": "Checking Balance",
+                  "width": "fill_container"
                 },
                 "8SWtk": {
-                  "content": "End of month projection"
+                  "content": "End of month projection",
+                  "width": "fill_container",
+                  "y": 22
                 },
                 "vNcDy": {
-                  "content": "₱12,000"
+                  "content": "₱12,000",
+                  "x": 307,
+                  "y": 21
                 }
               }
             }
@@ -2099,9 +2282,24 @@
               "ref": "CvyNk",
               "width": "fill_container",
               "name": "headSB",
+              "height": "fit_content",
+              "x": 24,
+              "y": 64,
               "descendants": {
+                "QfeQr": {
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "y": 3
+                },
                 "3MHCG": {
                   "content": "Sandbox"
+                },
+                "RbdSi": {
+                  "x": 310
+                },
+                "pLXHH": {
+                  "x": 12,
+                  "y": 12
                 }
               }
             },
@@ -2121,21 +2319,33 @@
                   "name": "segSB",
                   "descendants": {
                     "jmZk7": {
-                      "fill": "transparent"
+                      "fill": "transparent",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "x": 4,
+                      "y": 4
                     },
                     "uv0JG": {
                       "fill": "$--text-secondary",
                       "fontWeight": "500",
-                      "content": "Live Budget"
+                      "content": "Live Budget",
+                      "x": 49,
+                      "y": 11
                     },
                     "S7ST7": {
                       "fill": "$--bg-dark",
-                      "cornerRadius": 20
+                      "cornerRadius": 20,
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "x": 179,
+                      "y": 4
                     },
                     "xfaXH": {
                       "fill": "$--text-inverted",
                       "fontWeight": "700",
-                      "content": "Sandbox"
+                      "content": "Sandbox",
+                      "x": 57,
+                      "y": 11
                     }
                   }
                 },
@@ -2246,12 +2456,17 @@
               "ref": "O3ux1",
               "width": "fill_container",
               "name": "simHead",
+              "height": "fit_content",
+              "x": 24,
+              "y": 381,
               "descendants": {
                 "W5jJw": {
                   "content": "Simulate Expense"
                 },
                 "eLMoT": {
-                  "content": "Clear"
+                  "content": "Clear",
+                  "x": 318,
+                  "y": 13
                 }
               }
             },
@@ -2279,12 +2494,19 @@
                       "ref": "c9XFF",
                       "width": "fill_container",
                       "name": "i1",
+                      "height": "fit_content",
                       "descendants": {
                         "JrrKN": {
                           "content": "Purchase Name"
                         },
+                        "8ZYjn": {
+                          "width": "fill_container",
+                          "y": 24
+                        },
                         "R5BBE": {
-                          "content": "e.g. MacBook Pro"
+                          "content": "e.g. MacBook Pro",
+                          "x": 16,
+                          "y": 15.5
                         }
                       }
                     },
@@ -2301,12 +2523,19 @@
                           "ref": "c9XFF",
                           "width": 100,
                           "name": "i2",
+                          "height": "fit_content",
                           "descendants": {
                             "JrrKN": {
                               "content": "Amount"
                             },
+                            "8ZYjn": {
+                              "width": "fill_container",
+                              "y": 24
+                            },
                             "R5BBE": {
-                              "content": "₱ 80,000"
+                              "content": "₱ 80,000",
+                              "x": 16,
+                              "y": 15.5
                             }
                           }
                         }
@@ -2320,9 +2549,13 @@
                   "ref": "mbxe4",
                   "width": "fill_container",
                   "name": "btn",
+                  "x": 24,
+                  "y": 112,
                   "descendants": {
                     "yp3OZ": {
-                      "content": "Run Simulation"
+                      "content": "Run Simulation",
+                      "x": 98,
+                      "y": 14
                     }
                   }
                 }
@@ -2334,6 +2567,9 @@
               "ref": "O3ux1",
               "width": "fill_container",
               "name": "resHead",
+              "height": "fit_content",
+              "x": 24,
+              "y": 659,
               "descendants": {
                 "W5jJw": {
                   "content": "Consequences"
@@ -2358,20 +2594,33 @@
                   "ref": "Ks9uf",
                   "width": "fill_container",
                   "name": "r1",
+                  "height": "fit_content",
                   "descendants": {
+                    "GW1u1": {
+                      "x": 16,
+                      "y": 30
+                    },
                     "EHJ3z": {
                       "width": "fill_container",
-                      "clip": false
+                      "clip": false,
+                      "height": "fit_content",
+                      "x": 56,
+                      "y": 16
                     },
                     "ZiVFY": {
-                      "content": "Daily Velocity Impact"
+                      "content": "Daily Velocity Impact",
+                      "width": "fill_container"
                     },
                     "8SWtk": {
-                      "content": "Safe to spend drops significantly"
+                      "content": "Safe to spend drops significantly",
+                      "width": "fill_container",
+                      "y": 22
                     },
                     "vNcDy": {
                       "content": "-₱2,666/day",
-                      "fontSize": 16
+                      "fontSize": 16,
+                      "x": 246,
+                      "y": 31
                     }
                   }
                 },
@@ -2389,15 +2638,32 @@
                   "ref": "Ks9uf",
                   "width": "fill_container",
                   "name": "r2",
+                  "height": "fit_content",
+                  "y": 85,
                   "descendants": {
+                    "GW1u1": {
+                      "x": 16,
+                      "y": 22.5
+                    },
+                    "EHJ3z": {
+                      "width": "fill_container",
+                      "height": "fit_content",
+                      "x": 56,
+                      "y": 16
+                    },
                     "ZiVFY": {
-                      "content": "Checking Balance"
+                      "content": "Checking Balance",
+                      "width": "fill_container"
                     },
                     "8SWtk": {
-                      "content": "End of month projection"
+                      "content": "End of month projection",
+                      "width": "fill_container",
+                      "y": 22
                     },
                     "vNcDy": {
-                      "content": "₱12,000"
+                      "content": "₱12,000",
+                      "x": 261,
+                      "y": 21
                     }
                   }
                 }
@@ -2445,7 +2711,75 @@
               "type": "ref",
               "ref": "EZOJk",
               "width": "fill_container",
-              "name": "sbPill"
+              "name": "sbPill",
+              "x": 21,
+              "y": 12,
+              "descendants": {
+                "EkTMO": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 4,
+                  "y": 3
+                },
+                "F0iMl": {
+                  "x": 26,
+                  "y": 8
+                },
+                "4f4bd": {
+                  "x": 22,
+                  "y": 34
+                },
+                "NCUfT": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 78,
+                  "y": 3
+                },
+                "qE13q": {
+                  "x": 26,
+                  "y": 8
+                },
+                "y5hHn": {
+                  "x": 14,
+                  "y": 34
+                },
+                "ihvi2": {
+                  "x": 152,
+                  "y": 3
+                },
+                "TGPIh": {
+                  "x": 16,
+                  "y": 16
+                },
+                "KrFfO": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 208,
+                  "y": 3
+                },
+                "daWvk": {
+                  "x": 26,
+                  "y": 8
+                },
+                "p7DaL": {
+                  "x": 14.5,
+                  "y": 34
+                },
+                "T5EGC": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 282,
+                  "y": 3
+                },
+                "bR3QB": {
+                  "x": 26,
+                  "y": 8
+                },
+                "oNWsa": {
+                  "x": 29,
+                  "y": 34
+                }
+              }
             }
           ]
         }
@@ -2516,20 +2850,34 @@
               "ref": "mTtvR",
               "width": "fill_container",
               "name": "segType",
+              "x": 24,
+              "y": 24,
               "descendants": {
                 "jmZk7": {
-                  "fill": "$--bg-dark"
+                  "fill": "$--bg-dark",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "x": 4,
+                  "y": 4
                 },
                 "uv0JG": {
                   "fill": "$--text-inverted",
-                  "content": "Expense"
+                  "content": "Expense",
+                  "x": 58,
+                  "y": 11
                 },
                 "S7ST7": {
-                  "fill": "transparent"
+                  "fill": "transparent",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "x": 179,
+                  "y": 4
                 },
                 "xfaXH": {
                   "fill": "$--text-secondary",
-                  "content": "Income"
+                  "content": "Income",
+                  "x": 62.5,
+                  "y": 11
                 }
               }
             },
@@ -2573,12 +2921,21 @@
               "ref": "c9XFF",
               "width": "fill_container",
               "name": "inpName",
+              "height": "fit_content",
+              "x": 24,
+              "y": 206,
               "descendants": {
                 "JrrKN": {
                   "content": "Name"
                 },
+                "8ZYjn": {
+                  "width": "fill_container",
+                  "y": 24
+                },
                 "R5BBE": {
-                  "content": "e.g. Groceries"
+                  "content": "e.g. Groceries",
+                  "x": 16,
+                  "y": 15.5
                 }
               }
             },
@@ -2595,12 +2952,19 @@
                   "ref": "c9XFF",
                   "width": "fill_container",
                   "name": "inpDate",
+                  "height": "fit_content",
                   "descendants": {
                     "JrrKN": {
                       "content": "Date"
                     },
+                    "8ZYjn": {
+                      "width": "fill_container",
+                      "y": 24
+                    },
                     "R5BBE": {
-                      "content": "Today"
+                      "content": "Today",
+                      "x": 16,
+                      "y": 15.5
                     }
                   }
                 },
@@ -2610,12 +2974,20 @@
                   "ref": "c9XFF",
                   "width": "fill_container",
                   "name": "inpAccount",
+                  "height": "fit_content",
+                  "x": 185,
                   "descendants": {
                     "JrrKN": {
                       "content": "Account"
                     },
+                    "8ZYjn": {
+                      "width": "fill_container",
+                      "y": 24
+                    },
                     "R5BBE": {
-                      "content": "Checking"
+                      "content": "Checking",
+                      "x": 16,
+                      "y": 15.5
                     }
                   }
                 }
@@ -2646,13 +3018,17 @@
                   "ref": "4SRSD",
                   "width": "fill_container",
                   "name": "schChoice",
+                  "height": "fit_content",
+                  "y": 32,
                   "descendants": {
                     "2kdFE": {
                       "fill": "$--bg-dark",
                       "stroke": {}
                     },
                     "gsxEi": {
-                      "content": "Scheduled (Future)"
+                      "content": "Scheduled (Future)",
+                      "x": 36,
+                      "y": 3.5
                     }
                   }
                 },
@@ -2662,9 +3038,13 @@
                   "ref": "4SRSD",
                   "width": "fill_container",
                   "name": "paidChoice",
+                  "height": "fit_content",
+                  "y": 72,
                   "descendants": {
                     "gsxEi": {
-                      "content": "Paid / Cleared"
+                      "content": "Paid / Cleared",
+                      "x": 36,
+                      "y": 3.5
                     }
                   }
                 }
@@ -2694,7 +3074,9 @@
                   "name": "btnSave",
                   "descendants": {
                     "yp3OZ": {
-                      "content": "Add Expense"
+                      "content": "Add Expense",
+                      "x": 129,
+                      "y": 14
                     }
                   }
                 }
@@ -2740,12 +3122,25 @@
               "ref": "CvyNk",
               "width": "fill_container",
               "name": "headAcc",
+              "height": "fit_content",
+              "x": 24,
+              "y": 64,
               "descendants": {
+                "QfeQr": {
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "y": 3
+                },
                 "3MHCG": {
                   "content": "Accounts"
                 },
+                "RbdSi": {
+                  "x": 310
+                },
                 "pLXHH": {
-                  "iconFontName": "plus"
+                  "iconFontName": "plus",
+                  "x": 12,
+                  "y": 12
                 }
               }
             },
@@ -2796,12 +3191,15 @@
                   "ref": "O3ux1",
                   "width": "fill_container",
                   "name": "poolHead",
+                  "height": "fit_content",
                   "descendants": {
                     "W5jJw": {
                       "content": "Spending Pool"
                     },
                     "eLMoT": {
-                      "content": "₱15,500"
+                      "content": "₱15,500",
+                      "x": 299,
+                      "y": 13
                     }
                   }
                 },
@@ -2811,15 +3209,32 @@
                   "ref": "XOueE",
                   "width": "fill_container",
                   "name": "c1",
+                  "height": "fit_content",
+                  "y": 46,
                   "descendants": {
+                    "p9vgV": {
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 16
+                    },
                     "tMkgi": {
-                      "content": "CHECKING"
+                      "content": "CHECKING",
+                      "x": 12,
+                      "y": 6
+                    },
+                    "5k4sD": {
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 58
                     },
                     "x7kW3": {
                       "content": "₱15,000"
                     },
                     "slu5D": {
-                      "content": "Primary funding source"
+                      "content": "Primary funding source",
+                      "y": 32
                     }
                   }
                 },
@@ -2829,19 +3244,34 @@
                   "ref": "XOueE",
                   "width": "fill_container",
                   "name": "c2",
+                  "height": "fit_content",
+                  "y": 183,
                   "descendants": {
                     "p9vgV": {
-                      "fill": "$--text-tertiary"
+                      "fill": "$--text-tertiary",
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 16
                     },
                     "tMkgi": {
                       "content": "CASH",
-                      "fill": "$--text-inverted"
+                      "fill": "$--text-inverted",
+                      "x": 12,
+                      "y": 6
+                    },
+                    "5k4sD": {
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 58
                     },
                     "x7kW3": {
                       "content": "₱500"
                     },
                     "slu5D": {
-                      "content": "Physical wallet"
+                      "content": "Physical wallet",
+                      "y": 32
                     }
                   }
                 }
@@ -2861,12 +3291,15 @@
                   "ref": "O3ux1",
                   "width": "fill_container",
                   "name": "wallHead",
+                  "height": "fit_content",
                   "descendants": {
                     "W5jJw": {
                       "content": "Walled Gardens"
                     },
                     "eLMoT": {
-                      "content": "₱100,000"
+                      "content": "₱100,000",
+                      "x": 289,
+                      "y": 13
                     }
                   }
                 },
@@ -2883,15 +3316,31 @@
                       "ref": "iDE7I",
                       "width": "fill_container",
                       "name": "sc1",
+                      "height": "fit_content",
                       "descendants": {
+                        "D0DOH": {
+                          "width": "fit_content",
+                          "height": "fit_content",
+                          "x": 16,
+                          "y": 16
+                        },
                         "Dm98c": {
-                          "content": "SAVINGS"
+                          "content": "SAVINGS",
+                          "x": 12,
+                          "y": 6
+                        },
+                        "xNIuw": {
+                          "width": "fit_content",
+                          "height": "fit_content",
+                          "x": 16,
+                          "y": 58
                         },
                         "XlWBB": {
                           "content": "₱50,000"
                         },
                         "Veuvg": {
-                          "content": "Emergency fund"
+                          "content": "Emergency fund",
+                          "y": 32
                         }
                       }
                     },
@@ -2901,19 +3350,34 @@
                       "ref": "iDE7I",
                       "width": "fill_container",
                       "name": "sc2",
+                      "height": "fit_content",
+                      "x": 185,
                       "descendants": {
                         "D0DOH": {
-                          "fill": "$--text-tertiary"
+                          "fill": "$--text-tertiary",
+                          "width": "fit_content",
+                          "height": "fit_content",
+                          "x": 16,
+                          "y": 16
                         },
                         "Dm98c": {
                           "content": "INVESTMENT",
-                          "fill": "$--text-inverted"
+                          "fill": "$--text-inverted",
+                          "x": 12,
+                          "y": 6
+                        },
+                        "xNIuw": {
+                          "width": "fit_content",
+                          "height": "fit_content",
+                          "x": 16,
+                          "y": 58
                         },
                         "XlWBB": {
                           "content": "₱50,000"
                         },
                         "Veuvg": {
-                          "content": "Brokerage portfolio"
+                          "content": "Brokerage portfolio",
+                          "y": 32
                         }
                       }
                     }
@@ -2935,12 +3399,15 @@
                   "ref": "O3ux1",
                   "width": "fill_container",
                   "name": "ccHead",
+                  "height": "fit_content",
                   "descendants": {
                     "W5jJw": {
                       "content": "Credit Cards"
                     },
                     "eLMoT": {
-                      "content": "-₱4,500"
+                      "content": "-₱4,500",
+                      "x": 298,
+                      "y": 13
                     }
                   }
                 },
@@ -2950,6 +3417,8 @@
                   "ref": "iDE7I",
                   "width": "fill_container",
                   "name": "ccCard",
+                  "height": "fit_content",
+                  "y": 46,
                   "descendants": {
                     "D0DOH": {
                       "fill": "$--bg-surface",
@@ -2957,17 +3426,30 @@
                         "align": "inside",
                         "thickness": 1.5,
                         "fill": "$--border-strong"
-                      }
+                      },
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 16
                     },
                     "Dm98c": {
                       "content": "LIABILITY",
-                      "fill": "$--text-secondary"
+                      "fill": "$--text-secondary",
+                      "x": 12,
+                      "y": 6
+                    },
+                    "xNIuw": {
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 58
                     },
                     "XlWBB": {
                       "content": "-₱4,500"
                     },
                     "Veuvg": {
-                      "content": "BPI Credit Card"
+                      "content": "BPI Credit Card",
+                      "y": 32
                     }
                   }
                 }
@@ -3016,20 +3498,78 @@
               "ref": "EZOJk",
               "width": "fill_container",
               "name": "accPill",
+              "x": 21,
+              "y": 12,
               "descendants": {
+                "EkTMO": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 4,
+                  "y": 3
+                },
                 "F0iMl": {
-                  "fill": "$--text-tertiary"
+                  "fill": "$--text-tertiary",
+                  "x": 26,
+                  "y": 8
                 },
                 "4f4bd": {
                   "fill": "$--text-tertiary",
-                  "fontWeight": "500"
+                  "fontWeight": "500",
+                  "x": 22,
+                  "y": 34
+                },
+                "NCUfT": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 78,
+                  "y": 3
+                },
+                "qE13q": {
+                  "x": 26,
+                  "y": 8
+                },
+                "y5hHn": {
+                  "x": 14,
+                  "y": 34
+                },
+                "ihvi2": {
+                  "x": 152,
+                  "y": 3
+                },
+                "TGPIh": {
+                  "x": 16,
+                  "y": 16
+                },
+                "KrFfO": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 208,
+                  "y": 3
                 },
                 "daWvk": {
-                  "fill": "$--text-primary"
+                  "fill": "$--text-primary",
+                  "x": 26,
+                  "y": 8
                 },
                 "p7DaL": {
                   "fill": "$--text-primary",
-                  "fontWeight": "700"
+                  "fontWeight": "700",
+                  "x": 13.5,
+                  "y": 34
+                },
+                "T5EGC": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 282,
+                  "y": 3
+                },
+                "bR3QB": {
+                  "x": 26,
+                  "y": 8
+                },
+                "oNWsa": {
+                  "x": 29,
+                  "y": 34
                 }
               }
             }
@@ -3066,12 +3606,25 @@
               "ref": "CvyNk",
               "width": "fill_container",
               "name": "headAcc",
+              "height": "fit_content",
+              "x": 24,
+              "y": 64,
               "descendants": {
+                "QfeQr": {
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "y": 3
+                },
                 "3MHCG": {
                   "content": "Accounts"
                 },
+                "RbdSi": {
+                  "x": 310
+                },
                 "pLXHH": {
-                  "iconFontName": "plus"
+                  "iconFontName": "plus",
+                  "x": 12,
+                  "y": 12
                 }
               }
             },
@@ -3122,12 +3675,15 @@
                   "ref": "O3ux1",
                   "width": "fill_container",
                   "name": "poolHead",
+                  "height": "fit_content",
                   "descendants": {
                     "W5jJw": {
                       "content": "Spending Pool"
                     },
                     "eLMoT": {
-                      "content": "₱15,500"
+                      "content": "₱15,500",
+                      "x": 299,
+                      "y": 13
                     }
                   }
                 },
@@ -3137,15 +3693,32 @@
                   "ref": "XOueE",
                   "width": "fill_container",
                   "name": "c1",
+                  "height": "fit_content",
+                  "y": 46,
                   "descendants": {
+                    "p9vgV": {
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 16
+                    },
                     "tMkgi": {
-                      "content": "CHECKING"
+                      "content": "CHECKING",
+                      "x": 12,
+                      "y": 6
+                    },
+                    "5k4sD": {
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 58
                     },
                     "x7kW3": {
                       "content": "₱15,000"
                     },
                     "slu5D": {
-                      "content": "Primary funding source"
+                      "content": "Primary funding source",
+                      "y": 32
                     }
                   }
                 },
@@ -3155,19 +3728,34 @@
                   "ref": "XOueE",
                   "width": "fill_container",
                   "name": "c2",
+                  "height": "fit_content",
+                  "y": 183,
                   "descendants": {
                     "p9vgV": {
-                      "fill": "$--text-tertiary"
+                      "fill": "$--text-tertiary",
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 16
                     },
                     "tMkgi": {
                       "content": "CASH",
-                      "fill": "$--text-inverted"
+                      "fill": "$--text-inverted",
+                      "x": 12,
+                      "y": 6
+                    },
+                    "5k4sD": {
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 58
                     },
                     "x7kW3": {
                       "content": "₱500"
                     },
                     "slu5D": {
-                      "content": "Physical wallet"
+                      "content": "Physical wallet",
+                      "y": 32
                     }
                   }
                 }
@@ -3187,12 +3775,15 @@
                   "ref": "O3ux1",
                   "width": "fill_container",
                   "name": "wallHead",
+                  "height": "fit_content",
                   "descendants": {
                     "W5jJw": {
                       "content": "Walled Gardens"
                     },
                     "eLMoT": {
-                      "content": "₱100,000"
+                      "content": "₱100,000",
+                      "x": 289,
+                      "y": 13
                     }
                   }
                 },
@@ -3210,15 +3801,31 @@
                       "ref": "iDE7I",
                       "width": 220,
                       "name": "sc1",
+                      "height": "fit_content",
                       "descendants": {
+                        "D0DOH": {
+                          "width": "fit_content",
+                          "height": "fit_content",
+                          "x": 16,
+                          "y": 16
+                        },
                         "Dm98c": {
-                          "content": "SAVINGS"
+                          "content": "SAVINGS",
+                          "x": 12,
+                          "y": 6
+                        },
+                        "xNIuw": {
+                          "width": "fit_content",
+                          "height": "fit_content",
+                          "x": 16,
+                          "y": 58
                         },
                         "XlWBB": {
                           "content": "₱50,000"
                         },
                         "Veuvg": {
-                          "content": "Emergency fund"
+                          "content": "Emergency fund",
+                          "y": 32
                         }
                       }
                     },
@@ -3228,19 +3835,34 @@
                       "ref": "iDE7I",
                       "width": 220,
                       "name": "sc2",
+                      "height": "fit_content",
+                      "y": 137,
                       "descendants": {
                         "D0DOH": {
-                          "fill": "$--text-tertiary"
+                          "fill": "$--text-tertiary",
+                          "width": "fit_content",
+                          "height": "fit_content",
+                          "x": 16,
+                          "y": 16
                         },
                         "Dm98c": {
                           "content": "INVESTMENT",
-                          "fill": "$--text-inverted"
+                          "fill": "$--text-inverted",
+                          "x": 12,
+                          "y": 6
+                        },
+                        "xNIuw": {
+                          "width": "fit_content",
+                          "height": "fit_content",
+                          "x": 16,
+                          "y": 58
                         },
                         "XlWBB": {
                           "content": "₱50,000"
                         },
                         "Veuvg": {
-                          "content": "Brokerage portfolio"
+                          "content": "Brokerage portfolio",
+                          "y": 32
                         }
                       }
                     }
@@ -3262,12 +3884,15 @@
                   "ref": "O3ux1",
                   "width": "fill_container",
                   "name": "ccHead",
+                  "height": "fit_content",
                   "descendants": {
                     "W5jJw": {
                       "content": "Credit Cards"
                     },
                     "eLMoT": {
-                      "content": "-₱4,500"
+                      "content": "-₱4,500",
+                      "x": 298,
+                      "y": 13
                     }
                   }
                 },
@@ -3277,6 +3902,8 @@
                   "ref": "iDE7I",
                   "width": "fill_container",
                   "name": "ccCard",
+                  "height": "fit_content",
+                  "y": 46,
                   "descendants": {
                     "D0DOH": {
                       "fill": "$--bg-surface",
@@ -3284,17 +3911,30 @@
                         "align": "inside",
                         "thickness": 1.5,
                         "fill": "$--border-strong"
-                      }
+                      },
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 16
                     },
                     "Dm98c": {
                       "content": "LIABILITY",
-                      "fill": "$--text-secondary"
+                      "fill": "$--text-secondary",
+                      "x": 12,
+                      "y": 6
+                    },
+                    "xNIuw": {
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "x": 16,
+                      "y": 58
                     },
                     "XlWBB": {
                       "content": "-₱4,500"
                     },
                     "Veuvg": {
-                      "content": "BPI Credit Card"
+                      "content": "BPI Credit Card",
+                      "y": 32
                     }
                   }
                 }
@@ -4178,18 +4818,34 @@
               "ref": "Ks9uf",
               "width": "fill_container",
               "name": "trans1",
+              "height": "fit_content",
+              "x": 24,
+              "y": 522,
               "descendants": {
                 "GW1u1": {
-                  "fill": "$--bg-dark"
+                  "fill": "$--bg-dark",
+                  "x": 16,
+                  "y": 22.5
+                },
+                "EHJ3z": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 56,
+                  "y": 16
                 },
                 "ZiVFY": {
-                  "content": "PLDT Home Fibr"
+                  "content": "PLDT Home Fibr",
+                  "width": "fill_container"
                 },
                 "8SWtk": {
-                  "content": "Checking · Overdue"
+                  "content": "Checking · Overdue",
+                  "width": "fill_container",
+                  "y": 22
                 },
                 "vNcDy": {
-                  "content": "-₱1,599"
+                  "content": "-₱1,599",
+                  "x": 269,
+                  "y": 21
                 }
               }
             },
@@ -4199,15 +4855,33 @@
               "ref": "Ks9uf",
               "width": "fill_container",
               "name": "trans2",
+              "height": "fit_content",
+              "x": 24,
+              "y": 615,
               "descendants": {
+                "GW1u1": {
+                  "x": 16,
+                  "y": 22.5
+                },
+                "EHJ3z": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 56,
+                  "y": 16
+                },
                 "ZiVFY": {
-                  "content": "Netflix"
+                  "content": "Netflix",
+                  "width": "fill_container"
                 },
                 "8SWtk": {
-                  "content": "Credit Card · Pending"
+                  "content": "Credit Card · Pending",
+                  "width": "fill_container",
+                  "y": 22
                 },
                 "vNcDy": {
-                  "content": "-₱499"
+                  "content": "-₱499",
+                  "x": 282,
+                  "y": 21
                 }
               }
             }
@@ -4254,20 +4928,42 @@
               "ref": "EZOJk",
               "width": "fill_container",
               "name": "tPillInst",
+              "x": 21,
+              "y": 12,
               "descendants": {
+                "EkTMO": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 4,
+                  "y": 3
+                },
                 "F0iMl": {
-                  "fill": "$--text-tertiary"
+                  "fill": "$--text-tertiary",
+                  "x": 26,
+                  "y": 8
                 },
                 "4f4bd": {
                   "fill": "$--text-tertiary",
-                  "fontWeight": "500"
+                  "fontWeight": "500",
+                  "x": 22,
+                  "y": 34
+                },
+                "NCUfT": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 78,
+                  "y": 3
                 },
                 "qE13q": {
-                  "fill": "$--text-primary"
+                  "fill": "$--text-primary",
+                  "x": 26,
+                  "y": 8
                 },
                 "y5hHn": {
                   "fill": "$--text-primary",
-                  "fontWeight": "700"
+                  "fontWeight": "700",
+                  "x": 13,
+                  "y": 34
                 },
                 "ihvi2": {
                   "width": 56,
@@ -4277,6 +4973,38 @@
                   "x": 152,
                   "y": 3,
                   "textGrowth": "auto"
+                },
+                "TGPIh": {
+                  "x": 16,
+                  "y": 16
+                },
+                "KrFfO": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 208,
+                  "y": 3
+                },
+                "daWvk": {
+                  "x": 26,
+                  "y": 8
+                },
+                "p7DaL": {
+                  "x": 14.5,
+                  "y": 34
+                },
+                "T5EGC": {
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "x": 282,
+                  "y": 3
+                },
+                "bR3QB": {
+                  "x": 26,
+                  "y": 8
+                },
+                "oNWsa": {
+                  "x": 29,
+                  "y": 34
                 }
               }
             }

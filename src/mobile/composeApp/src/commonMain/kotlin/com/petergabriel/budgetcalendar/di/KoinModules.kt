@@ -65,7 +65,6 @@ import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.GetSandbo
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.GetSandboxesUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.PromoteTransactionUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.RemoveSimulationTransactionUseCase
-import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.RunSimulationUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.UpdateSnapshotLastAccessedUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.SandboxViewModel
 import com.petergabriel.budgetcalendar.features.transactions.data.mapper.TransactionMapper
@@ -102,7 +101,7 @@ val databaseModule = module {
 }
 
 val repositoryModule = module {
-    single { AccountRepositoryImpl(get(), get()) } bind IAccountRepository::class
+    single { AccountRepositoryImpl(get(), get(), get()) } bind IAccountRepository::class
     single { TransactionRepositoryImpl(get(), get()) } bind ITransactionRepository::class
     single { BudgetRepositoryImpl(get(), get(), get()) } bind IBudgetRepository::class
     single { MonthlyRolloverRepositoryImpl(get(), get()) } bind IMonthlyRolloverRepository::class
@@ -124,7 +123,7 @@ val useCaseModule = module {
     factory { GetTransactionsUseCase(get()) }
     factory { GetPendingTransactionsUseCase(get()) }
     factory { GetOverdueTransactionsUseCase(get()) }
-    factory { UpdateTransactionStatusUseCase(get(), get()) }
+    factory { UpdateTransactionStatusUseCase(get()) }
     factory { DeleteTransactionUseCase(get()) }
     factory { MarkOverdueTransactionsUseCase(get()) }
     factory { GetPendingAndOverdueExpensesByAccountUseCase(get()) }
@@ -160,7 +159,6 @@ val useCaseModule = module {
     factory { PromoteTransactionUseCase(get(), get()) }
     factory { DeleteSandboxUseCase(get()) }
     factory { CheckAndExpireSandboxesUseCase(get()) }
-    factory { RunSimulationUseCase() }
     factory { UpdateSnapshotLastAccessedUseCase(get()) }
 
     factory { CreateCreditCardSettingsUseCase(get(), get()) }
@@ -179,7 +177,7 @@ val viewModelModule = module {
     viewModel { BudgetViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get()) }
     viewModel { RecurringViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { SandboxViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { SandboxViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CreditCardViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }
 

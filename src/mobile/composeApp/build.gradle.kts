@@ -56,11 +56,17 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
         androidUnitTest.dependencies {
             implementation(libs.junit)
             implementation(libs.kotlin.testJunit)
             implementation(libs.sqldelight.sqlite.driver)
+        }
+        androidInstrumentedTest.dependencies {
+            implementation(libs.androidx.compose.ui.test.junit4)
+            implementation(libs.androidx.testExt.junit)
+            implementation(libs.androidx.espresso.core)
         }
     }
 }
@@ -75,6 +81,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     packaging {
         resources {
@@ -94,6 +101,7 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
 sqldelight {

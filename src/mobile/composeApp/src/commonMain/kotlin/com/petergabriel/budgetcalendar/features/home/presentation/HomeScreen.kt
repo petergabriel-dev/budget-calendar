@@ -43,11 +43,13 @@ import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarThe
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.budget.presentation.BudgetViewModel
-import com.petergabriel.budgetcalendar.features.home.presentation.components.ConsequencesSection
-import com.petergabriel.budgetcalendar.features.home.presentation.components.SimulationFormCard
-import com.petergabriel.budgetcalendar.features.home.presentation.components.SnapshotSelectorPill
-import com.petergabriel.budgetcalendar.features.home.presentation.components.SnapshotSelectorSheet
+import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.AddSandboxTransactionSheet
+import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.ComparisonDeltaRow
+import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.HeroProjectedSpend
+import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.SandboxTransactionList
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.SandboxViewModel
+import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.SnapshotSelectorPill
+import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.SnapshotSelectorSheet
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
@@ -82,9 +84,9 @@ fun HomeScreen(
     val sandboxState by sandboxViewModel.uiState.collectAsStateWithLifecycle()
 
     val tz = TimeZone.currentSystemDefault()
-    val today = remember {
-        Clock.System.now().toLocalDateTime(tz).date
-    }
+    val today = Clock.System.now().toLocalDateTime(tz).date
+    val daysRemainingInMonth = DateUtils.daysRemainingInMonth(today = today, tz = tz)
+    val isLastDayOfMonth = daysRemainingInMonth == 1
     val weekStart = remember(today) {
         today - DatePeriod(days = today.dayOfWeek.ordinal)
     }
@@ -171,10 +173,12 @@ fun HomeScreen(
                 HeroSafeToSpend(
                     amount = budgetState.budgetSummary.availableToSpend,
                     dailyRate = if (budgetState.budgetSummary.availableToSpend > 0L) {
-                        budgetState.budgetSummary.availableToSpend / 30
+                        budgetState.budgetSummary.availableToSpend / daysRemainingInMonth
                     } else {
                         null
                     },
+                    daysRemaining = daysRemainingInMonth,
+                    isLastDayOfMonth = isLastDayOfMonth,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -232,33 +236,35 @@ fun HomeScreen(
             item {
                 SnapshotSelectorPill(
                     activeSnapshot = sandboxState.activeSnapshot,
-                    onSnapshotPillTap = sandboxViewModel::showSnapshotSheet,
+                    onTap = sandboxViewModel::showSnapshotSheet,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
 
             item {
-                HeroSafeToSpend(
-                    amount = sandboxState.projectedSafeToSpend,
+                HeroProjectedSpend(
+                    projectedSafeToSpend = sandboxState.projectedSafeToSpend,
                     dailyRate = sandboxState.currentDailyRate,
-                    label = "PROJECTED SPEND",
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
 
-            item {
-                SimulationFormCard(
-                    simulationInput = sandboxState.simulationInput,
-                    onSimulationInputChange = sandboxViewModel::updateSimulationInput,
-                    onRunSimulation = sandboxViewModel::runSimulation,
-                    onClearSimulation = sandboxViewModel::clearSimulation,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            val comparison = sandboxState.comparison
+            if (comparison != null) {
+                item {
+                    ComparisonDeltaRow(
+                        comparison = comparison,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
 
             item {
-                ConsequencesSection(
-                    result = sandboxState.consequencesResult,
+                SandboxTransactionList(
+                    transactions = sandboxState.sandboxTransactions,
+                    onAddTap = sandboxViewModel::showAddTransactionSheet,
+                    onPromote = sandboxViewModel::promoteTransaction,
+                    onRemove = sandboxViewModel::removeTransaction,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -281,8 +287,17 @@ fun HomeScreen(
         snapshots = sandboxState.availableSnapshots,
         activeSnapshotId = sandboxState.activeSnapshot?.id,
         onSelect = sandboxViewModel::selectSnapshot,
+        onDelete = sandboxViewModel::deleteSandbox,
         onCreateNew = sandboxViewModel::createSandbox,
         onDismiss = sandboxViewModel::hideSnapshotSheet,
+    )
+
+    AddSandboxTransactionSheet(
+        isVisible = sandboxState.isAddTransactionSheetVisible,
+        snapshotId = sandboxState.activeSnapshot?.id,
+        accounts = formState.availableAccounts,
+        onAdd = sandboxViewModel::addTransaction,
+        onDismiss = sandboxViewModel::hideAddTransactionSheet,
     )
 
     TransactionFormSheet(

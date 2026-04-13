@@ -26,9 +26,12 @@ class TransactionUseCasesTest {
     @BeforeTest
     fun setUp() {
         transactionRepository = FakeTransactionRepository()
-        accountRepository = FakeAccountRepository()
+        accountRepository = FakeAccountRepository(
+            transactionProvider = transactionRepository::allTransactions,
+            transactionChangedTrigger = transactionRepository.transactionChangedTrigger,
+        )
         createTransactionUseCase = CreateTransactionUseCase(transactionRepository)
-        updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(transactionRepository, accountRepository)
+        updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(transactionRepository)
         deleteTransactionUseCase = DeleteTransactionUseCase(transactionRepository)
         markOverdueTransactionsUseCase = MarkOverdueTransactionsUseCase(transactionRepository)
     }
@@ -325,8 +328,7 @@ class TransactionUseCasesTest {
      * Test: Creating a PENDING expense does NOT change actual balance (STS is reserved separately),
      * but confirming the expense SHOULD decrease the account balance.
      *
-     * The fix: UpdateTransactionStatusUseCase.adjustBalance() is called on CONFIRMED,
-     * which decreases the account balance for EXPENSE transactions.
+     * The fix: account balance is derived from confirmed transaction history.
      */
     @Test
     fun confirmExpense_deductsAccountBalance() = runBlocking {
@@ -338,7 +340,7 @@ class TransactionUseCasesTest {
                 id = 1L,
                 name = "Checking",
                 type = AccountType.CHECKING,
-                balance = 10_000L,
+                balance = 500_00L,
                 isInSpendingPool = true,
                 createdAt = today,
                 updatedAt = today,
@@ -349,7 +351,7 @@ class TransactionUseCasesTest {
         val expenseResult = createTransactionUseCase(
             CreateTransactionRequest(
                 accountId = 1L,
-                amount = 2_000L,
+                amount = 75_00L,
                 date = today,
                 type = TransactionType.EXPENSE,
                 category = "Groceries",
@@ -359,9 +361,9 @@ class TransactionUseCasesTest {
         val expense = expenseResult.getOrThrow()
         assertEquals(TransactionStatus.PENDING, expense.status)
 
-        // Actual balance should still be 10_000 (pending doesn't change balance)
+        // Actual balance should still be 500_00 (pending doesn't change balance)
         val balanceAfterCreate = accountRepository.getBalance(1L)
-        assertEquals(10_000L, balanceAfterCreate, "Account balance should not change when pending expense is created")
+        assertEquals(500_00L, balanceAfterCreate, "Account balance should not change when pending expense is created")
 
         // Confirm the expense
         val confirmResult = updateTransactionStatusUseCase(
@@ -370,9 +372,9 @@ class TransactionUseCasesTest {
         )
         assertTrue(confirmResult.isSuccess)
 
-        // Account balance should now be 8_000 (10_000 - 2_000) - THIS IS THE FIX!
+        // Account balance should now be 425_00 (500_00 - 75_00)
         val balanceAfterConfirm = accountRepository.getBalance(1L)
-        assertEquals(8_000L, balanceAfterConfirm, "Account balance should decrease when expense is confirmed")
+        assertEquals(425_00L, balanceAfterConfirm, "Account balance should decrease when expense is confirmed")
     }
 
     /**

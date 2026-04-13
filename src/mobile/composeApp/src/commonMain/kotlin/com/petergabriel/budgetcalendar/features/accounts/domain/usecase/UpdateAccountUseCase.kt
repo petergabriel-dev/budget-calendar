@@ -18,11 +18,6 @@ class UpdateAccountUseCase(
         }
 
         val resolvedType = request.type ?: existing.type
-        val resolvedBalance = request.balance ?: existing.balance
-
-        if (resolvedType != AccountType.CREDIT_CARD && resolvedBalance < 0) {
-            return Result.failure(IllegalArgumentException("Asset accounts cannot have negative balance"))
-        }
 
         val updated = accountRepository.updateAccount(
             id = id,

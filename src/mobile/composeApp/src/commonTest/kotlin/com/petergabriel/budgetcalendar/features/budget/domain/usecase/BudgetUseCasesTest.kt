@@ -284,21 +284,21 @@ class BudgetUseCasesTest {
     // ========== Bugfix Reproduction Tests (2026-04-01) ==========
     
     /**
-     * Bug: Safe to Spend Not Subtracting Confirmed Spending
+     * Bug: Safe to Spend double-deducts confirmed spending.
      * 
      * Test verifies that when a PENDING expense is confirmed, STS correctly
-     * accounts for the confirmed spending.
+     * stays stable when account balance is adjusted on confirmation.
      * 
      * Scenario:
      * 1. Initial state: $500 balance, no pending, no confirmed → STS = $500
      * 2. Add $75 PENDING expense → STS = $500 - $75 = $425
      * 3. Confirm the expense:
      *    - pendingReservations goes to $0 (no longer pending)
-     *    - confirmedSpending = $75 (expense is now confirmed this month)
-     *    - With bugfix: STS = $500 - $0 - $75 = $425 (stable)
-     *    - Without bugfix: STS = $500 - $0 = $500 (incorrect increase)
-     * 4. Add another $50 PENDING expense → STS = $500 - $50 - $75 = $375
-     * 5. Confirm → STS = $500 - $0 - $125 = $375 (stable)
+     *    - totalBalance becomes $425 (account balance adjusted)
+     *    - confirmedSpending = $75 (tracked metric only)
+     *    - STS = $425 - $0 = $425 (stable)
+     * 4. Add another $50 PENDING expense → STS = $425 - $50 = $375
+     * 5. Confirm → totalBalance becomes $375, STS = $375 - $0 = $375 (stable)
      */
     @Test
     fun calculateSafeToSpend_confirmedExpenseDoesNotIncreaseSTS() = runBlocking {
@@ -318,8 +318,9 @@ class BudgetUseCasesTest {
         assertEquals(0L, stsWithPending.confirmedSpending)
         
         // Step 3: Confirm the expense
-        // After confirmation: pending goes to 0, confirmed spending = $75
+        // After confirmation: pending goes to 0 and account balance decreases to $425
         budgetRepository.setPendingReservations(0L)
+        budgetRepository.setTotalSpendingPoolBalance(425_00L)
         
         // Create confirmed expense in repository
         transactionRepository.createTransaction(
@@ -333,20 +334,21 @@ class BudgetUseCasesTest {
         )
         
         val stsAfterConfirm = calculateSafeToSpendUseCase().first()
-        assertEquals(425_00L, stsAfterConfirm.availableToSpend, "STS should remain stable after confirming (confirmedSpending offsets the deduction)")
+        assertEquals(425_00L, stsAfterConfirm.availableToSpend, "STS should remain stable after confirming")
         assertEquals(75_00L, stsAfterConfirm.confirmedSpending, "Confirmed spending should be tracked")
         
         // Step 4: Add another $50 PENDING expense
         budgetRepository.setPendingReservations(50_00L)
         
         val stsWithNewPending = calculateSafeToSpendUseCase().first()
-        // STS = 500 - 50(pending) - 75(confirmed) = 375
+        // STS = 425 - 50(pending) = 375
         assertEquals(375_00L, stsWithNewPending.availableToSpend, "STS should reduce by new pending amount")
         assertEquals(50_00L, stsWithNewPending.pendingReservations)
         assertEquals(75_00L, stsWithNewPending.confirmedSpending)
         
         // Step 5: Confirm the second expense
         budgetRepository.setPendingReservations(0L)
+        budgetRepository.setTotalSpendingPoolBalance(375_00L)
         transactionRepository.createTransaction(
             CreateTransactionRequest(
                 accountId = 1L,
@@ -358,7 +360,7 @@ class BudgetUseCasesTest {
         )
         
         val stsAfterSecondConfirm = calculateSafeToSpendUseCase().first()
-        // STS = 500 - 0 - 125(confirmed) = 375
+        // STS = 375 - 0 = 375
         assertEquals(375_00L, stsAfterSecondConfirm.availableToSpend, "STS should remain stable after confirming second expense")
         assertEquals(125_00L, stsAfterSecondConfirm.confirmedSpending, "Total confirmed spending should be $125")
     }

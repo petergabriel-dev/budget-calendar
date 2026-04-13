@@ -129,18 +129,25 @@ Constraint: A bill due in a future month does NOT reduce the current month's pro
 
 // Calendar Grid
 Constraint: Calendar displays month grid with 7 columns (Sunday to Saturday)
-Constraint: Each day cell shows: date number, daily net change (+income, -expenses)
-Constraint: Visual indicators: dot for pending, red dot for overdue, checkmark for confirmed
+Constraint: Each day cell shows: date number, tinted background (net sign indicator), and state dots
+Constraint: Non-today cell background is colorSuccess @ 20% alpha when netAmount > 0, colorError @ 20% alpha when netAmount < 0, transparent when netAmount == null or == 0. Non-today cells never show a colored border.
+Constraint: Today cell border is always bgDark (black, 1.5dp) regardless of netAmount — the dark border is the exclusive "today" indicator
+Constraint: Today cell background reflects net amount: colorError @ 20% alpha when netAmount < 0, colorSuccess @ 20% alpha otherwise (including null/zero)
+Constraint: The netAmount text label ("—" or formatted amount) is NOT shown in the cell — border/background is the only net indicator
+Constraint: Visual indicators: amber dot for pending, red dot for overdue; no confirmed indicator — the tinted background already communicates that a day has confirmed transactions
 Constraint: Tapping a day opens transaction list for that date below the grid
 Constraint: Month navigation via left/right arrows or swipe gesture (drag > 70dp)
-Constraint: Current day is highlighted with distinct background (bg-dark, text-inverted)
+Constraint: Selected day (when not today) is highlighted with bgDark background and textInverted content color
 Constraint: Days from adjacent months are shown at 40% opacity
-Constraint: Empty days show "—"
+Constraint: Empty days (no transactions) show no border and no state indicators
 
 // Transaction Section Header
 Constraint: Section header below the grid reads "Today · {MMM d}" when selectedDate == today
 Constraint: When a different date is selected, reads "{DayOfWeek} · {MMM d}" (e.g. "Monday · Feb 3")
 Constraint: Format the date using device local timezone
+Constraint: Header includes a right-aligned chevron-up action with a minimum 44x44dp touch target
+Constraint: Tapping chevron opens a full-screen ModalBottomSheet showing all selected-day transactions
+Constraint: Expand sheet supports swipe-down/back dismiss and is mutually exclusive with the transaction form sheet
 
 // Calendar fetching
 Constraint: Calendar fetches transactions for the visible month plus one month buffer
@@ -228,19 +235,27 @@ interface CalendarGridProps {
   onDateSelected: (LocalDate) -> Unit;
 }
 
-// CalendarDayCell Props (unchanged)
+// CalendarDayCell Props (UPDATED — today uses bgDark border + net-responsive background)
 interface CalendarDayCellProps {
   day: CalendarDay;
   onTap: () -> Unit;
 }
+// Background (non-today): colorSuccess @ 20% when netAmount > 0, colorError @ 20% when netAmount < 0, transparent when null/0; no colored border
+// Border (today): always bgDark (black), 1.5dp — the exclusive "today" indicator; no other cell gets a colored border
+// Background (today): colorError @ 20% when netAmount < 0, colorSuccess @ 20% otherwise
+// Background (selected, non-today): bgDark
+// No net amount text rendered — border/background is the sole net sign indicator
+// State row: amber StateDot (pending), red StateDot (overdue) — no confirmed indicator
 
 // DayTransactionSectionHeader Props (NEW — replaces static BcSectionHeader)
 interface DayTransactionSectionHeaderProps {
   selectedDate: LocalDate;
   today: LocalDate;
+  onExpand: () -> Unit;
 }
 // Renders: "Today · Feb 12" if selected == today, else "Monday · Feb 3"
 // Style: 20pt, Bold (800), text-primary, Outfit — using TransactionHeader component (oMq1b)
+// Action: right-aligned chevron-up icon button (44x44dp min target) that triggers onExpand
 
 // DayTransactionList Props (unchanged)
 interface DayTransactionListProps {

@@ -14,7 +14,17 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Create
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.testutil.FakeTransactionRepository
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -169,61 +179,91 @@ class SandboxUseCasesTest {
     fun getSandboxSafeToSpend_noTransactionsEqualsInitialSafeToSpend() = runBlocking {
         val snapshot = createSnapshot(initialSafeToSpend = 12_000L)
 
-        val result = getSandboxSafeToSpendUseCase(snapshot.id)
-
-        assertTrue(result.isSuccess)
-        assertEquals(12_000L, result.getOrThrow())
+        val value = getSandboxSafeToSpendUseCase(snapshot.id).first()
+        assertEquals(12_000L, value)
     }
 
     @Test
-    fun getSandboxSafeToSpend_expenseDecreasesSafeToSpend() = runBlocking {
+    fun getSandboxSafeToSpend_reactsToExpenseInsertion() = runBlocking {
         val snapshot = createSnapshot(initialSafeToSpend = 12_000L)
+        val flow = getSandboxSafeToSpendUseCase(snapshot.id)
+        val initial = flow.first()
+        val updatedDeferred = async(start = CoroutineStart.UNDISPATCHED) {
+            withTimeout(3_000) {
+                flow.drop(1).first()
+            }
+        }
+
         addExpense(snapshot.id, amount = 2_000L)
+        val updated = updatedDeferred.await()
 
-        val result = getSandboxSafeToSpendUseCase(snapshot.id)
-
-        assertTrue(result.isSuccess)
-        assertEquals(10_000L, result.getOrThrow())
+        assertEquals(12_000L, initial)
+        assertEquals(10_000L, updated)
     }
 
     @Test
-    fun getSandboxSafeToSpend_incomeIncreasesSafeToSpend() = runBlocking {
+    fun getSandboxSafeToSpend_reactsToIncomeInsertion() = runBlocking {
         val snapshot = createSnapshot(initialSafeToSpend = 12_000L)
+        val flow = getSandboxSafeToSpendUseCase(snapshot.id)
+        val initial = flow.first()
+        val updatedDeferred = async(start = CoroutineStart.UNDISPATCHED) {
+            withTimeout(3_000) {
+                flow.drop(1).first()
+            }
+        }
+
         addIncome(snapshot.id, amount = 3_500L)
+        val updated = updatedDeferred.await()
 
-        val result = getSandboxSafeToSpendUseCase(snapshot.id)
-
-        assertTrue(result.isSuccess)
-        assertEquals(15_500L, result.getOrThrow())
+        assertEquals(12_000L, initial)
+        assertEquals(15_500L, updated)
     }
 
     @Test
-    fun getSandboxSafeToSpend_resultNeverNegative() = runBlocking {
+    fun getSandboxSafeToSpend_supportsNegativeProjectedValue() = runBlocking {
         val snapshot = createSnapshot(initialSafeToSpend = 2_000L)
         addExpense(snapshot.id, amount = 5_000L)
 
-        val result = getSandboxSafeToSpendUseCase(snapshot.id)
-
-        assertTrue(result.isSuccess)
-        assertEquals(0L, result.getOrThrow())
+        val value = getSandboxSafeToSpendUseCase(snapshot.id).first()
+        assertEquals(-3_000L, value)
     }
 
     @Test
-    fun compareSandboxWithReality_computesDifferenceAsSandboxMinusReal() = runBlocking {
+    fun getSandboxSafeToSpend_mixedIncomeExpenseEmitsExpectedValue() = runBlocking {
+        val snapshot = createSnapshot(initialSafeToSpend = 9_000L)
+        addIncome(snapshot.id, amount = 2_000L)
+        addExpense(snapshot.id, amount = 1_500L)
+
+        val value = getSandboxSafeToSpendUseCase(snapshot.id).first()
+        assertEquals(9_500L, value)
+    }
+
+    @Test
+    fun compareSandboxWithReality_computesDifferenceAsSandboxMinusReal_reactively() = runBlocking {
         budgetRepository.setTotalSpendingPoolBalance(10_000L)
         budgetRepository.setPendingReservations(0L)
         budgetRepository.setOverdueReservations(0L)
 
         val snapshot = createSnapshot(initialSafeToSpend = 10_000L)
+        val differences = mutableListOf<Long>()
+        val firstEmissionReady = CompletableDeferred<Unit>()
+        val job = launch(start = CoroutineStart.UNDISPATCHED) {
+            compareSandboxWithRealityUseCase(snapshot.id)
+                .onEach { comparison ->
+                    differences += comparison.difference
+                    if (!firstEmissionReady.isCompleted) {
+                        firstEmissionReady.complete(Unit)
+                    }
+                }
+                .take(2)
+                .collect()
+        }
+
+        firstEmissionReady.await()
         addIncome(snapshot.id, amount = 1_000L)
+        withTimeout(3_000) { job.join() }
 
-        val result = compareSandboxWithRealityUseCase(snapshot.id)
-
-        assertTrue(result.isSuccess)
-        val comparison = result.getOrThrow()
-        assertEquals(10_000L, comparison.realSafeToSpend)
-        assertEquals(11_000L, comparison.sandboxSafeToSpend)
-        assertEquals(1_000L, comparison.difference)
+        assertEquals(listOf(0L, 1_000L), differences)
     }
 
     @Test
@@ -231,10 +271,8 @@ class SandboxUseCasesTest {
         budgetRepository.setTotalSpendingPoolBalance(9_000L)
         val snapshot = createSnapshot(initialSafeToSpend = 9_000L)
 
-        val result = compareSandboxWithRealityUseCase(snapshot.id)
-
-        assertTrue(result.isSuccess)
-        assertEquals(0L, result.getOrThrow().difference)
+        val comparison = compareSandboxWithRealityUseCase(snapshot.id).first()
+        assertEquals(0L, comparison.difference)
     }
 
     @Test
@@ -243,10 +281,35 @@ class SandboxUseCasesTest {
         val snapshot = createSnapshot(initialSafeToSpend = 9_000L)
         addExpense(snapshot.id, amount = 2_500L)
 
-        val result = compareSandboxWithRealityUseCase(snapshot.id)
+        val comparison = compareSandboxWithRealityUseCase(snapshot.id).first()
+        assertEquals(-2_500L, comparison.difference)
+    }
 
-        assertTrue(result.isSuccess)
-        assertEquals(-2_500L, result.getOrThrow().difference)
+    @Test
+    fun compareSandboxWithReality_reactsWhenRealSafeToSpendChanges() = runBlocking {
+        budgetRepository.setTotalSpendingPoolBalance(9_000L)
+        budgetRepository.setPendingReservations(0L)
+        budgetRepository.setOverdueReservations(0L)
+        val snapshot = createSnapshot(initialSafeToSpend = 9_000L)
+        val emissions = mutableListOf<Pair<Long, Long>>()
+        val firstEmissionReady = CompletableDeferred<Unit>()
+        val job = launch(start = CoroutineStart.UNDISPATCHED) {
+            compareSandboxWithRealityUseCase(snapshot.id)
+                .onEach { comparison ->
+                    emissions += comparison.realSafeToSpend to comparison.difference
+                    if (!firstEmissionReady.isCompleted) {
+                        firstEmissionReady.complete(Unit)
+                    }
+                }
+                .take(2)
+                .collect()
+        }
+
+        firstEmissionReady.await()
+        budgetRepository.setTotalSpendingPoolBalance(8_000L)
+        withTimeout(3_000) { job.join() }
+
+        assertEquals(listOf(9_000L to 0L, 8_000L to 1_000L), emissions)
     }
 
     @Test

@@ -10,11 +10,13 @@ import com.petergabriel.budgetcalendar.features.budget.domain.repository.IBudget
 import com.petergabriel.budgetcalendar.features.transactions.domain.repository.ITransactionRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class BudgetRepositoryImpl(
     private val database: BudgetCalendarDatabase,
     private val budgetMapper: BudgetMapper,
@@ -25,54 +27,59 @@ class BudgetRepositoryImpl(
     private val transactionChangedTrigger = transactionRepository.transactionChangedTrigger.onStart { emit(Unit) }
 
     override fun getTotalSpendingPoolBalance(): Flow<Long> {
-        val totalFlow = database.budgetQueries
-            .getTotalSpendingPoolBalance()
-            .asFlow()
-            .mapToOne(dispatcher)
-            .map(budgetMapper::toAmount)
-        return totalFlow.combine(transactionChangedTrigger) { total, _ -> total }
+        return transactionChangedTrigger.flatMapLatest {
+            database.budgetQueries
+                .getTotalSpendingPoolBalance()
+                .asFlow()
+                .mapToOne(dispatcher)
+                .map(budgetMapper::toAmount)
+        }
     }
 
     override fun getPendingReservations(): Flow<Long> {
-        val pendingFlow = database.budgetQueries
-            .getPendingAndOverdueForSpendingPool(budgetMapper::toPendingAndOverdueRow)
-            .asFlow()
-            .mapToList(dispatcher)
-            .map { rows ->
-                rows
-                    .filter { row -> row.status.equals("pending", ignoreCase = true) }
-                    .sumOf { row -> row.amount }
-            }
-        return pendingFlow.combine(transactionChangedTrigger) { pending, _ -> pending }
+        return transactionChangedTrigger.flatMapLatest {
+            database.budgetQueries
+                .getPendingAndOverdueForSpendingPool(budgetMapper::toPendingAndOverdueRow)
+                .asFlow()
+                .mapToList(dispatcher)
+                .map { rows ->
+                    rows
+                        .filter { row -> row.status.equals("pending", ignoreCase = true) }
+                        .sumOf { row -> row.amount }
+                }
+        }
     }
 
     override fun getOverdueReservations(): Flow<Long> {
-        val overdueFlow = database.budgetQueries
-            .getPendingAndOverdueForSpendingPool(budgetMapper::toPendingAndOverdueRow)
-            .asFlow()
-            .mapToList(dispatcher)
-            .map { rows ->
-                rows
-                    .filter { row -> row.status.equals("overdue", ignoreCase = true) }
-                    .sumOf { row -> row.amount }
-            }
-        return overdueFlow.combine(transactionChangedTrigger) { overdue, _ -> overdue }
+        return transactionChangedTrigger.flatMapLatest {
+            database.budgetQueries
+                .getPendingAndOverdueForSpendingPool(budgetMapper::toPendingAndOverdueRow)
+                .asFlow()
+                .mapToList(dispatcher)
+                .map { rows ->
+                    rows
+                        .filter { row -> row.status.equals("overdue", ignoreCase = true) }
+                        .sumOf { row -> row.amount }
+                }
+        }
     }
 
     override fun getCreditCardReservedAmount(): Flow<Long> {
-        val reservedFlow = database.budgetQueries
-            .getCreditCardReservedAmount()
-            .asFlow()
-            .mapToOne(dispatcher)
-            .map(budgetMapper::toAmount)
-        return reservedFlow.combine(transactionChangedTrigger) { reserved, _ -> reserved }
+        return transactionChangedTrigger.flatMapLatest {
+            database.budgetQueries
+                .getCreditCardReservedAmount()
+                .asFlow()
+                .mapToOne(dispatcher)
+                .map(budgetMapper::toAmount)
+        }
     }
 
     override fun getCreditCardReservations(): Flow<List<CreditCardReservation>> {
-        val reservationsFlow = database.budgetQueries
-            .getCreditCardReservations(budgetMapper::toCreditCardReservation)
-            .asFlow()
-            .mapToList(dispatcher)
-        return reservationsFlow.combine(transactionChangedTrigger) { reservations, _ -> reservations }
+        return transactionChangedTrigger.flatMapLatest {
+            database.budgetQueries
+                .getCreditCardReservations(budgetMapper::toCreditCardReservation)
+                .asFlow()
+                .mapToList(dispatcher)
+        }
     }
 }

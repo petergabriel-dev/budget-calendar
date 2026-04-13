@@ -1,6 +1,5 @@
 package com.petergabriel.budgetcalendar.features.accounts.presentation.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,9 +11,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -101,28 +102,37 @@ fun AccountFormSheet(
             )
             InlineError(validationErrors["name"])
 
-            OutlinedTextField(
-                value = selectedType.displayName(),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Type") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { typeMenuExpanded = true },
-                trailingIcon = { Text("v") },
-            )
-            DropdownMenu(
+            ExposedDropdownMenuBox(
                 expanded = typeMenuExpanded,
-                onDismissRequest = { typeMenuExpanded = false },
+                onExpandedChange = { typeMenuExpanded = it },
             ) {
-                AccountType.entries.forEach { type ->
-                    DropdownMenuItem(
-                        text = { Text(type.displayName()) },
-                        onClick = {
-                            selectedType = type
-                            typeMenuExpanded = false
-                        },
-                    )
+                OutlinedTextField(
+                    value = selectedType.displayName(),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Type") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                        .testTag(ACCOUNT_TYPE_FIELD_TAG),
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuExpanded)
+                    },
+                )
+                ExposedDropdownMenu(
+                    expanded = typeMenuExpanded,
+                    onDismissRequest = { typeMenuExpanded = false },
+                ) {
+                    AccountType.entries.forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.displayName()) },
+                            modifier = Modifier.testTag(accountTypeOptionTag(type)),
+                            onClick = {
+                                selectedType = type
+                                typeMenuExpanded = false
+                            },
+                        )
+                    }
                 }
             }
 
@@ -190,6 +200,7 @@ fun AccountFormSheet(
                 }
 
                 Switch(
+                    modifier = Modifier.testTag(INCLUDE_IN_SPENDING_POOL_SWITCH_TAG),
                     checked = includeInSpendingPool,
                     onCheckedChange = { includeInSpendingPool = it },
                     enabled = selectedType != AccountType.CREDIT_CARD,
@@ -293,4 +304,8 @@ private fun AccountType.displayName(): String {
         }
 }
 
+private fun accountTypeOptionTag(type: AccountType): String = "account_type_option_${type.name}"
+
 private const val ACCOUNT_DESCRIPTION_SOFT_CAP = 100
+private const val ACCOUNT_TYPE_FIELD_TAG = "account_type_field"
+private const val INCLUDE_IN_SPENDING_POOL_SWITCH_TAG = "include_in_spending_pool_switch"

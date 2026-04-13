@@ -1,6 +1,7 @@
 package com.petergabriel.budgetcalendar.features.sandbox.domain.usecase
 
 import com.petergabriel.budgetcalendar.features.accounts.domain.repository.IAccountRepository
+import com.petergabriel.budgetcalendar.features.sandbox.domain.model.AddSandboxTransactionRequest
 import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxTransaction
 import com.petergabriel.budgetcalendar.features.sandbox.domain.repository.ISandboxRepository
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
@@ -10,6 +11,19 @@ class AddSimulationTransactionUseCase(
     private val sandboxRepository: ISandboxRepository,
     private val accountRepository: IAccountRepository,
 ) {
+    suspend operator fun invoke(request: AddSandboxTransactionRequest): Result<SandboxTransaction> {
+        return invoke(
+            snapshotId = request.snapshotId,
+            accountId = request.accountId,
+            amount = request.amount,
+            date = request.date,
+            type = request.type,
+            description = request.description,
+            category = request.category,
+            originalTransactionId = null,
+        )
+    }
+
     suspend operator fun invoke(
         snapshotId: Long,
         accountId: Long,
@@ -22,6 +36,10 @@ class AddSimulationTransactionUseCase(
     ): Result<SandboxTransaction> {
         if (amount <= 0L) {
             return Result.failure(IllegalArgumentException("Transaction amount must be greater than 0"))
+        }
+
+        if (type == TransactionType.TRANSFER) {
+            return Result.failure(IllegalArgumentException("Sandbox transactions support income or expense only"))
         }
 
         val account = accountRepository.getAccountById(accountId)

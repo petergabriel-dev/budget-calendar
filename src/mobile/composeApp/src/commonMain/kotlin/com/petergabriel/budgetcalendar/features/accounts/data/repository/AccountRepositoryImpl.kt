@@ -11,34 +11,33 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountTyp
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAccountRequest
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.UpdateAccountRequest
 import com.petergabriel.budgetcalendar.features.accounts.domain.repository.IAccountRepository
+import com.petergabriel.budgetcalendar.features.transactions.domain.repository.ITransactionRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlin.math.abs
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AccountRepositoryImpl(
     private val database: BudgetCalendarDatabase,
     private val accountMapper: AccountMapper,
+    private val transactionRepository: ITransactionRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : IAccountRepository {
-
-    private val _balanceChangedTrigger = MutableSharedFlow<Unit>(replay = 1)
-    override val balanceChangedTrigger: SharedFlow<Unit> = _balanceChangedTrigger.asSharedFlow()
+    private val transactionRefreshTrigger = transactionRepository.transactionChangedTrigger.onStart { emit(Unit) }
 
     override fun getAllAccounts(): Flow<List<Account>> {
-        val accountsFlow = database.accountsQueries
-            .getAllAccounts(::toEntity)
-            .asFlow()
-            .mapToList(dispatcher)
-            .map { entities -> entities.map(accountMapper::toDomain) }
-        return accountsFlow
-            .combine(balanceChangedTrigger.onStart { emit(Unit) }) { accounts, _ -> accounts }
+        return transactionRefreshTrigger.flatMapLatest {
+            database.accountsQueries
+                .getAllAccountsWithComputedBalance(::toEntity)
+                .asFlow()
+                .mapToList(dispatcher)
+                .map { entities -> entities.map(accountMapper::toDomain) }
+        }
     }
 
     override suspend fun getAccountById(id: Long): Account? {
@@ -49,13 +48,18 @@ class AccountRepositoryImpl(
     }
 
     override fun getSpendingPoolAccounts(): Flow<List<Account>> {
-        val spendingPoolFlow = database.accountsQueries
-            .getSpendingPoolAccounts(::toEntity)
-            .asFlow()
-            .mapToList(dispatcher)
-            .map { entities -> entities.map(accountMapper::toDomain) }
-        return spendingPoolFlow
-            .combine(balanceChangedTrigger.onStart { emit(Unit) }) { accounts, _ -> accounts }
+        return transactionRefreshTrigger.flatMapLatest {
+            database.accountsQueries
+                .getAllAccountsWithComputedBalance(::toEntity)
+                .asFlow()
+                .mapToList(dispatcher)
+                .map { entities ->
+                    entities
+                        .map(accountMapper::toDomain)
+                        .filter { account -> account.isInSpendingPool }
+                        .sortedBy { account -> account.name }
+                }
+        }
     }
 
     override suspend fun createAccount(request: CreateAccountRequest): Account {
@@ -72,7 +76,6 @@ class AccountRepositoryImpl(
         )
 
         val insertedId = database.accountsQueries.getLastInsertedAccountId().executeAsOne()
-        _balanceChangedTrigger.emit(Unit)
         return checkNotNull(getAccountById(insertedId)) {
             "Failed to load newly inserted account"
         }
@@ -83,7 +86,6 @@ class AccountRepositoryImpl(
         val updated = existing.copy(
             name = request.name?.trim().takeUnless { it.isNullOrBlank() } ?: existing.name,
             type = request.type ?: existing.type,
-            balance = request.balance ?: existing.balance,
             isInSpendingPool = request.isInSpendingPool ?: existing.isInSpendingPool,
             description = if (request.description == null) {
                 existing.description
@@ -96,20 +98,17 @@ class AccountRepositoryImpl(
         database.accountsQueries.updateAccount(
             updated.name,
             updated.type.dbValue,
-            updated.balance,
             if (updated.isInSpendingPool) 1L else 0L,
             updated.description,
             updated.updatedAt,
             id,
         )
-        _balanceChangedTrigger.emit(Unit)
 
         return getAccountById(id)
     }
 
     override suspend fun deleteAccount(id: Long) {
         database.accountsQueries.deleteAccount(id)
-        _balanceChangedTrigger.emit(Unit)
     }
 
     override suspend fun getTotalSpendingPoolBalance(): Long {
@@ -122,15 +121,10 @@ class AccountRepositoryImpl(
     }
 
     override suspend fun calculateNetWorth(): Long {
-        val accounts = database.accountsQueries.getAllAccounts(::toEntity).executeAsList().map(accountMapper::toDomain)
+        val accounts = database.accountsQueries.getAllAccountsWithComputedBalance(::toEntity).executeAsList().map(accountMapper::toDomain)
         val assets = accounts.filter { it.type != AccountType.CREDIT_CARD }.sumOf { it.balance }
         val liabilities = accounts.filter { it.type == AccountType.CREDIT_CARD }.sumOf { abs(it.balance) }
         return assets - liabilities
-    }
-
-    override suspend fun adjustBalance(accountId: Long, delta: Long) {
-        database.accountsQueries.adjustAccountBalance(delta, DateUtils.nowMillis(), accountId)
-        _balanceChangedTrigger.emit(Unit)
     }
 
     private fun toEntity(

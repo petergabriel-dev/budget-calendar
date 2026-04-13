@@ -1,28 +1,40 @@
 getAllAccounts:
-SELECT id, name, type, balance, is_in_spending_pool, description, created_at, updated_at
+SELECT id, name, type, initial_balance AS balance, is_in_spending_pool, description, created_at, updated_at
 FROM accounts
 ORDER BY created_at DESC;
 
 getAccountById:
-SELECT id, name, type, balance, is_in_spending_pool, description, created_at, updated_at
-FROM accounts
-WHERE id = :id;
+SELECT
+  a.id,
+  a.name,
+  a.type,
+  CAST(a.initial_balance + COALESCE(SUM(t.signed_amount), 0) AS INTEGER) AS balance,
+  a.is_in_spending_pool,
+  a.description,
+  a.created_at,
+  a.updated_at
+FROM accounts a
+LEFT JOIN transactions t
+  ON t.account_id = a.id
+  AND t.status = 'confirmed'
+  AND t.is_sandbox = 0
+WHERE a.id = :id
+GROUP BY a.id, a.name, a.type, a.initial_balance, a.is_in_spending_pool, a.description, a.created_at, a.updated_at;
 
 getSpendingPoolAccounts:
-SELECT id, name, type, balance, is_in_spending_pool, description, created_at, updated_at
+SELECT id, name, type, initial_balance AS balance, is_in_spending_pool, description, created_at, updated_at
 FROM accounts
 WHERE is_in_spending_pool = 1
 ORDER BY name;
 
 insertAccount:
-INSERT INTO accounts(name, type, balance, is_in_spending_pool, description, created_at, updated_at)
-VALUES (:name, :type, :balance, :is_in_spending_pool, :description, :created_at, :updated_at);
+INSERT INTO accounts(name, type, initial_balance, is_in_spending_pool, description, created_at, updated_at)
+VALUES (:name, :type, :initial_balance, :is_in_spending_pool, :description, :created_at, :updated_at);
 
 updateAccount:
 UPDATE accounts
 SET name = :name,
     type = :type,
-    balance = :balance,
     is_in_spending_pool = :is_in_spending_pool,
     description = :description,
     updated_at = :updated_at
@@ -33,15 +45,37 @@ DELETE FROM accounts
 WHERE id = ?;
 
 getTotalSpendingPoolBalance:
-SELECT CAST(COALESCE(SUM(balance), 0) AS INTEGER)
-FROM accounts
-WHERE is_in_spending_pool = 1;
+SELECT CAST(COALESCE(SUM(account_balance), 0) AS INTEGER)
+FROM (
+  SELECT
+    a.id,
+    a.initial_balance + COALESCE(SUM(t.signed_amount), 0) AS account_balance
+  FROM accounts a
+  LEFT JOIN transactions t
+    ON t.account_id = a.id
+    AND t.status = 'confirmed'
+    AND t.is_sandbox = 0
+  WHERE a.is_in_spending_pool = 1
+  GROUP BY a.id, a.initial_balance
+);
 
-adjustAccountBalance:
-UPDATE accounts 
-SET balance = balance + :delta, 
-    updated_at = :updated_at 
-WHERE id = :id;
+getAllAccountsWithComputedBalance:
+SELECT
+  a.id,
+  a.name,
+  a.type,
+  CAST(a.initial_balance + COALESCE(SUM(t.signed_amount), 0) AS INTEGER) AS balance,
+  a.is_in_spending_pool,
+  a.description,
+  a.created_at,
+  a.updated_at
+FROM accounts a
+LEFT JOIN transactions t
+  ON t.account_id = a.id
+  AND t.status = 'confirmed'
+  AND t.is_sandbox = 0
+GROUP BY a.id, a.name, a.type, a.initial_balance, a.is_in_spending_pool, a.description, a.created_at, a.updated_at
+ORDER BY a.created_at DESC;
 
 getLastInsertedAccountId:
 SELECT last_insert_rowid();

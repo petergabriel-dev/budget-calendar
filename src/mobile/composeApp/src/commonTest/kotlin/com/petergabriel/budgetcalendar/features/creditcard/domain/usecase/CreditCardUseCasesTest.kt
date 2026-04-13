@@ -31,9 +31,12 @@ class CreditCardUseCasesTest {
 
     @BeforeTest
     fun setUp() {
-        accountRepository = FakeAccountRepository()
-        creditCardRepository = FakeCreditCardRepository()
         transactionRepository = FakeTransactionRepository()
+        accountRepository = FakeAccountRepository(
+            transactionProvider = transactionRepository::allTransactions,
+            transactionChangedTrigger = transactionRepository.transactionChangedTrigger,
+        )
+        creditCardRepository = FakeCreditCardRepository()
 
         createCreditCardSettingsUseCase = CreateCreditCardSettingsUseCase(accountRepository, creditCardRepository)
         getCreditCardSettingsUseCase = GetCreditCardSettingsUseCase(creditCardRepository, createCreditCardSettingsUseCase)

@@ -11,7 +11,6 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Update
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.UpdateTransactionStatusUseCase
 import com.petergabriel.budgetcalendar.features.transactions.testutil.FakeTransactionRepository
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -25,16 +24,16 @@ class CalendarProjectionUseCasesTest {
 
     @BeforeTest
     fun setUp() {
-        accountRepository = FakeAccountRepository()
         transactionRepository = FakeTransactionRepository()
+        accountRepository = FakeAccountRepository(
+            transactionProvider = transactionRepository::allTransactions,
+            transactionChangedTrigger = transactionRepository.transactionChangedTrigger,
+        )
         calculateMonthProjectionUseCase = CalculateMonthProjectionUseCase(
             transactionRepository,
             accountRepository,
         )
-        updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(
-            transactionRepository,
-            accountRepository,
-        )
+        updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(transactionRepository)
     }
 
     @Test
@@ -113,7 +112,7 @@ class CalendarProjectionUseCasesTest {
         
         accountRepository.seedAccounts(spendingPoolAccount)
 
-        // Confirm the expense - this calls adjustBalance internally
+        // Confirm the expense so it is no longer counted as pending
         updateTransactionStatusUseCase(transaction.id, UpdateTransactionStatusRequest(TransactionStatus.CONFIRMED))
 
         // Act

@@ -1,17 +1,32 @@
 package com.petergabriel.budgetcalendar.features.sandbox.domain.usecase
 
 import com.petergabriel.budgetcalendar.features.sandbox.domain.repository.ISandboxRepository
+import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
 class GetSandboxSafeToSpendUseCase(
     private val sandboxRepository: ISandboxRepository,
 ) {
-    suspend operator fun invoke(snapshotId: Long): Result<Long> {
+    operator fun invoke(snapshotId: Long): Flow<Long> = flow {
         val snapshot = sandboxRepository.getSnapshotById(snapshotId)
-            ?: return Result.failure(NoSuchElementException("Sandbox snapshot with id=$snapshotId was not found"))
+            ?: throw NoSuchElementException("Sandbox snapshot with id=$snapshotId was not found")
+        val initialSafeToSpend = snapshot.initialSafeToSpend
 
-        val delta = sandboxRepository.getSandboxBalanceDelta(snapshotId)
-            .getOrElse { throwable -> return Result.failure(throwable) }
-
-        return Result.success((snapshot.initialSafeToSpend + delta).coerceAtLeast(0L))
+        emitAll(
+            sandboxRepository.getTransactionsBySnapshot(snapshotId)
+                .map { transactions ->
+                    val delta = transactions.sumOf { transaction ->
+                        when (transaction.type) {
+                            TransactionType.INCOME -> transaction.amount
+                            TransactionType.EXPENSE -> -transaction.amount
+                            TransactionType.TRANSFER -> 0L
+                        }
+                    }
+                    initialSafeToSpend + delta
+                },
+        )
     }
 }

@@ -162,12 +162,14 @@ Stores What-If scenario snapshots for sandbox mode.
 CREATE TABLE sandbox_snapshots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    description TEXT,
+    initial_safe_to_spend INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL,
     last_accessed_at INTEGER NOT NULL
 );
 
--- Index for sorting by creation date
-CREATE INDEX idx_snapshots_created ON sandbox_snapshots(created_at);
+-- Index for sorting by last accessed (snapshot sheet ordering + expiry queries)
+CREATE INDEX idx_snapshots_last_accessed ON sandbox_snapshots(last_accessed_at);
 ```
 
 **Columns:**
@@ -176,8 +178,10 @@ CREATE INDEX idx_snapshots_created ON sandbox_snapshots(created_at);
 |--------|------|-------------|-------------|
 | id | INTEGER | PRIMARY KEY AUTOINCREMENT | Unique snapshot identifier |
 | name | TEXT | NOT NULL | Snapshot display name |
+| description | TEXT | | Optional user notes |
+| initial_safe_to_spend | INTEGER | NOT NULL DEFAULT 0 | Real STS at snapshot creation time (cents) |
 | created_at | INTEGER | NOT NULL | Unix timestamp (ms) |
-| last_accessed_at | INTEGER | NOT NULL | Last accessed time for expiration tracking |
+| last_accessed_at | INTEGER | NOT NULL | Last accessed time for expiration tracking and ordering |
 
 ---
 
@@ -426,9 +430,21 @@ SELECT * FROM sandbox_snapshots ORDER BY created_at DESC;
 SELECT * FROM sandbox_snapshots WHERE id = :id;
 
 -- name: insertSnapshot :one
-INSERT INTO sandbox_snapshots (name, created_at)
-VALUES (:name, :created_at)
+INSERT INTO sandbox_snapshots (name, description, initial_safe_to_spend, created_at, last_accessed_at)
+VALUES (:name, :description, :initial_safe_to_spend, :created_at, :last_accessed_at)
 RETURNING *;
+
+-- name: updateLastAccessed :exec
+UPDATE sandbox_snapshots SET last_accessed_at = :last_accessed_at WHERE id = :id;
+
+-- name: getExpiredSnapshots :many
+SELECT * FROM sandbox_snapshots WHERE last_accessed_at < :cutoff;
+
+-- name: getSandboxBalanceDelta :one
+SELECT
+  COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) -
+  COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS delta
+FROM sandbox_transactions WHERE snapshot_id = :snapshot_id;
 
 -- name: deleteSnapshot :exec
 DELETE FROM sandbox_snapshots WHERE id = :id;
