@@ -9,11 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -29,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
+import com.petergabriel.budgetcalendar.core.designsystem.component.AccountPickerModal
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSegmentedControl
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
@@ -66,7 +62,7 @@ fun AddSandboxTransactionSheet(
     var selectedDateMillis by rememberSaveable {
         mutableStateOf(DateUtils.startOfDayMillis(DateUtils.nowMillis()))
     }
-    var accountMenuExpanded by remember { mutableStateOf(false) }
+    var showAccountPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(accounts) {
@@ -158,40 +154,31 @@ fun AddSandboxTransactionSheet(
                     style = typography.bodySmall,
                     color = colors.textSecondary,
                 )
-                ExposedDropdownMenuBox(
-                    expanded = accountMenuExpanded,
-                    onExpandedChange = { expanded -> accountMenuExpanded = expanded },
-                ) {
-                    val selectedAccountName = accounts.firstOrNull { account -> account.id == selectedAccountId }?.name
-                        ?: "No account available"
-                    OutlinedTextField(
-                        value = selectedAccountName,
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = accountMenuExpanded)
+                val selectedAccountName = accounts.firstOrNull { account -> account.id == selectedAccountId }?.name
+                    ?: "No account available"
+                OutlinedTextField(
+                    value = selectedAccountName,
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = accounts.isNotEmpty()) {
+                            showAccountPicker = true
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(
-                                type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                                enabled = true,
-                            ),
+                )
+
+                if (showAccountPicker) {
+                    AccountPickerModal(
+                        isVisible = showAccountPicker,
+                        accounts = accounts,
+                        selectedAccountId = selectedAccountId,
+                        title = "Select Account",
+                        onAccountSelected = { id ->
+                            selectedAccountId = id
+                            showAccountPicker = false
+                        },
+                        onDismiss = { showAccountPicker = false },
                     )
-                    DropdownMenu(
-                        expanded = accountMenuExpanded,
-                        onDismissRequest = { accountMenuExpanded = false },
-                    ) {
-                        accounts.forEach { account ->
-                            DropdownMenuItem(
-                                text = { Text(account.name) },
-                                onClick = {
-                                    selectedAccountId = account.id
-                                    accountMenuExpanded = false
-                                },
-                            )
-                        }
-                    }
                 }
             }
 
