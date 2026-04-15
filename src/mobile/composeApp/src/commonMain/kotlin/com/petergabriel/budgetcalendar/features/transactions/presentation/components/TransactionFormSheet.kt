@@ -15,8 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -96,7 +94,7 @@ fun TransactionFormSheet(
     var showAccountPicker by remember(stateKey) { mutableStateOf(false) }
     var showDatePicker by remember(stateKey) { mutableStateOf(false) }
     var destinationAccountId by remember(stateKey) { mutableStateOf(initialData?.destinationAccountId) }
-    var destinationMenuExpanded by remember(stateKey) { mutableStateOf(false) }
+    var showDestinationPicker by remember(stateKey) { mutableStateOf(false) }
 
     LaunchedEffect(stateKey) {
         onSetType(initialType)
@@ -290,27 +288,26 @@ fun TransactionFormSheet(
                             .clickable(
                                 enabled = !uiState.isSubmitting && filteredAccounts.isNotEmpty(),
                             ) {
-                                destinationMenuExpanded = true
+                                showDestinationPicker = true
                             },
                         readOnly = true,
                         isError = hasFieldError("destinationAccountId", localErrors, uiState),
                         errorText = resolveFieldError("destinationAccountId", localErrors, uiState),
                     )
 
-                    DropdownMenu(
-                        expanded = destinationMenuExpanded,
-                        onDismissRequest = { destinationMenuExpanded = false },
-                    ) {
-                        filteredAccounts.forEach { account ->
-                            DropdownMenuItem(
-                                text = { Text(account.name) },
-                                onClick = {
-                                    destinationAccountId = account.id
-                                    destinationMenuExpanded = false
-                                    localErrors.remove("destinationAccountId")
-                                },
-                            )
-                        }
+                    if (showDestinationPicker) {
+                        AccountPickerModal(
+                            isVisible = showDestinationPicker,
+                            accounts = filteredAccounts,
+                            selectedAccountId = destinationAccountId,
+                            title = "Select Destination",
+                            onAccountSelected = { id ->
+                                destinationAccountId = id
+                                localErrors.remove("destinationAccountId")
+                                showDestinationPicker = false
+                            },
+                            onDismiss = { showDestinationPicker = false },
+                        )
                     }
                 }
 
