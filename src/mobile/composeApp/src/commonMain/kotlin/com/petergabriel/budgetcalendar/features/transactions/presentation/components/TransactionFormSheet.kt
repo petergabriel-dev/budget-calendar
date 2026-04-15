@@ -2,10 +2,11 @@ package com.petergabriel.budgetcalendar.features.transactions.presentation.compo
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +28,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petergabriel.budgetcalendar.core.designsystem.component.AccountPickerModal
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSegmentedControl
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
@@ -71,9 +74,11 @@ fun TransactionFormSheet(
 
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
-    val stateKey = initialData?.id ?: initialDateMillis
+    val isEditMode = initialData != null
+    val stateKey = initialData?.id ?: "new"
     val initialType = when (initialData?.type ?: uiState.selectedType) {
         TransactionType.INCOME -> TransactionType.INCOME
+        TransactionType.TRANSFER -> TransactionType.TRANSFER
         else -> TransactionType.EXPENSE
     }
     var amountInput by remember(stateKey) {
@@ -82,17 +87,27 @@ fun TransactionFormSheet(
     var selectedDateMillis by remember(stateKey) {
         mutableStateOf(DateUtils.startOfDayMillis(initialData?.date ?: initialDateMillis))
     }
+    var userManuallyChangedDate by remember(stateKey) { mutableStateOf(false) }
     var selectedAccountId by remember(stateKey) { mutableStateOf(initialData?.accountId) }
     var categoryInput by remember(stateKey) { mutableStateOf(initialData?.category.orEmpty()) }
     var statusInput by remember(stateKey) { mutableStateOf(initialData?.status ?: TransactionStatus.PENDING) }
 
     val localErrors = remember(stateKey) { mutableStateMapOf<String, String>() }
-    var accountMenuExpanded by remember(stateKey) { mutableStateOf(false) }
+    var showAccountPicker by remember(stateKey) { mutableStateOf(false) }
     var showDatePicker by remember(stateKey) { mutableStateOf(false) }
+    var destinationAccountId by remember(stateKey) { mutableStateOf(initialData?.destinationAccountId) }
+    var destinationMenuExpanded by remember(stateKey) { mutableStateOf(false) }
 
     LaunchedEffect(stateKey) {
         onSetType(initialType)
         localErrors.clear()
+        userManuallyChangedDate = false
+    }
+
+    LaunchedEffect(initialDateMillis) {
+        if (!isEditMode && !userManuallyChangedDate) {
+            selectedDateMillis = DateUtils.startOfDayMillis(initialDateMillis)
+        }
     }
 
     LaunchedEffect(uiState.availableAccounts, selectedAccountId) {
@@ -101,14 +116,14 @@ fun TransactionFormSheet(
         }
     }
 
-    val selectedType = if (uiState.selectedType == TransactionType.INCOME) {
-        TransactionType.INCOME
-    } else {
-        TransactionType.EXPENSE
+    val selectedType = when (uiState.selectedType) {
+        TransactionType.INCOME -> TransactionType.INCOME
+        TransactionType.TRANSFER -> TransactionType.TRANSFER
+        else -> TransactionType.EXPENSE
     }
     val selectedAccount = uiState.availableAccounts.firstOrNull { account -> account.id == selectedAccountId }
     val parsedAmount = MoneyInputUtils.parseToCents(amountInput)
-    val showInsufficientFunds = selectedType == TransactionType.EXPENSE &&
+    val showInsufficientFunds = (selectedType == TransactionType.EXPENSE || selectedType == TransactionType.TRANSFER) &&
         parsedAmount != null &&
         selectedAccount != null &&
         parsedAmount > selectedAccount.balance
@@ -160,10 +175,23 @@ fun TransactionFormSheet(
                 }
 
                 BcSegmentedControl(
-                    options = listOf("Expense", "Income"),
-                    selectedIndex = if (selectedType == TransactionType.INCOME) 1 else 0,
+                    options = listOf("Expense", "Income", "Transfer"),
+                    selectedIndex = when (selectedType) {
+                        TransactionType.INCOME -> 1
+                        TransactionType.TRANSFER -> 2
+                        else -> 0
+                    },
                     onSelectedIndexChange = { selectedIndex ->
-                        onSetType(if (selectedIndex == 1) TransactionType.INCOME else TransactionType.EXPENSE)
+                        val newType = when (selectedIndex) {
+                            1 -> TransactionType.INCOME
+                            2 -> TransactionType.TRANSFER
+                            else -> TransactionType.EXPENSE
+                        }
+                        if (newType != TransactionType.TRANSFER) {
+                            destinationAccountId = null
+                        }
+                        localErrors.remove("destinationAccountId")
+                        onSetType(newType)
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -210,52 +238,93 @@ fun TransactionFormSheet(
                         errorText = resolveFieldError("date", localErrors, uiState),
                     )
 
-                    Box(modifier = Modifier.weight(1f)) {
-                        BcInputGroup(
-                            label = "Account",
-                            value = selectedAccount?.name.orEmpty(),
-                            onValueChange = {},
-                            placeholder = if (uiState.availableAccounts.isEmpty()) "No accounts" else "Select account",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(
-                                    enabled = !uiState.isSubmitting && uiState.availableAccounts.isNotEmpty(),
-                                ) {
-                                    accountMenuExpanded = true
-                                },
-                            readOnly = true,
-                            isError = hasFieldError("accountId", localErrors, uiState),
-                            errorText = resolveFieldError("accountId", localErrors, uiState),
-                        )
+                    BcInputGroup(
+                        label = "Account",
+                        value = selectedAccount?.name.orEmpty(),
+                        onValueChange = {},
+                        placeholder = if (uiState.availableAccounts.isEmpty()) "No accounts" else "Select account",
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable(
+                                enabled = !uiState.isSubmitting && uiState.availableAccounts.isNotEmpty(),
+                            ) {
+                                showAccountPicker = true
+                            },
+                        readOnly = true,
+                        isError = hasFieldError("accountId", localErrors, uiState),
+                        errorText = resolveFieldError("accountId", localErrors, uiState),
+                    )
+                }
 
-                        DropdownMenu(
-                            expanded = accountMenuExpanded,
-                            onDismissRequest = { accountMenuExpanded = false },
-                        ) {
-                            uiState.availableAccounts.forEach { account ->
-                                DropdownMenuItem(
-                                    text = { Text(account.name) },
-                                    onClick = {
-                                        selectedAccountId = account.id
-                                        accountMenuExpanded = false
-                                        localErrors.remove("accountId")
-                                    },
-                                )
+                if (showAccountPicker) {
+                    AccountPickerModal(
+                        isVisible = showAccountPicker,
+                        accounts = uiState.availableAccounts,
+                        selectedAccountId = selectedAccountId,
+                        title = "Select Account",
+                        onAccountSelected = { id ->
+                            selectedAccountId = id
+                            if (destinationAccountId == id) {
+                                destinationAccountId = null
                             }
+                            localErrors.remove("accountId")
+                            showAccountPicker = false
+                        },
+                        onDismiss = { showAccountPicker = false },
+                    )
+                }
+
+                if (selectedType == TransactionType.TRANSFER) {
+                    val filteredAccounts = uiState.availableAccounts.filter { it.id != selectedAccountId }
+                    val destinationAccount = filteredAccounts.find { it.id == destinationAccountId }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    BcInputGroup(
+                        label = "Destination Account",
+                        value = destinationAccount?.name.orEmpty(),
+                        onValueChange = {},
+                        placeholder = if (filteredAccounts.isEmpty()) "No other accounts" else "Select destination",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                enabled = !uiState.isSubmitting && filteredAccounts.isNotEmpty(),
+                            ) {
+                                destinationMenuExpanded = true
+                            },
+                        readOnly = true,
+                        isError = hasFieldError("destinationAccountId", localErrors, uiState),
+                        errorText = resolveFieldError("destinationAccountId", localErrors, uiState),
+                    )
+
+                    DropdownMenu(
+                        expanded = destinationMenuExpanded,
+                        onDismissRequest = { destinationMenuExpanded = false },
+                    ) {
+                        filteredAccounts.forEach { account ->
+                            DropdownMenuItem(
+                                text = { Text(account.name) },
+                                onClick = {
+                                    destinationAccountId = account.id
+                                    destinationMenuExpanded = false
+                                    localErrors.remove("destinationAccountId")
+                                },
+                            )
                         }
                     }
                 }
 
                 if (showDatePicker) {
-                    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
+                    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = DateUtils.toUtcDayStartMillis(selectedDateMillis))
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    selectedDateMillis = DateUtils.startOfDayMillis(
-                                        datePickerState.selectedDateMillis ?: selectedDateMillis,
+                                    selectedDateMillis = DateUtils.toLocalDayStartMillis(
+                                        datePickerState.selectedDateMillis ?: DateUtils.toUtcDayStartMillis(selectedDateMillis),
                                     )
+                                    userManuallyChangedDate = true
                                     showDatePicker = false
                                 },
                             ) {
@@ -328,7 +397,14 @@ fun TransactionFormSheet(
                             errors["accountId"] = "Account is required"
                         }
 
-                        if (categoryInput.isBlank()) {
+                        if (selectedType == TransactionType.TRANSFER && destinationAccountId == null) {
+                            errors["destinationAccountId"] = "Destination account is required"
+                        }
+                        if (selectedType == TransactionType.TRANSFER && destinationAccountId == selectedAccountId) {
+                            errors["destinationAccountId"] = "Cannot transfer to the same account"
+                        }
+
+                        if (selectedType != TransactionType.TRANSFER && categoryInput.isBlank()) {
                             errors["category"] = "Category is required"
                         }
 
@@ -341,7 +417,7 @@ fun TransactionFormSheet(
                         onSave(
                             CreateTransactionRequest(
                                 accountId = checkNotNull(accountId),
-                                destinationAccountId = null,
+                                destinationAccountId = if (selectedType == TransactionType.TRANSFER) destinationAccountId else null,
                                 amount = checkNotNull(amount),
                                 date = selectedDateMillis,
                                 type = selectedType,
