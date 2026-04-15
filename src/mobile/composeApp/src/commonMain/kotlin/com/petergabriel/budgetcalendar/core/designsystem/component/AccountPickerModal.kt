@@ -107,7 +107,7 @@ fun AccountPickerModal(
 
                         BcBadge(
                             text = accountTypeLabel,
-                            variant = BadgeVariant.Pending,
+                            variant = account.type.toBadgeVariant(),
                         )
 
                         if (account.id == selectedAccountId) {
