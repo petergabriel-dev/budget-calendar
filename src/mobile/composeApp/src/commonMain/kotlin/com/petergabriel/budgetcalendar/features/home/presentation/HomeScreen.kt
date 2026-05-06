@@ -195,6 +195,17 @@ fun HomeScreen(
                     onDateSelected = { selectedDate = it },
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(modifier = Modifier.height(spacing.spacing3))
+                Text(
+                    text = CurrencyUtils.formatCents(weeklySpent),
+                    style = BudgetCalendarTheme.typography.cardTitle,
+                    color = colors.textPrimary,
+                )
+                Text(
+                    text = "spent this week",
+                    style = BudgetCalendarTheme.typography.bodySmall,
+                    color = colors.textSecondary,
+                )
             }
 
             item {
