@@ -186,7 +186,6 @@ fun HomeScreen(
             item {
                 BcSectionHeader(
                     title = "This Week",
-                    actionText = "${CurrencyUtils.formatCents(weeklySpent)} spent",
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(spacing.spacing2))
