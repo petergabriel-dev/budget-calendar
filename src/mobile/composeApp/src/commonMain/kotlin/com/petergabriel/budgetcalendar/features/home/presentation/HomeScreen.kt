@@ -77,6 +77,7 @@ fun HomeScreen(
 ) {
     val colors = BudgetCalendarTheme.colors
     val spacing = BudgetCalendarTheme.spacing
+    val typography = BudgetCalendarTheme.typography
 
     val budgetState by budgetViewModel.uiState.collectAsStateWithLifecycle()
     val transactionState by transactionViewModel.uiState.collectAsStateWithLifecycle()
@@ -198,12 +199,12 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(spacing.spacing3))
                 Text(
                     text = CurrencyUtils.formatCents(weeklySpent),
-                    style = BudgetCalendarTheme.typography.cardTitle,
+                    style = typography.cardTitle.copy(fontWeight = FontWeight.ExtraBold),
                     color = colors.textPrimary,
                 )
                 Text(
                     text = "spent this week",
-                    style = BudgetCalendarTheme.typography.bodySmall,
+                    style = typography.bodySmall,
                     color = colors.textSecondary,
                 )
             }
