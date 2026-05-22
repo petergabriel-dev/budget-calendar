@@ -8,7 +8,6 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.UpdateAcco
 import com.petergabriel.budgetcalendar.features.accounts.domain.repository.IAccountRepository
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
-import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -160,17 +159,6 @@ class FakeAccountRepository(
     }
 
     private fun signedAmountFor(transaction: Transaction): Long {
-        return when (transaction.type) {
-            TransactionType.INCOME -> transaction.amount
-            TransactionType.EXPENSE -> -transaction.amount
-            TransactionType.TRANSFER -> {
-                val linkedTransactionId = transaction.linkedTransactionId
-                if (linkedTransactionId == null || transaction.id < linkedTransactionId) {
-                    -transaction.amount
-                } else {
-                    transaction.amount
-                }
-            }
-        }
+        return transaction.signedAmount
     }
 }

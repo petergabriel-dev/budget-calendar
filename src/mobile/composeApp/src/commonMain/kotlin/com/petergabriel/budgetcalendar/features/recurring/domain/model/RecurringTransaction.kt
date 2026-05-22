@@ -25,4 +25,11 @@ data class RecurringTransaction(
     val isActive: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
-)
+) {
+    val signedAmount: Long
+        get() = when (type) {
+            RecurrenceType.INCOME -> amount
+            RecurrenceType.EXPENSE -> -amount
+            RecurrenceType.TRANSFER -> -amount
+        }
+}

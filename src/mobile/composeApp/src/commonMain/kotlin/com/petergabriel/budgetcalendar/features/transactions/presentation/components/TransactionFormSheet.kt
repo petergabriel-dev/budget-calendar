@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -65,6 +66,9 @@ fun TransactionFormSheet(
     onSave: (CreateTransactionRequest) -> Unit,
     onCancel: () -> Unit,
     onDelete: ((Transaction) -> Unit)? = null,
+    titleOverride: String? = null,
+    disableDismissRequest: Boolean = false,
+    confirmDiscardOnDirty: Boolean = false,
 ) {
     if (!isVisible) {
         return
@@ -95,6 +99,7 @@ fun TransactionFormSheet(
     var showDatePicker by remember(stateKey) { mutableStateOf(false) }
     var destinationAccountId by remember(stateKey) { mutableStateOf(initialData?.destinationAccountId) }
     var showDestinationPicker by remember(stateKey) { mutableStateOf(false) }
+    var showDiscardDialog by remember(stateKey) { mutableStateOf(false) }
 
     LaunchedEffect(stateKey) {
         onSetType(initialType)
@@ -120,6 +125,26 @@ fun TransactionFormSheet(
         else -> TransactionType.EXPENSE
     }
     val selectedAccount = uiState.availableAccounts.firstOrNull { account -> account.id == selectedAccountId }
+    val initialAccountId = initialData?.accountId ?: uiState.availableAccounts.firstOrNull()?.id
+    val initialDestinationAccountId = initialData?.destinationAccountId
+    val initialAmountInput = initialData?.amount?.let(MoneyInputUtils::centsToInput).orEmpty()
+    val initialDateInput = DateUtils.startOfDayMillis(initialData?.date ?: initialDateMillis)
+    val initialCategoryInput = initialData?.category.orEmpty()
+    val initialStatusInput = initialData?.status ?: TransactionStatus.PENDING
+    val isDirty = amountInput != initialAmountInput ||
+        selectedDateMillis != initialDateInput ||
+        selectedAccountId != initialAccountId ||
+        categoryInput != initialCategoryInput ||
+        statusInput != initialStatusInput ||
+        selectedType != initialType ||
+        destinationAccountId != initialDestinationAccountId
+    fun handleClose() {
+        if (confirmDiscardOnDirty && isDirty) {
+            showDiscardDialog = true
+        } else {
+            onCancel()
+        }
+    }
     val parsedAmount = MoneyInputUtils.parseToCents(amountInput)
     val showInsufficientFunds = (selectedType == TransactionType.EXPENSE || selectedType == TransactionType.TRANSFER) &&
         parsedAmount != null &&
@@ -129,7 +154,11 @@ fun TransactionFormSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
-        onDismissRequest = onCancel,
+        onDismissRequest = {
+            if (!disableDismissRequest) {
+                handleClose()
+            }
+        },
         sheetState = sheetState,
         dragHandle = {},
     ) {
@@ -151,13 +180,13 @@ fun TransactionFormSheet(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = if (initialData == null) "New Transaction" else "Edit Transaction",
+                        text = titleOverride ?: if (initialData == null) "New Transaction" else "Edit Transaction",
                         style = typography.section,
                         color = colors.textPrimary,
                     )
 
                     IconButton(
-                        onClick = onCancel,
+                        onClick = { handleClose() },
                         enabled = !uiState.isSubmitting,
                     ) {
                         Icon(
@@ -443,6 +472,29 @@ fun TransactionFormSheet(
                 }
             }
         }
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard transaction?") },
+            text = { Text("Your changes will be lost.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDiscardDialog = false
+                        onCancel()
+                    },
+                ) {
+                    Text("Discard")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text("Keep editing")
+                }
+            },
+        )
     }
 }
 

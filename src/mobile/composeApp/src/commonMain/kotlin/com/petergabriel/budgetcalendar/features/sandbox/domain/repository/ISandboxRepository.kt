@@ -24,6 +24,8 @@ interface ISandboxRepository {
         description: String?,
         category: String?,
         originalTransactionId: Long?,
+        destinationAccountId: Long? = null,
+        signedAmount: Long? = null,
     ): Result<SandboxTransaction>
 
     suspend fun deleteSandboxTransaction(id: Long): Result<Unit>

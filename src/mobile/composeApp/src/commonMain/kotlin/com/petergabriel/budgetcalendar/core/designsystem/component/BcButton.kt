@@ -81,6 +81,7 @@ fun BcButton(
                 Icon(
                     imageVector = leading,
                     contentDescription = null,
+                    tint = token.contentColor.copy(alpha = alpha),
                 )
             }
 
@@ -94,6 +95,7 @@ fun BcButton(
                 Icon(
                     imageVector = trailing,
                     contentDescription = null,
+                    tint = token.contentColor.copy(alpha = alpha),
                 )
             }
         }

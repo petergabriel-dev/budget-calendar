@@ -11,6 +11,10 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.CreateAc
 import com.petergabriel.budgetcalendar.features.budget.data.mapper.BudgetMapper
 import com.petergabriel.budgetcalendar.features.budget.data.repository.BudgetRepositoryImpl
 import com.petergabriel.budgetcalendar.features.budget.data.repository.MonthlyRolloverRepositoryImpl
+import com.petergabriel.budgetcalendar.features.notifications.data.mapper.NotificationMapper
+import com.petergabriel.budgetcalendar.features.notifications.data.repository.NotificationRepositoryImpl
+import com.petergabriel.budgetcalendar.features.notifications.domain.model.NotificationType
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GenerateNotificationsUseCase
 import com.petergabriel.budgetcalendar.features.transactions.data.mapper.TransactionMapper
 import com.petergabriel.budgetcalendar.features.transactions.data.repository.TransactionRepositoryImpl
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.CreateTransactionRequest
@@ -18,6 +22,7 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transa
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.UpdateTransactionStatusRequest
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.CreateTransactionUseCase
+import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.MarkOverdueTransactionsUseCase
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.UpdateTransactionStatusUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -186,6 +191,74 @@ class BudgetFlowObservationIntegrationTest {
         }
     }
 
+    @Test
+    fun overdueNotification_reactiveUpdate_updatesCountWithoutDuplicate() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val account = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Primary Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 500_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+
+            val overdueDate = DateUtils.startOfDayMillis(DateUtils.nowMillis()) - (2L * DateUtils.MILLIS_IN_DAY)
+
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = account.id,
+                    amount = 50_00L,
+                    date = overdueDate,
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Overdue A",
+                ),
+            ).getOrThrow()
+
+            fixture.markOverdueTransactionsUseCase(DateUtils.nowMillis())
+            fixture.generateNotificationsUseCase.checkOverdueNotification(
+                overdueTransactions = fixture.transactionRepository.getOverdueTransactions().first(),
+                nowMillis = DateUtils.nowMillis(),
+            )
+
+            val firstOverdueNotification = fixture.notificationRepository
+                .getActiveNotifications()
+                .first()
+                .first { notification -> notification.type == NotificationType.OVERDUE_TRANSACTIONS }
+            assertEquals(1, firstOverdueNotification.overdueCount)
+
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = account.id,
+                    amount = 75_00L,
+                    date = overdueDate,
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Overdue B",
+                ),
+            ).getOrThrow()
+
+            fixture.markOverdueTransactionsUseCase(DateUtils.nowMillis())
+            fixture.generateNotificationsUseCase.checkOverdueNotification(
+                overdueTransactions = fixture.transactionRepository.getOverdueTransactions().first(),
+                nowMillis = DateUtils.nowMillis(),
+            )
+
+            val overdueNotifications = fixture.notificationRepository
+                .getActiveNotifications()
+                .first()
+                .filter { notification -> notification.type == NotificationType.OVERDUE_TRANSACTIONS }
+
+            assertEquals(1, overdueNotifications.size)
+            assertEquals(2, overdueNotifications.first().overdueCount)
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
     private fun createFixture(): Fixture {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         BudgetCalendarDatabase.Schema.create(driver)
@@ -196,13 +269,18 @@ class BudgetFlowObservationIntegrationTest {
         val budgetMapper = BudgetMapper()
         val budgetRepository = BudgetRepositoryImpl(database, budgetMapper, transactionRepository)
         val monthlyRolloverRepository = MonthlyRolloverRepositoryImpl(database, budgetMapper)
+        val notificationRepository = NotificationRepositoryImpl(database, NotificationMapper())
 
         return Fixture(
             driver = driver,
+            transactionRepository = transactionRepository,
+            notificationRepository = notificationRepository,
             accountRepository = accountRepository,
             createAccountUseCase = CreateAccountUseCase(accountRepository),
             createTransactionUseCase = CreateTransactionUseCase(transactionRepository),
             updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(transactionRepository),
+            markOverdueTransactionsUseCase = MarkOverdueTransactionsUseCase(transactionRepository),
+            generateNotificationsUseCase = GenerateNotificationsUseCase(notificationRepository),
             calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(
                 budgetRepository,
                 monthlyRolloverRepository,
@@ -213,10 +291,14 @@ class BudgetFlowObservationIntegrationTest {
 
     private data class Fixture(
         val driver: JdbcSqliteDriver,
+        val transactionRepository: TransactionRepositoryImpl,
+        val notificationRepository: NotificationRepositoryImpl,
         val accountRepository: AccountRepositoryImpl,
         val createAccountUseCase: CreateAccountUseCase,
         val createTransactionUseCase: CreateTransactionUseCase,
         val updateTransactionStatusUseCase: UpdateTransactionStatusUseCase,
+        val markOverdueTransactionsUseCase: MarkOverdueTransactionsUseCase,
+        val generateNotificationsUseCase: GenerateNotificationsUseCase,
         val calculateSafeToSpendUseCase: CalculateSafeToSpendUseCase,
     )
 }

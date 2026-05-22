@@ -1,5 +1,5 @@
 getSandboxTransactionsBySnapshot:
-SELECT id, snapshot_id, account_id, amount, date, type, status, description, category, original_transaction_id, created_at, updated_at
+SELECT id, snapshot_id, account_id, destination_account_id, amount, signed_amount, date, type, status, description, category, original_transaction_id, created_at, updated_at
 FROM sandbox_transactions
 WHERE snapshot_id = ?
 ORDER BY date ASC, created_at DESC;
@@ -8,7 +8,9 @@ insertSandboxTransaction:
 INSERT INTO sandbox_transactions(
   snapshot_id,
   account_id,
+  destination_account_id,
   amount,
+  signed_amount,
   date,
   type,
   status,
@@ -18,7 +20,7 @@ INSERT INTO sandbox_transactions(
   created_at,
   updated_at
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 deleteSandboxTransaction:
 DELETE FROM sandbox_transactions
@@ -36,7 +38,7 @@ FROM sandbox_transactions
 WHERE snapshot_id = ?;
 
 getSandboxTransactionById:
-SELECT id, snapshot_id, account_id, amount, date, type, status, description, category, original_transaction_id, created_at, updated_at
+SELECT id, snapshot_id, account_id, destination_account_id, amount, signed_amount, date, type, status, description, category, original_transaction_id, created_at, updated_at
 FROM sandbox_transactions
 WHERE id = ?;
 

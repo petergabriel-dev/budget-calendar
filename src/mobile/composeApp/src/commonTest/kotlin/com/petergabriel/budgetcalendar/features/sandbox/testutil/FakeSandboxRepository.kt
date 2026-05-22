@@ -73,6 +73,8 @@ class FakeSandboxRepository : ISandboxRepository {
         description: String?,
         category: String?,
         originalTransactionId: Long?,
+        destinationAccountId: Long?,
+        signedAmount: Long?,
     ): Result<SandboxTransaction> {
         if (snapshots.none { snapshot -> snapshot.id == snapshotId }) {
             return Result.failure(NoSuchElementException("Sandbox snapshot with id=$snapshotId was not found"))
@@ -83,7 +85,9 @@ class FakeSandboxRepository : ISandboxRepository {
             id = nextTransactionId++,
             snapshotId = snapshotId,
             accountId = accountId,
+            destinationAccountId = destinationAccountId,
             amount = amount,
+            signedAmount = signedAmount,
             date = date,
             type = type,
             status = status,
@@ -108,7 +112,7 @@ class FakeSandboxRepository : ISandboxRepository {
         val delta = transactions
             .filter { item -> item.snapshotId == snapshotId }
             .sumOf { item ->
-                when (item.type) {
+                item.signedAmount ?: when (item.type) {
                     TransactionType.INCOME -> item.amount
                     TransactionType.EXPENSE -> -item.amount
                     TransactionType.TRANSFER -> 0L

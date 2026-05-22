@@ -51,11 +51,7 @@ fun RecurringCard(
         RecurrenceType.TRANSFER -> colors.colorInfo
     }
 
-    val signedAmount = when (recurring.type) {
-        RecurrenceType.INCOME -> recurring.amount
-        RecurrenceType.EXPENSE -> -recurring.amount
-        RecurrenceType.TRANSFER -> recurring.amount
-    }
+    val signedAmount = recurring.signedAmount
 
     val amountColor = when (recurring.type) {
         RecurrenceType.INCOME -> colors.colorSuccess
@@ -107,7 +103,7 @@ fun RecurringCard(
             Text(
                 text = CurrencyUtils.formatCents(
                     amountInCents = signedAmount,
-                    includePlusSign = recurring.type == RecurrenceType.INCOME,
+                    includePlusSign = recurring.signedAmount > 0,
                 ),
                 style = typography.cardTitle,
                 color = amountColor,

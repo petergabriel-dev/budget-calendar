@@ -39,6 +39,21 @@ import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCre
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.MakeCreditCardPaymentUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.UpdateCreditCardSettingsUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.presentation.CreditCardViewModel
+import com.petergabriel.budgetcalendar.features.notifications.data.mapper.NotificationMapper
+import com.petergabriel.budgetcalendar.features.notifications.data.mapper.UserSettingsMapper
+import com.petergabriel.budgetcalendar.features.notifications.data.repository.NotificationRepositoryImpl
+import com.petergabriel.budgetcalendar.features.notifications.data.repository.UserSettingsRepositoryImpl
+import com.petergabriel.budgetcalendar.features.notifications.domain.repository.INotificationRepository
+import com.petergabriel.budgetcalendar.features.notifications.domain.repository.IUserSettingsRepository
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.DismissAllNotificationsUseCase
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.DismissNotificationUseCase
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GenerateNotificationsUseCase
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GetActiveNotificationsUseCase
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GetUnreadNotificationCountUseCase
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GetUserSettingsUseCase
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.UpdateUserSettingsUseCase
+import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationCenterViewModel
+import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationSettingsViewModel
 import com.petergabriel.budgetcalendar.features.recurring.data.mapper.RecurringTransactionMapper
 import com.petergabriel.budgetcalendar.features.recurring.data.repository.RecurringTransactionRepositoryImpl
 import com.petergabriel.budgetcalendar.features.recurring.domain.repository.IRecurringTransactionRepository
@@ -98,6 +113,8 @@ val databaseModule = module {
     single { BudgetMapper() }
     single { SandboxMapper() }
     single { CreditCardMapper() }
+    single { NotificationMapper() }
+    single { UserSettingsMapper() }
 }
 
 val repositoryModule = module {
@@ -108,6 +125,8 @@ val repositoryModule = module {
     single { RecurringTransactionRepositoryImpl(get(), get()) } bind IRecurringTransactionRepository::class
     single { SandboxRepositoryImpl(get(), get()) } bind ISandboxRepository::class
     single { CreditCardRepositoryImpl(get(), get()) } bind ICreditCardRepository::class
+    single { NotificationRepositoryImpl(get(), get()) } bind INotificationRepository::class
+    single { UserSettingsRepositoryImpl(get(), get()) } bind IUserSettingsRepository::class
 }
 
 val useCaseModule = module {
@@ -156,7 +175,7 @@ val useCaseModule = module {
     factory { RemoveSimulationTransactionUseCase(get()) }
     factory { GetSandboxSafeToSpendUseCase(get()) }
     factory { CompareSandboxWithRealityUseCase(get(), get(), get()) }
-    factory { PromoteTransactionUseCase(get(), get()) }
+    factory { PromoteTransactionUseCase(get(), get(), get()) }
     factory { DeleteSandboxUseCase(get()) }
     factory { CheckAndExpireSandboxesUseCase(get()) }
     factory { UpdateSnapshotLastAccessedUseCase(get()) }
@@ -168,17 +187,27 @@ val useCaseModule = module {
     factory { GetCreditCardSummariesUseCase(get(), get(), get()) }
     factory { GetCreditCardSummaryByIdUseCase(get(), get(), get()) }
     factory { MakeCreditCardPaymentUseCase(get(), get()) }
+
+    factory { GenerateNotificationsUseCase(get()) }
+    factory { GetActiveNotificationsUseCase(get()) }
+    factory { GetUnreadNotificationCountUseCase(get()) }
+    factory { DismissNotificationUseCase(get()) }
+    factory { DismissAllNotificationsUseCase(get()) }
+    factory { GetUserSettingsUseCase(get()) }
+    factory { UpdateUserSettingsUseCase(get()) }
 }
 
 val viewModelModule = module {
     viewModel { AccountViewModel(get(), get(), get(), get(), get()) }
     viewModel { TransactionViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { TransactionFormViewModel(get(), get(), get(), get()) }
-    viewModel { BudgetViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { BudgetViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get()) }
     viewModel { RecurringViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SandboxViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CreditCardViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { NotificationCenterViewModel(get(), get(), get(), get()) }
+    viewModel { NotificationSettingsViewModel(get(), get()) }
 }
 
 fun initKoin(appDeclaration: KoinAppDeclaration = {}): KoinApplication {

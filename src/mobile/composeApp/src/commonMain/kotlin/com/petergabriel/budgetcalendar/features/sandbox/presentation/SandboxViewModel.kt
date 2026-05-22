@@ -195,7 +195,7 @@ class SandboxViewModel(
             }
 
         val normalizedCategory = request.category.trim()
-        if (normalizedCategory.isBlank()) {
+        if (request.type != com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType.TRANSFER && normalizedCategory.isBlank()) {
             _uiState.update { it.copy(error = "Name is required") }
             return
         }

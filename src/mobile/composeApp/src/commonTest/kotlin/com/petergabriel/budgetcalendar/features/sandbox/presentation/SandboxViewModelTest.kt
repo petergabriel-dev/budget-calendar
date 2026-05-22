@@ -24,6 +24,7 @@ import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.UpdateSna
 import com.petergabriel.budgetcalendar.features.sandbox.testutil.FakeSandboxRepository
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
+import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.CreateTransactionUseCase
 import com.petergabriel.budgetcalendar.features.transactions.testutil.FakeTransactionRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -108,6 +109,7 @@ class SandboxViewModelTest {
             promoteTransactionUseCase = PromoteTransactionUseCase(
                 transactionRepository,
                 sandboxRepository,
+                CreateTransactionUseCase(transactionRepository),
             ),
             updateSnapshotLastAccessedUseCase = UpdateSnapshotLastAccessedUseCase(sandboxRepository),
             checkAndExpireSandboxesUseCase = CheckAndExpireSandboxesUseCase(sandboxRepository),

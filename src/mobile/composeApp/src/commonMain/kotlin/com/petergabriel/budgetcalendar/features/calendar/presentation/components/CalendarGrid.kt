@@ -27,7 +27,7 @@ fun CalendarGrid(
     modifier: Modifier = Modifier,
 ) {
     val rowCount = (days.size / 7).coerceAtLeast(1)
-    val cellHeight = 84.dp
+    val cellHeight = 66.dp
     val gridHeight = (cellHeight * rowCount) + (2.dp * (rowCount - 1))
 
     Column(modifier = modifier.fillMaxWidth()) {

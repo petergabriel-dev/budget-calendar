@@ -29,6 +29,7 @@ import kotlin.time.Instant
 fun TransactionListItem(
     transaction: Transaction,
     accountName: String,
+    destinationAccountName: String? = null,
     modifier: Modifier = Modifier,
     onTap: () -> Unit,
     onLongPress: () -> Unit,
@@ -38,10 +39,24 @@ fun TransactionListItem(
     val spacing = BudgetCalendarTheme.spacing
     val radius = BudgetCalendarTheme.radius
 
-    val signedAmount = when (transaction.type) {
-        TransactionType.INCOME -> transaction.amount
-        TransactionType.EXPENSE -> -transaction.amount
-        TransactionType.TRANSFER -> transaction.amount
+    val displayAmount = if (transaction.type == TransactionType.TRANSFER) {
+        transaction.amount
+    } else {
+        transaction.signedAmount
+    }
+    val amountText = CurrencyUtils.formatCents(
+        amountInCents = displayAmount,
+        includePlusSign = transaction.type != TransactionType.TRANSFER && transaction.signedAmount >= 0,
+    )
+    val titleText = if (transaction.type == TransactionType.TRANSFER) {
+        "Transfer"
+    } else {
+        transaction.category ?: "Uncategorized"
+    }
+    val accountText = if (transaction.type == TransactionType.TRANSFER && destinationAccountName != null) {
+        "$accountName → $destinationAccountName • ${formatDate(transaction.date)}"
+    } else {
+        "$accountName • ${formatDate(transaction.date)}"
     }
 
     val amountColor = when (transaction.type) {
@@ -72,7 +87,7 @@ fun TransactionListItem(
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
-                text = transaction.category ?: "Uncategorized",
+                text = titleText,
                 style = typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = colors.textPrimary,
@@ -89,7 +104,7 @@ fun TransactionListItem(
             }
 
             Text(
-                text = "$accountName • ${formatDate(transaction.date)}",
+                text = accountText,
                 style = typography.bodySmall,
                 color = colors.textTertiary,
             )
@@ -100,10 +115,7 @@ fun TransactionListItem(
             verticalArrangement = Arrangement.spacedBy(spacing.spacing1),
         ) {
             Text(
-                text = CurrencyUtils.formatCents(
-                    amountInCents = signedAmount,
-                    includePlusSign = transaction.type != TransactionType.EXPENSE,
-                ),
+                text = amountText,
                 style = typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = amountColor,

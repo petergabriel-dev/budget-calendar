@@ -69,4 +69,23 @@ object DateUtils {
         val nextMonthStart = start.plus(DatePeriod(months = 1), timeZone)
         return start.toEpochMilliseconds() to (nextMonthStart.toEpochMilliseconds() - 1)
     }
+
+    fun millisUntilNextDay(timeZone: TimeZone = TimeZone.currentSystemDefault()): Long {
+        val now = Clock.System.now()
+        val tomorrow = LocalDate.fromEpochDays(now.toLocalDateTime(timeZone).date.toEpochDays() + 1)
+        val tomorrowStart = tomorrow.atStartOfDayIn(timeZone)
+        return (tomorrowStart - now).inWholeMilliseconds
+    }
+
+    fun toUtcDayStartMillis(localDayStartMillis: Long, timeZone: TimeZone = TimeZone.currentSystemDefault()): Long {
+        val localDate = Instant.fromEpochMilliseconds(localDayStartMillis).toLocalDateTime(timeZone).date
+        return LocalDate(localDate.year, localDate.monthNumber, localDate.dayOfMonth)
+            .atStartOfDayIn(TimeZone.UTC)
+            .toEpochMilliseconds()
+    }
+
+    fun toLocalDayStartMillis(utcDayStartMillis: Long, timeZone: TimeZone = TimeZone.currentSystemDefault()): Long {
+        val utcDate = Instant.fromEpochMilliseconds(utcDayStartMillis).toLocalDateTime(TimeZone.UTC).date
+        return utcDate.atStartOfDayIn(timeZone).toEpochMilliseconds()
+    }
 }

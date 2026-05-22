@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
+import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionListItem
 
 @Composable
@@ -20,10 +21,16 @@ fun DayTransactionList(
     transactions: List<Transaction>,
     modifier: Modifier = Modifier,
     accountNameProvider: (Long) -> String = { accountId -> "Account #$accountId" },
+    maxItems: Int? = null,
     onTransactionTap: (Transaction) -> Unit = {},
     onTransactionLongPress: (Transaction) -> Unit = {},
 ) {
-    if (transactions.isEmpty()) {
+    val displayTransactions = buildDisplayTransactions(
+        transactions = transactions,
+        maxItems = maxItems,
+    )
+
+    if (displayTransactions.isEmpty()) {
         Box(
             modifier = modifier
                 .fillMaxWidth()
@@ -43,13 +50,34 @@ fun DayTransactionList(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(transactions, key = { transaction -> transaction.id }) { transaction ->
+        items(displayTransactions, key = { transaction -> transaction.id }) { transaction ->
             TransactionListItem(
                 transaction = transaction,
                 accountName = accountNameProvider(transaction.accountId),
+                destinationAccountName = transaction.destinationAccountId?.let(accountNameProvider),
                 onTap = { onTransactionTap(transaction) },
                 onLongPress = { onTransactionLongPress(transaction) },
             )
         }
     }
+}
+
+private fun buildDisplayTransactions(
+    transactions: List<Transaction>,
+    maxItems: Int?,
+): List<Transaction> {
+    val collapsedTransfers = transactions.filterNot { transaction ->
+        transaction.type == TransactionType.TRANSFER &&
+            transaction.signedAmount > 0 &&
+            transaction.linkedTransactionId != null &&
+            transactions.any { other -> other.id == transaction.linkedTransactionId }
+    }
+
+    val sorted = collapsedTransfers.sortedWith(
+        compareByDescending<Transaction> { it.createdAt }
+            .thenByDescending { it.updatedAt }
+            .thenByDescending { it.id },
+    )
+
+    return maxItems?.let(sorted::take) ?: sorted
 }

@@ -44,12 +44,16 @@ fun SandboxTransactionItem(
     val radius = BudgetCalendarTheme.radius
 
     var showPromoteConfirm by remember { mutableStateOf(false) }
-    val signedAmount = when (transaction.type) {
+    val signedAmount = transaction.signedAmount ?: when (transaction.type) {
         TransactionType.INCOME -> transaction.amount
         TransactionType.EXPENSE -> -transaction.amount
         TransactionType.TRANSFER -> transaction.amount
     }
-    val amountColor = if (signedAmount >= 0L) colors.colorSuccess else colors.colorError
+    val amountColor = when (transaction.type) {
+        TransactionType.INCOME -> colors.colorSuccess
+        TransactionType.EXPENSE -> colors.colorError
+        TransactionType.TRANSFER -> colors.colorInfo
+    }
 
     Column(
         modifier = modifier
@@ -71,8 +75,16 @@ fun SandboxTransactionItem(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 BcBadge(
-                    text = if (transaction.type == TransactionType.INCOME) "Income" else "Expense",
-                    variant = if (transaction.type == TransactionType.INCOME) BadgeVariant.Success else BadgeVariant.Error,
+                    text = when (transaction.type) {
+                        TransactionType.INCOME -> "Income"
+                        TransactionType.EXPENSE -> "Expense"
+                        TransactionType.TRANSFER -> "Transfer"
+                    },
+                    variant = when (transaction.type) {
+                        TransactionType.INCOME -> BadgeVariant.Success
+                        TransactionType.EXPENSE -> BadgeVariant.Error
+                        TransactionType.TRANSFER -> BadgeVariant.Info
+                    },
                 )
 
                 Text(

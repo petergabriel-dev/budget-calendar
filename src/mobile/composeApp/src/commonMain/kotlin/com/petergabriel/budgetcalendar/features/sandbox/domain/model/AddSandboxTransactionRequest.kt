@@ -5,6 +5,7 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transa
 data class AddSandboxTransactionRequest(
     val snapshotId: Long,
     val accountId: Long,
+    val destinationAccountId: Long? = null,
     val amount: Long,
     val date: Long,
     val type: TransactionType,

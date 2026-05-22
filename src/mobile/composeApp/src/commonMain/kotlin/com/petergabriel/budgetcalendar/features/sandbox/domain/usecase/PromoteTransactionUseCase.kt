@@ -6,10 +6,12 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Create
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.domain.repository.ITransactionRepository
+import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.CreateTransactionUseCase
 
 class PromoteTransactionUseCase(
     private val transactionRepository: ITransactionRepository,
     private val sandboxRepository: ISandboxRepository,
+    private val createTransactionUseCase: CreateTransactionUseCase,
 ) {
     suspend operator fun invoke(sandboxTransaction: SandboxTransaction): Result<Transaction> {
         val existingRealTransaction = sandboxTransaction.originalTransactionId
@@ -19,6 +21,35 @@ class PromoteTransactionUseCase(
             sandboxRepository.deleteSandboxTransaction(sandboxTransaction.id)
                 .onFailure { throwable -> return Result.failure(throwable) }
             return Result.success(existingRealTransaction)
+        }
+
+        if (sandboxTransaction.type == TransactionType.TRANSFER) {
+            val destinationAccountId = sandboxTransaction.destinationAccountId
+                ?: return Result.failure(
+                    IllegalArgumentException("Transfer requires a destination account"),
+                )
+
+            val request = CreateTransactionRequest(
+                accountId = sandboxTransaction.accountId,
+                destinationAccountId = destinationAccountId,
+                amount = sandboxTransaction.amount,
+                date = sandboxTransaction.date,
+                type = TransactionType.TRANSFER,
+                status = sandboxTransaction.status,
+                description = sandboxTransaction.description,
+                category = sandboxTransaction.category,
+                isSandbox = false,
+            )
+
+            val result = createTransactionUseCase(request)
+            if (result.isFailure) {
+                return Result.failure(result.exceptionOrNull() ?: IllegalStateException("Transfer creation failed"))
+            }
+
+            sandboxRepository.deleteSandboxTransaction(sandboxTransaction.id)
+                .onFailure { throwable -> return Result.failure(throwable) }
+
+            return result
         }
 
         val promoted = runCatching {
@@ -31,7 +62,7 @@ class PromoteTransactionUseCase(
                     status = sandboxTransaction.status,
                     description = sandboxTransaction.description,
                     category = sandboxTransaction.category,
-                    signedAmount = when (sandboxTransaction.type) {
+                    signedAmount = sandboxTransaction.signedAmount ?: when (sandboxTransaction.type) {
                         TransactionType.INCOME -> sandboxTransaction.amount
                         TransactionType.EXPENSE -> -sandboxTransaction.amount
                         TransactionType.TRANSFER -> -sandboxTransaction.amount

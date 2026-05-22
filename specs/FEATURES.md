@@ -257,7 +257,7 @@ The **Daily Velocity Display** is part of this feature: the Home screen shows a 
 ## Feature: Sandbox Mode (What-If)
 
 **Shadow Spec:** `specs/shadow/Sandbox.shadow.md`
-**Status:** In Progress (domain layer complete; UI layer pending)
+**Status:** Done
 
 ### Description
 
@@ -323,7 +323,7 @@ Sandbox Mode is a persistent, multi-transaction budget planning scratchpad. User
 
 ## Feature: Credit Card Handling
 
-**Status:** Planned
+**Status:** Done
 **Shadow Spec:** `specs/shadow/CreditCard.shadow.md`
 
 ### Description
@@ -510,9 +510,37 @@ sealed class BudgetCalendarError {
 
 ---
 
+## Feature: Notification Center
+
+**Status:** Done
+**Shadow Spec:** `specs/shadow/NotificationCenter.shadow.md`
+
+### Description
+
+Notification Center is a persistent in-app alert system surfaced via the bell icon on the Home screen. It generates and stores four notification types: overdue transaction alerts (with reactive content updates), month-end rollover reminders (at 7, 5, and 3 days), STS Low warnings (user-configurable threshold, default 15% of pool balance), and STS Negative alerts. Notifications persist until explicitly dismissed. The bell badge shows the count of undismissed notifications. Items expand in place to show detail; no navigation deep-links. A new `user_settings` table stores the STS low threshold setting, exposed via the profile page.
+
+### Business Rules
+
+| Rule | Description | Priority |
+|------|-------------|----------|
+| NC-001 | Four notification types: OVERDUE_TRANSACTIONS, ROLLOVER_REMINDER_7/5/3, STS_LOW, STS_NEGATIVE | Required |
+| NC-002 | Notifications persist until explicitly dismissed — they do not auto-clear when the underlying condition resolves | Required |
+| NC-003 | Badge count = number of undismissed notifications; not affected by opening the center | Required |
+| NC-004 | Overdue, STS_LOW, STS_NEGATIVE: at most one non-dismissed notification per type (upsert pattern) | Required |
+| NC-005 | Rollover reminders: one per (type × year × month); not re-generated if already exists for current month | Required |
+| NC-006 | Notification generation runs at app launch/foreground resume (same hook as MarkOverdueTransactionsUseCase) and reactively via STS Flow mid-session | Required |
+| NC-007 | STS_LOW fires when currentSts >= 0 AND currentSts < (poolBalance × threshold / 100) | Required |
+| NC-008 | STS_NEGATIVE fires when currentSts < 0; STS_LOW and STS_NEGATIVE are independent and may both be active | Required |
+| NC-009 | STS low threshold is user-configurable (1–100%), default 15%, stored in user_settings table | Required |
+| NC-010 | Overdue notification expanded detail fetches live overdue transactions at render time, not stored in payload | Required |
+| NC-011 | Dismiss per-item or "Clear all"; both actions update is_dismissed in DB | Required |
+| NC-012 | Only one notification item expanded at a time (accordion) | Required |
+
+---
+
 ## Feature: Design System Implementation
 
-**Status:** Planned
+**Status:** In Progress
 **Shadow Spec:** `specs/shadow/DesignSystem.shadow.md`
 
 ### Description
@@ -535,21 +563,47 @@ Implements the 62-component design system as Compose Multiplatform code. Creates
 
 ## Feature: Transaction Modal Redesign
 
-**Status:** Planned
+**Status:** In Progress
 **Shadow Spec:** `specs/shadow/TransactionModal.shadow.md`
 
 ### Description
 
-Redesigns `TransactionFormSheet` to match the design system spec. Replaces the Material3 `TabRow` + `OutlinedTextField` layout with design-token-native components: `LargeAmountInput` for the amount display, `BcInputGroup` for Name/Date/Account fields, `BcCheckboxRow` for status selection, `BcSegmentedControl` for the Expense/Income toggle, and a single full-width `BcButton` CTA. Removes TRANSFER from the modal. No domain or database changes.
+Redesigns `TransactionFormSheet` to match the design system spec. Replaces the Material3 `TabRow` + `OutlinedTextField` layout with design-token-native components: `LargeAmountInput` for the amount display, `BcInputGroup` for Name/Date/Account fields, `BcCheckboxRow` for status selection, `BcSegmentedControl` for the Expense/Income/Transfer toggle, and a single full-width `BcButton` CTA. Account and Destination Account fields open a full-screen `AccountPickerModal` instead of a dropdown. The shared `AccountPickerModal` is also used by `AddSandboxTransactionSheet`. No domain or database changes.
 
 ### Business Rules
 
 | Rule | Description | Priority |
 |------|-------------|----------|
-| TM-001 | Type selector shows only INCOME and EXPENSE — TRANSFER is excluded from this modal | Required |
+| TM-001 | Type selector shows INCOME, EXPENSE, and TRANSFER — TRANSFER shows a destination account field | Required |
 | TM-002 | "Name" field maps to `category` in `CreateTransactionRequest` | Required |
 | TM-003 | Status checkboxes are mutually exclusive: Scheduled (Future) = PENDING, Paid / Cleared = CONFIRMED | Required |
 | TM-004 | X button in header replaces the Cancel button — calls onCancel | Required |
-| TM-005 | CTA label is "Add Expense" or "Add Income" for create mode, "Save" for edit mode | Required |
+| TM-005 | CTA label is "Add Expense" / "Add Income" / "Add Transfer" for create mode, "Save" for edit mode | Required |
 | TM-006 | Description field is not shown — always passed as null | Required |
 | TM-007 | All tokens must come from BudgetCalendarTheme — no raw hex, dp, or sp values | Required |
+| TM-008 | Account and Destination Account fields open a full-screen `AccountPickerModal` (ModalBottomSheet with skipPartiallyExpanded) instead of a dropdown menu | Required |
+| TM-009 | AccountPickerModal displays each account as a row with: account name, formatted balance (CurrencyUtils.formatCents), and account type badge (BcBadge) | Required |
+| TM-010 | Account type badge variant mapping: CHECKING=Info, SAVINGS=Success, CREDIT_CARD=Warning, CASH=Pending, INVESTMENT=Info | Required |
+| TM-011 | AccountPickerModal has a back arrow (BcHeader) to dismiss without changing selection; tapping an account row applies the selection and closes the modal | Required |
+| TM-012 | AccountPickerModal is shared between TransactionFormSheet and AddSandboxTransactionSheet — lives in core/designsystem/component/ | Required |
+| TM-013 | Currently selected account shows a checkmark icon in the AccountPickerModal row | Required |
+
+---
+
+## Feature: DatePicker Timezone Fix
+
+**Status:** Planned
+**Shadow Spec:** `specs/shadow/DatePickerTimezoneFix.shadow.md`
+
+### Description
+
+Fixes the one-day drift bug in Compose DatePicker where the selected date indicator highlights the wrong calendar day. The root cause is that `DatePicker` interprets `initialSelectedDateMillis` as UTC epoch milliseconds, while stored dates are device-local start-of-day millis. Adds `toUtcDayStartMillis()` and `toLocalDayStartMillis()` helpers in `DateUtils` to translate correctly in both directions. No domain or database changes.
+
+### Business Rules
+
+| Rule | Description | Priority |
+|------|-------------|----------|
+| DPTZ-001 | DatePicker always receives UTC-aligned millis for the intended calendar day | Required |
+| DPTZ-002 | DatePicker confirm output is converted back to device-local start-of-day millis before storage | Required |
+| DPTZ-003 | Both TransactionFormSheet and AddSandboxTransactionSheet use the same conversion pattern | Required |
+| DPTZ-004 | The userManuallyChangedDate flag is preserved — auto-updates at midnight only apply when user has not manually picked a date | Required |

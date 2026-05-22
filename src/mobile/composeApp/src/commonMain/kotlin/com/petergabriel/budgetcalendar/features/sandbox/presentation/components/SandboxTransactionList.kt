@@ -2,7 +2,6 @@ package com.petergabriel.budgetcalendar.features.sandbox.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -10,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcSectionHeader
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxTransaction
@@ -30,22 +30,12 @@ fun SandboxTransactionList(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(spacing.spacing3),
     ) {
-        Row(
+        BcSectionHeader(
+            title = "Sandbox Transactions",
+            actionText = "Add",
+            onActionClick = onAddTap,
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Sandbox Transactions",
-                style = typography.section,
-                color = colors.textPrimary,
-            )
-            BcButton(
-                text = "Add",
-                onClick = onAddTap,
-                variant = ButtonVariant.Ghost,
-            )
-        }
+        )
 
         if (transactions.isEmpty()) {
             Column(
@@ -63,7 +53,7 @@ fun SandboxTransactionList(
                 BcButton(
                     text = "Add",
                     onClick = onAddTap,
-                    variant = ButtonVariant.Ghost,
+                    variant = ButtonVariant.Primary,
                 )
             }
         } else {

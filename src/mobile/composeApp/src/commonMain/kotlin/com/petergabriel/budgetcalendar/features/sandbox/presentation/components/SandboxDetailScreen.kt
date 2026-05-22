@@ -15,7 +15,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,7 +58,14 @@ fun SandboxDetailScreen(
 ) {
     val transactionFormUiState by transactionFormViewModel.uiState.collectAsStateWithLifecycle()
     var showTransactionForm by remember { mutableStateOf(false) }
-    val initialDateMillis = remember { DateUtils.startOfDayMillis(DateUtils.nowMillis()) }
+    var currentDayMillis by remember { mutableLongStateOf(DateUtils.startOfDayMillis(DateUtils.nowMillis())) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val delay = DateUtils.millisUntilNextDay()
+            kotlinx.coroutines.delay(delay)
+            currentDayMillis = DateUtils.startOfDayMillis(DateUtils.nowMillis())
+        }
+    }
     val spacing = BudgetCalendarTheme.spacing
     val colors = BudgetCalendarTheme.colors
 
@@ -123,7 +132,7 @@ fun SandboxDetailScreen(
     TransactionFormSheet(
         isVisible = showTransactionForm,
         uiState = transactionFormUiState,
-        initialDateMillis = initialDateMillis,
+        initialDateMillis = currentDayMillis,
         onSetType = transactionFormViewModel::setType,
         onSave = { request ->
             onAddSimulation(
@@ -138,6 +147,9 @@ fun SandboxDetailScreen(
             transactionFormViewModel.clearError()
             showTransactionForm = false
         },
+        titleOverride = "New Sandbox Transaction",
+        disableDismissRequest = true,
+        confirmDiscardOnDirty = true,
     )
 }
 

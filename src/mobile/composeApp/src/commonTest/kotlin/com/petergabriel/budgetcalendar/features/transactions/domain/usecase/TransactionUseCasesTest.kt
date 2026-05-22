@@ -122,6 +122,67 @@ class TransactionUseCasesTest {
     }
 
     @Test
+    fun createTransaction_transferWithNullDestinationReturnsError() = runBlocking {
+        val today = DateUtils.startOfDayMillis(DateUtils.nowMillis())
+        val result = createTransactionUseCase(
+            CreateTransactionRequest(
+                accountId = 1L,
+                destinationAccountId = null,
+                amount = 5_000L,
+                date = today,
+                type = TransactionType.TRANSFER,
+            ),
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals(
+            "Transfer destination account is required",
+            result.exceptionOrNull()?.message,
+        )
+    }
+
+    @Test
+    fun createTransaction_transferWithoutCategorySucceeds() = runBlocking {
+        val today = DateUtils.startOfDayMillis(DateUtils.nowMillis())
+        val result = createTransactionUseCase(
+            CreateTransactionRequest(
+                accountId = 10L,
+                destinationAccountId = 20L,
+                amount = 1_000L,
+                date = today,
+                type = TransactionType.TRANSFER,
+                category = null,
+            ),
+        )
+
+        assertTrue(result.isSuccess)
+        val transfer = result.getOrThrow()
+        assertEquals(TransactionType.TRANSFER, transfer.type)
+        assertEquals(null, transfer.category)
+        assertEquals(2, transactionRepository.allTransactions().size)
+    }
+
+    @Test
+    fun createTransaction_expenseWithoutCategorySucceedsAtUseCaseLevel() = runBlocking {
+        val today = DateUtils.startOfDayMillis(DateUtils.nowMillis())
+        val result = createTransactionUseCase(
+            CreateTransactionRequest(
+                accountId = 1L,
+                amount = 500L,
+                date = today,
+                type = TransactionType.EXPENSE,
+                category = null,
+            ),
+        )
+
+        // Use case does not enforce category — that validation lives in TransactionFormViewModel
+        assertTrue(result.isSuccess)
+        val expense = result.getOrThrow()
+        assertEquals(TransactionType.EXPENSE, expense.type)
+        assertEquals(null, expense.category)
+    }
+
+    @Test
     fun createTransaction_returnsExpectedValidationErrors() = runBlocking {
         val today = DateUtils.startOfDayMillis(DateUtils.nowMillis())
 

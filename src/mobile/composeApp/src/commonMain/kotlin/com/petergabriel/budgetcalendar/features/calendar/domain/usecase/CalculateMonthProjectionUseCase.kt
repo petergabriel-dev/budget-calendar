@@ -40,13 +40,11 @@ class CalculateMonthProjectionUseCase(
             val spendingPoolAccountIds = spendingPoolAccounts.map { it.id }.toSet()
             val signedTransactionSum = monthTransactions.sumOf { transaction ->
                 when (transaction.type) {
-                    TransactionType.INCOME -> transaction.amount
-                    TransactionType.EXPENSE -> -transaction.amount
+                    TransactionType.INCOME -> transaction.signedAmount
+                    TransactionType.EXPENSE -> transaction.signedAmount
                     TransactionType.TRANSFER -> {
-                        // Source account is in spending pool (query filters for this)
-                        // If destination is NOT in spending pool, money is leaving the pool
                         val destinationIsInPool = transaction.destinationAccountId?.let { it in spendingPoolAccountIds } ?: false
-                        if (destinationIsInPool) 0L else -transaction.amount
+                        if (destinationIsInPool) 0L else transaction.signedAmount
                     }
                 }
             }

@@ -13,6 +13,7 @@ import com.petergabriel.budgetcalendar.features.sandbox.testutil.FakeSandboxRepo
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.CreateTransactionRequest
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
+import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.CreateTransactionUseCase
 import com.petergabriel.budgetcalendar.features.transactions.testutil.FakeTransactionRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
@@ -76,6 +77,7 @@ class SandboxUseCasesTest {
             promoteTransactionUseCase = PromoteTransactionUseCase(
                 transactionRepository,
                 sandboxRepository,
+                CreateTransactionUseCase(transactionRepository),
             )
             checkAndExpireSandboxesUseCase = CheckAndExpireSandboxesUseCase(sandboxRepository)
 

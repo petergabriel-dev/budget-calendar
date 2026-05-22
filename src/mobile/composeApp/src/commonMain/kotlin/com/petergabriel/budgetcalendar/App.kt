@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,18 +31,30 @@ import com.petergabriel.budgetcalendar.core.designsystem.component.BcTabBarPill
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcTabItem
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
+import com.petergabriel.budgetcalendar.features.budget.domain.usecase.CalculateSafeToSpendUseCase
 import com.petergabriel.budgetcalendar.features.accounts.presentation.AccountScreen
 import com.petergabriel.budgetcalendar.features.calendar.presentation.CalendarScreen
+import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.CalculateMonthProjectionUseCase
 import com.petergabriel.budgetcalendar.features.home.presentation.HomeScreen
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GenerateNotificationsUseCase
+import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GetUserSettingsUseCase
+import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationSettingsScreen
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
+import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.GetOverdueTransactionsUseCase
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.MarkOverdueTransactionsUseCase
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormViewModel
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionFormSheet
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.time.Instant
 
 private enum class AppTab(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Outlined.Home),
@@ -59,13 +72,25 @@ fun App() {
         var hasSkippedFirstResume by remember { mutableStateOf(false) }
         val transactionFormViewModel: TransactionFormViewModel = koinViewModel()
         val markOverdueTransactionsUseCase: MarkOverdueTransactionsUseCase = koinInject()
+        val getOverdueTransactionsUseCase: GetOverdueTransactionsUseCase = koinInject()
+        val calculateMonthProjectionUseCase: CalculateMonthProjectionUseCase = koinInject()
+        val calculateSafeToSpendUseCase: CalculateSafeToSpendUseCase = koinInject()
+        val getUserSettingsUseCase: GetUserSettingsUseCase = koinInject()
+        val generateNotificationsUseCase: GenerateNotificationsUseCase = koinInject()
         val formState by transactionFormViewModel.uiState.collectAsStateWithLifecycle()
         val lifecycleOwner = LocalLifecycleOwner.current
         val coroutineScope = rememberCoroutineScope()
 
         LaunchedEffect(Unit) {
             withContext(Dispatchers.Default) {
-                markOverdueTransactionsUseCase(DateUtils.nowMillis())
+                refreshNotifications(
+                    markOverdueTransactionsUseCase = markOverdueTransactionsUseCase,
+                    getOverdueTransactionsUseCase = getOverdueTransactionsUseCase,
+                    calculateMonthProjectionUseCase = calculateMonthProjectionUseCase,
+                    calculateSafeToSpendUseCase = calculateSafeToSpendUseCase,
+                    getUserSettingsUseCase = getUserSettingsUseCase,
+                    generateNotificationsUseCase = generateNotificationsUseCase,
+                )
             }
         }
 
@@ -81,7 +106,14 @@ fun App() {
                 }
 
                 coroutineScope.launch(Dispatchers.Default) {
-                    markOverdueTransactionsUseCase(DateUtils.nowMillis())
+                    refreshNotifications(
+                        markOverdueTransactionsUseCase = markOverdueTransactionsUseCase,
+                        getOverdueTransactionsUseCase = getOverdueTransactionsUseCase,
+                        calculateMonthProjectionUseCase = calculateMonthProjectionUseCase,
+                        calculateSafeToSpendUseCase = calculateSafeToSpendUseCase,
+                        getUserSettingsUseCase = getUserSettingsUseCase,
+                        generateNotificationsUseCase = generateNotificationsUseCase,
+                    )
                 }
             }
 
@@ -127,14 +159,25 @@ fun App() {
                     modifier = Modifier.padding(innerPadding),
                 )
 
-                AppTab.ME -> Box(modifier = Modifier.padding(innerPadding))
+                AppTab.ME -> NotificationSettingsScreen(
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+        }
+
+        var currentDayMillis by remember { mutableLongStateOf(DateUtils.startOfDayMillis(DateUtils.nowMillis())) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                val delay = DateUtils.millisUntilNextDay()
+                kotlinx.coroutines.delay(delay)
+                currentDayMillis = DateUtils.startOfDayMillis(DateUtils.nowMillis())
             }
         }
 
         TransactionFormSheet(
             isVisible = showAddForm,
             uiState = formState,
-            initialDateMillis = remember { DateUtils.nowMillis() },
+            initialDateMillis = currentDayMillis,
             initialData = null,
             onSetType = transactionFormViewModel::setType,
             onSave = { request ->
@@ -148,4 +191,36 @@ fun App() {
             onDelete = null,
         )
     }
+}
+
+private suspend fun refreshNotifications(
+    markOverdueTransactionsUseCase: MarkOverdueTransactionsUseCase,
+    getOverdueTransactionsUseCase: GetOverdueTransactionsUseCase,
+    calculateMonthProjectionUseCase: CalculateMonthProjectionUseCase,
+    calculateSafeToSpendUseCase: CalculateSafeToSpendUseCase,
+    getUserSettingsUseCase: GetUserSettingsUseCase,
+    generateNotificationsUseCase: GenerateNotificationsUseCase,
+) {
+    val nowMillis = DateUtils.nowMillis()
+    val timeZone = TimeZone.currentSystemDefault()
+    val today = Instant.fromEpochMilliseconds(nowMillis).toLocalDateTime(timeZone).date
+    val currentYearMonth = YearMonth(today.year, today.month.number)
+
+    markOverdueTransactionsUseCase(nowMillis)
+
+    val overdueTransactions = getOverdueTransactionsUseCase().first()
+    val projectedRollover = calculateMonthProjectionUseCase(currentYearMonth).first()
+    val budgetSummary = calculateSafeToSpendUseCase().first()
+    val thresholdPercent = getUserSettingsUseCase().first()?.stsLowThresholdPercent ?: 15
+
+    generateNotificationsUseCase(
+        overdueTransactions = overdueTransactions,
+        daysRemaining = DateUtils.daysRemainingInMonth(today = today, tz = timeZone),
+        projectedRollover = projectedRollover,
+        currentSts = budgetSummary.availableToSpend,
+        poolBalance = budgetSummary.totalLiquidAssets,
+        thresholdPercent = thresholdPercent,
+        nowMillis = nowMillis,
+        timeZone = timeZone,
+    )
 }

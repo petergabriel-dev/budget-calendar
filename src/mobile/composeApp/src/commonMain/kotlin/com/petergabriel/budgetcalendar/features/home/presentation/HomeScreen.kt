@@ -21,10 +21,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,14 +40,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcBadge
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSearchBar
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSectionHeader
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSegmentedControl
+import com.petergabriel.budgetcalendar.core.designsystem.component.BadgeVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.HeroSafeToSpend
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.budget.presentation.BudgetViewModel
+import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationCenterSheet
+import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationCenterViewModel
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.AddSandboxTransactionSheet
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.ComparisonDeltaRow
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.HeroProjectedSpend
@@ -74,6 +83,7 @@ fun HomeScreen(
     transactionViewModel: TransactionViewModel = koinViewModel(),
     transactionFormViewModel: TransactionFormViewModel = koinViewModel(),
     sandboxViewModel: SandboxViewModel = koinViewModel(),
+    notificationCenterViewModel: NotificationCenterViewModel = koinViewModel(),
 ) {
     val colors = BudgetCalendarTheme.colors
     val spacing = BudgetCalendarTheme.spacing
@@ -83,6 +93,7 @@ fun HomeScreen(
     val transactionState by transactionViewModel.uiState.collectAsStateWithLifecycle()
     val formState by transactionFormViewModel.uiState.collectAsStateWithLifecycle()
     val sandboxState by sandboxViewModel.uiState.collectAsStateWithLifecycle()
+    val unreadCount by notificationCenterViewModel.unreadCount.collectAsStateWithLifecycle(initialValue = 0)
 
     val tz = TimeZone.currentSystemDefault()
     val today = Clock.System.now().toLocalDateTime(tz).date
@@ -104,7 +115,25 @@ fun HomeScreen(
     var selectedDate by remember { mutableStateOf(today) }
     var searchQuery by remember { mutableStateOf("") }
     var showAddForm by remember { mutableStateOf(false) }
+    var showNotificationCenter by remember { mutableStateOf(false) }
     var editingTransaction by remember { mutableStateOf<Transaction?>(null) }
+    var currentDayMillis by remember { mutableLongStateOf(DateUtils.startOfDayMillis(DateUtils.nowMillis())) }
+
+    fun closeTransactionForm() {
+        showAddForm = false
+        editingTransaction = null
+    }
+
+    fun closeNotificationCenter() {
+        showNotificationCenter = false
+    }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val delay = DateUtils.millisUntilNextDay()
+            kotlinx.coroutines.delay(delay)
+            currentDayMillis = DateUtils.startOfDayMillis(DateUtils.nowMillis())
+        }
+    }
 
     val overdueTransactions = remember(transactionState.transactions) {
         transactionState.transactions.filter { it.status == TransactionStatus.OVERDUE && !it.isSandbox }
@@ -143,9 +172,12 @@ fun HomeScreen(
             BcHeader(
                 title = if (sandboxState.isSandboxMode) "Sandbox" else "Budget",
                 modifier = Modifier.fillMaxWidth(),
-                actionIcon = Icons.Outlined.Notifications,
-                actionContentDescription = "Notifications",
-                onActionClick = {},
+                actionContent = {
+                    NotificationBellAction(
+                        unreadCount = unreadCount,
+                        onClick = { showNotificationCenter = true },
+                    )
+                },
             )
         }
 
@@ -203,7 +235,7 @@ fun HomeScreen(
                     color = colors.textPrimary,
                 )
                 Text(
-                    text = "spent this week",
+                    text = "Spent This Week",
                     style = typography.bodySmall,
                     color = colors.textSecondary,
                 )
@@ -314,7 +346,7 @@ fun HomeScreen(
     TransactionFormSheet(
         isVisible = showAddForm,
         uiState = formState,
-        initialDateMillis = remember { DateUtils.nowMillis() },
+        initialDateMillis = currentDayMillis,
         initialData = editingTransaction,
         onSetType = transactionFormViewModel::setType,
         onSave = { request ->
@@ -324,20 +356,65 @@ fun HomeScreen(
             } else {
                 transactionFormViewModel.replace(existingTransactionId = editing.id, request = request)
             }
-            showAddForm = false
-            editingTransaction = null
+            closeTransactionForm()
         },
         onCancel = {
             transactionFormViewModel.clearError()
-            showAddForm = false
-            editingTransaction = null
+            closeTransactionForm()
         },
         onDelete = { transaction ->
             transactionFormViewModel.delete(transaction.id)
-            showAddForm = false
-            editingTransaction = null
+            closeTransactionForm()
         },
     )
+
+    NotificationCenterSheet(
+        isVisible = showNotificationCenter,
+        viewModel = notificationCenterViewModel,
+        onDismiss = ::closeNotificationCenter,
+    )
+}
+
+@Composable
+private fun NotificationBellAction(
+    unreadCount: Int,
+    onClick: () -> Unit,
+) {
+    val colors = BudgetCalendarTheme.colors
+    val radius = BudgetCalendarTheme.radius
+    val spacing = BudgetCalendarTheme.spacing
+    val touchTarget = spacing.spacing12 - spacing.spacing1
+
+    Surface(
+        shape = RoundedCornerShape(radius.lg),
+        color = colors.bgSurface,
+    ) {
+        Box {
+            IconButton(
+                modifier = Modifier.size(touchTarget),
+                onClick = onClick,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = "Notifications",
+                    tint = colors.textPrimary,
+                )
+            }
+
+            if (unreadCount > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = spacing.spacing1, end = spacing.spacing1),
+                ) {
+                    BcBadge(
+                        text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                        variant = BadgeVariant.Error,
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -411,8 +488,7 @@ private fun ScheduleTransactionRow(
         Instant.fromEpochMilliseconds(transaction.date).toLocalDateTime(tz).date
     }
     val relativeLabel = remember(txnDate, today) {
-        val daysDiff = today.toEpochDays() - txnDate.toEpochDays()
-        when (daysDiff) {
+        when (val daysDiff = today.toEpochDays() - txnDate.toEpochDays()) {
             0L -> "Today"
             1L -> "Yesterday"
             else -> "$daysDiff Days Ago"
@@ -444,14 +520,14 @@ private fun ScheduleTransactionRow(
                 color = colors.textPrimary,
             )
             Text(
-                text = "$relativeLabel · ${CurrencyUtils.formatCents(transaction.amount)}",
+                text = "$relativeLabel · ${CurrencyUtils.formatCents(transaction.signedAmount)}",
                 style = typography.bodySmall,
                 color = colors.textSecondary,
             )
         }
 
         Text(
-            text = "-${CurrencyUtils.formatCents(transaction.amount)}",
+            text = CurrencyUtils.formatCents(transaction.signedAmount),
             style = typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
             color = colors.textPrimary,
         )

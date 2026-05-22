@@ -295,6 +295,85 @@ CREATE INDEX idx_cc_settings_account ON credit_card_settings(account_id);
 
 ---
 
+#### 8. notifications
+
+Stores persistent in-app alert records for the Notification Center.
+
+```sql
+-- Create notifications table
+CREATE TABLE notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL CHECK (type IN (
+        'overdue_transactions',
+        'rollover_reminder_7', 'rollover_reminder_5', 'rollover_reminder_3',
+        'sts_low', 'sts_negative'
+    )),
+    is_dismissed INTEGER NOT NULL DEFAULT 0,
+
+    -- Rollover scoping (null for non-rollover types)
+    trigger_month INTEGER,          -- 1–12
+    trigger_year INTEGER,           -- e.g. 2026
+
+    -- Payload fields (only relevant fields populated per type)
+    overdue_count INTEGER,          -- OVERDUE_TRANSACTIONS
+    projected_rollover INTEGER,     -- ROLLOVER_REMINDER_* (cents)
+    days_remaining INTEGER,         -- ROLLOVER_REMINDER_*
+    current_sts INTEGER,            -- STS_LOW / STS_NEGATIVE (cents)
+    pool_balance INTEGER,           -- STS_LOW / STS_NEGATIVE (cents)
+
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_notifications_type_dismissed ON notifications(type, is_dismissed);
+CREATE INDEX idx_notifications_dismissed ON notifications(is_dismissed);
+CREATE INDEX idx_notifications_rollover ON notifications(type, trigger_year, trigger_month);
+```
+
+**Columns:**
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT | Unique notification identifier |
+| type | TEXT | NOT NULL, CHECK | NotificationType enum value |
+| is_dismissed | INTEGER | NOT NULL DEFAULT 0 | Boolean flag (0/1) |
+| trigger_month | INTEGER | | For rollover types: month 1–12; null otherwise |
+| trigger_year | INTEGER | | For rollover types: year; null otherwise |
+| overdue_count | INTEGER | | OVERDUE_TRANSACTIONS payload |
+| projected_rollover | INTEGER | | ROLLOVER_REMINDER_* payload (cents) |
+| days_remaining | INTEGER | | ROLLOVER_REMINDER_* payload |
+| current_sts | INTEGER | | STS_LOW/STS_NEGATIVE payload (cents) |
+| pool_balance | INTEGER | | STS_LOW/STS_NEGATIVE payload (cents) |
+| created_at | INTEGER | NOT NULL | Unix timestamp (ms) |
+| updated_at | INTEGER | NOT NULL | Unix timestamp (ms) |
+
+---
+
+#### 9. user_settings
+
+Single-row settings store for user-configurable preferences.
+
+```sql
+-- Create user_settings table (always one row with id=1)
+CREATE TABLE user_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    sts_low_threshold_percent INTEGER NOT NULL DEFAULT 15,  -- 1–100
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+```
+
+**Columns:**
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY DEFAULT 1 | Always 1 — single-row table |
+| sts_low_threshold_percent | INTEGER | NOT NULL DEFAULT 15 | STS low alert threshold (1–100%) |
+| created_at | INTEGER | NOT NULL | Unix timestamp (ms) |
+| updated_at | INTEGER | NOT NULL | Unix timestamp (ms) |
+
+---
+
 ## SQLDelight Query Definitions
 
 ### accounts
@@ -531,6 +610,9 @@ DELETE FROM sandbox_transactions WHERE snapshot_id = :snapshot_id;
 | idx_snapshots_created | sandbox_snapshots | created_at | Snapshot listing |
 | idx_sandbox_snapshot | sandbox_transactions | snapshot_id | Sandbox loading |
 | idx_sandbox_date | sandbox_transactions | date | Sandbox calendar |
+| idx_notifications_type_dismissed | notifications | type, is_dismissed | Active notification lookup by type |
+| idx_notifications_dismissed | notifications | is_dismissed | Badge count query |
+| idx_notifications_rollover | notifications | type, trigger_year, trigger_month | Rollover deduplication |
 
 ---
 

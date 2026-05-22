@@ -5,6 +5,7 @@ data class TransactionEntity(
     val accountId: Long,
     val destinationAccountId: Long?,
     val amount: Long,
+    val signedAmount: Long,
     val date: Long,
     val type: String,
     val status: String,

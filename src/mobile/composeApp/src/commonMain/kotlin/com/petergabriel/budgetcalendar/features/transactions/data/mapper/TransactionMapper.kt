@@ -12,6 +12,7 @@ class TransactionMapper {
             accountId = entity.accountId,
             destinationAccountId = entity.destinationAccountId,
             amount = entity.amount,
+            signedAmount = entity.signedAmount,
             date = entity.date,
             type = TransactionType.fromDbValue(entity.type),
             status = TransactionStatus.fromDbValue(entity.status),

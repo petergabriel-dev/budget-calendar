@@ -1,0 +1,132 @@
+getActiveNotifications:
+SELECT
+  id,
+  type,
+  is_dismissed,
+  trigger_month,
+  trigger_year,
+  overdue_count,
+  projected_rollover,
+  days_remaining,
+  current_sts,
+  pool_balance,
+  created_at,
+  updated_at
+FROM notifications
+WHERE is_dismissed = 0
+ORDER BY created_at DESC;
+
+getUnreadCount:
+SELECT CAST(COUNT(*) AS INTEGER)
+FROM notifications
+WHERE is_dismissed = 0;
+
+getNotificationById:
+SELECT
+  id,
+  type,
+  is_dismissed,
+  trigger_month,
+  trigger_year,
+  overdue_count,
+  projected_rollover,
+  days_remaining,
+  current_sts,
+  pool_balance,
+  created_at,
+  updated_at
+FROM notifications
+WHERE id = :id
+LIMIT 1;
+
+getNotificationByType:
+SELECT
+  id,
+  type,
+  is_dismissed,
+  trigger_month,
+  trigger_year,
+  overdue_count,
+  projected_rollover,
+  days_remaining,
+  current_sts,
+  pool_balance,
+  created_at,
+  updated_at
+FROM notifications
+WHERE type = :type
+  AND is_dismissed = 0
+LIMIT 1;
+
+getNotificationByTypeAndMonth:
+SELECT
+  id,
+  type,
+  is_dismissed,
+  trigger_month,
+  trigger_year,
+  overdue_count,
+  projected_rollover,
+  days_remaining,
+  current_sts,
+  pool_balance,
+  created_at,
+  updated_at
+FROM notifications
+WHERE type = :type
+  AND trigger_year = :year
+  AND trigger_month = :month
+LIMIT 1;
+
+insertNotification:
+INSERT INTO notifications(
+  type,
+  is_dismissed,
+  trigger_month,
+  trigger_year,
+  overdue_count,
+  projected_rollover,
+  days_remaining,
+  current_sts,
+  pool_balance,
+  created_at,
+  updated_at
+)
+VALUES (
+  :type,
+  :is_dismissed,
+  :trigger_month,
+  :trigger_year,
+  :overdue_count,
+  :projected_rollover,
+  :days_remaining,
+  :current_sts,
+  :pool_balance,
+  :created_at,
+  :updated_at
+);
+
+updateNotificationPayload:
+UPDATE notifications
+SET overdue_count = :overdue_count,
+    projected_rollover = :projected_rollover,
+    days_remaining = :days_remaining,
+    current_sts = :current_sts,
+    pool_balance = :pool_balance,
+    updated_at = :updated_at
+WHERE id = :id;
+
+dismissNotification:
+UPDATE notifications
+SET is_dismissed = 1,
+    updated_at = :updated_at
+WHERE id = :id;
+
+dismissAllNotifications:
+UPDATE notifications
+SET is_dismissed = 1,
+    updated_at = :updated_at
+WHERE is_dismissed = 0;
+
+getLastInsertedNotificationId:
+SELECT last_insert_rowid();

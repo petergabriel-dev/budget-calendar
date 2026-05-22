@@ -33,7 +33,7 @@ fun DayTransactionSectionHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 24.dp, bottom = 8.dp),
+            .padding(top = 12.dp, bottom = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {

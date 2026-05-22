@@ -136,6 +136,7 @@ class FakeTransactionRepository : ITransactionRepository {
             accountId = request.accountId,
             destinationAccountId = request.destinationAccountId,
             amount = request.amount,
+            signedAmount = request.signedAmount,
             date = request.date,
             type = request.type,
             status = request.status,

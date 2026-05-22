@@ -19,7 +19,7 @@ class GetSandboxSafeToSpendUseCase(
             sandboxRepository.getTransactionsBySnapshot(snapshotId)
                 .map { transactions ->
                     val delta = transactions.sumOf { transaction ->
-                        when (transaction.type) {
+                        transaction.signedAmount ?: when (transaction.type) {
                             TransactionType.INCOME -> transaction.amount
                             TransactionType.EXPENSE -> -transaction.amount
                             TransactionType.TRANSFER -> 0L

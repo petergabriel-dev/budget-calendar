@@ -1,6 +1,7 @@
 package com.petergabriel.budgetcalendar.core.designsystem.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +23,7 @@ fun BcHeader(
     actionIcon: ImageVector? = null,
     actionContentDescription: String? = null,
     onActionClick: (() -> Unit)? = null,
+    actionContent: (@Composable () -> Unit)? = null,
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
@@ -38,7 +40,9 @@ fun BcHeader(
             color = colors.textPrimary,
         )
 
-        if (actionIcon != null && onActionClick != null) {
+        if (actionContent != null) {
+            Box { actionContent() }
+        } else if (actionIcon != null && onActionClick != null) {
             Surface(
                 shape = RoundedCornerShape(radius.lg),
                 color = colors.bgSurface,

@@ -30,6 +30,7 @@ data class Transaction(
     val accountId: Long,
     val destinationAccountId: Long?,
     val amount: Long,
+    val signedAmount: Long,
     val date: Long,
     val type: TransactionType,
     val status: TransactionStatus,

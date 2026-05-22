@@ -198,6 +198,10 @@ class TransactionRepositoryImpl(
             )
         }
 
+        if (overdue.isNotEmpty()) {
+            _transactionChangedTrigger.emit(Unit)
+        }
+
         return overdue.size
     }
 
@@ -206,6 +210,7 @@ class TransactionRepositoryImpl(
         accountId: Long,
         destinationAccountId: Long?,
         amount: Long,
+        signedAmount: Long,
         date: Long,
         type: String,
         status: String,
@@ -221,6 +226,7 @@ class TransactionRepositoryImpl(
             accountId = accountId,
             destinationAccountId = destinationAccountId,
             amount = amount,
+            signedAmount = signedAmount,
             date = date,
             type = type,
             status = status,
