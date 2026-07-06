@@ -181,7 +181,7 @@ class TransactionRepositoryImpl(
 
     override suspend fun markOverdueTransactions(nowMillis: Long): Int {
         val pendingTransactions = database.transactionsQueries
-            .getPendingTransactions(::toEntity)
+            .getPendingTransactionsForOverdueMarking(::toEntity)
             .executeAsList()
             .map(transactionMapper::toDomain)
 

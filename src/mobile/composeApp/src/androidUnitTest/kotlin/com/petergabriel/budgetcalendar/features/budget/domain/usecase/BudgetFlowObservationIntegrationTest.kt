@@ -260,6 +260,78 @@ class BudgetFlowObservationIntegrationTest {
     }
 
     @Test
+    fun markOverdueTransactions_excludesCreditCardChargesFromOverdueLifecycle() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val checking = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Primary Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 500_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+            val card = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card A",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = 0L,
+                    isInSpendingPool = false,
+                ),
+            ).getOrThrow()
+            val overdueDate = DateUtils.startOfDayMillis(DateUtils.nowMillis()) - (2L * DateUtils.MILLIS_IN_DAY)
+
+            val checkingCharge = fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = checking.id,
+                    amount = 50_00L,
+                    date = overdueDate,
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Checking overdue",
+                ),
+            ).getOrThrow()
+            val cardCharge = fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = card.id,
+                    amount = 75_00L,
+                    date = overdueDate,
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Card stays pending",
+                ),
+            ).getOrThrow()
+
+            val markedCount = fixture.markOverdueTransactionsUseCase(DateUtils.nowMillis())
+            assertEquals(1, markedCount)
+            assertEquals(
+                TransactionStatus.OVERDUE,
+                fixture.transactionRepository.getTransactionById(checkingCharge.id)?.status,
+            )
+            assertEquals(
+                TransactionStatus.PENDING,
+                fixture.transactionRepository.getTransactionById(cardCharge.id)?.status,
+            )
+
+            val pendingTransactions = fixture.transactionRepository.getPendingTransactions().first()
+            assertEquals(listOf(cardCharge.id), pendingTransactions.map { transaction -> transaction.id })
+
+            fixture.generateNotificationsUseCase.checkOverdueNotification(
+                overdueTransactions = fixture.transactionRepository.getOverdueTransactions().first(),
+                nowMillis = DateUtils.nowMillis(),
+            )
+            val overdueNotification = fixture.notificationRepository
+                .getActiveNotifications()
+                .first()
+                .single { notification -> notification.type == NotificationType.OVERDUE_TRANSACTIONS }
+            assertEquals(1, overdueNotification.overdueCount)
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
+    @Test
     fun creditCardReserve_tracksProjectedUnpaidBalanceAcrossLifecycle() = runBlocking {
         val fixture = createFixture()
 
