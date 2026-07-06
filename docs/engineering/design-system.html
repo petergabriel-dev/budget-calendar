@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Budget Calendar Design System</title>
+  <style>
+    :root {
+      --bg-dark: #000000;
+      --bg-muted: #27272A;
+      --bg-primary: #FFFFFF;
+      --bg-surface: #F4F4F5;
+      --text-primary: #000000;
+      --text-secondary: #71717A;
+      --text-tertiary: #A1A1AA;
+      --text-inverted: #FFFFFF;
+      --text-disabled: #D4D4D8;
+      --border-strong: #E4E4E7;
+      --border-subtle: #F4F4F5;
+      --color-success: #22C55E;
+      --color-success-bg: #DCFCE7;
+      --color-error: #EF4444;
+      --color-error-bg: #FEE2E2;
+      --color-warning: #F59E0B;
+      --color-warning-bg: #FEF3C7;
+      --color-info: #3B82F6;
+      --color-info-bg: #DBEAFE;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 40px 20px 72px; }
+    h1, h2, h3 { font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif; line-height: 1.05; margin: 0; }
+    h1 { font-size: clamp(40px, 7vw, 72px); letter-spacing: -3px; font-weight: 900; }
+    h2 { margin-top: 48px; font-size: 32px; letter-spacing: -0.5px; font-weight: 800; }
+    h3 { margin-top: 24px; font-size: 20px; font-weight: 800; }
+    p { max-width: 78ch; color: var(--text-secondary); }
+    a { color: var(--text-primary); font-weight: 700; }
+    code { background: var(--bg-surface); border-radius: 8px; padding: 2px 6px; }
+    pre { overflow-x: auto; background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 16px; padding: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+    th, td { border: 1px solid var(--border-strong); padding: 10px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--bg-surface); font-weight: 800; }
+    .hero { border-bottom: 1px solid var(--border-strong); padding-bottom: 28px; }
+    .meta { color: var(--text-tertiary); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 16px; }
+    .card { border: 1px solid var(--border-strong); border-radius: 20px; padding: 16px; background: var(--bg-primary); }
+    .swatch { height: 72px; border-radius: 16px; border: 1px solid var(--border-strong); margin-bottom: 12px; }
+    .chip { display: inline-block; padding: 4px 8px; border-radius: 999px; background: var(--bg-surface); color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+    .type-specimen { border-bottom: 1px solid var(--border-strong); padding: 16px 0; }
+    .display-large { font-family: Outfit, Inter, sans-serif; font-size: 72px; line-height: 72px; letter-spacing: -3px; font-weight: 900; }
+    .display-medium { font-family: Outfit, Inter, sans-serif; font-size: 56px; line-height: 56px; letter-spacing: -2px; font-weight: 900; }
+    .headline { font-family: Outfit, Inter, sans-serif; font-size: 40px; line-height: 44px; letter-spacing: -1px; font-weight: 800; }
+    .title { font-family: Outfit, Inter, sans-serif; font-size: 32px; line-height: 36px; letter-spacing: -0.5px; font-weight: 800; }
+    .section { font-family: Outfit, Inter, sans-serif; font-size: 24px; line-height: 28px; letter-spacing: -0.5px; font-weight: 800; }
+    .body-large { font-size: 16px; line-height: 22px; font-weight: 600; }
+    .body-medium { font-size: 14px; line-height: 20px; font-weight: 500; }
+    .body-small { font-size: 12px; line-height: 16px; font-weight: 400; }
+    .caption { font-family: Outfit, Inter, sans-serif; font-size: 11px; line-height: 14px; letter-spacing: 1px; font-weight: 600; text-transform: uppercase; }
+    .scale-row { display: grid; grid-template-columns: 120px 1fr 80px; align-items: center; gap: 12px; margin: 10px 0; }
+    .bar { height: 20px; background: var(--bg-dark); border-radius: 999px; }
+    .radius-box { width: 72px; height: 48px; border: 2px solid var(--bg-dark); background: var(--bg-surface); }
+    .shadow-box { width: 96px; height: 48px; border-radius: 12px; background: var(--bg-primary); border: 1px solid var(--border-strong); }
+    .muted { color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="meta">Engineering docs / Design system</div>
+    <h1>Budget Calendar Design System</h1>
+    <p>Current source of truth: Compose theme code plus this offline catalog. Old Pencil variables are reconciled here for retirement only.</p>
+    <p><strong>Code sources:</strong> <code>core/designsystem/theme/Color.kt</code>, <code>Typography.kt</code>, <code>Spacing.kt</code>, <code>Radius.kt</code>, <code>Shadow.kt</code>, <code>BudgetCalendarTheme.kt</code>, and <code>core/designsystem/component/*.kt</code>.</p>
+  </section>
+
+  <section>
+    <h2>Color tokens</h2>
+    <p>Rendered from <code>Color.kt</code>. Pencil vars from <code>specs/DESIGN_SYSTEM.pen</code> are mapped where they existed.</p>
+    <div class="grid">
+      <div class="card"><div class="swatch" style="background:#000000"></div><strong>bgDark / textPrimary</strong><br><span class="muted">#000000</span></div>
+      <div class="card"><div class="swatch" style="background:#27272A"></div><strong>bgMuted</strong><br><span class="muted">#27272A</span></div>
+      <div class="card"><div class="swatch" style="background:#FFFFFF"></div><strong>bgPrimary / textInverted</strong><br><span class="muted">#FFFFFF</span></div>
+      <div class="card"><div class="swatch" style="background:#F4F4F5"></div><strong>bgSurface / borderSubtle</strong><br><span class="muted">#F4F4F5</span></div>
+      <div class="card"><div class="swatch" style="background:#71717A"></div><strong>textSecondary</strong><br><span class="muted">#71717A</span></div>
+      <div class="card"><div class="swatch" style="background:#A1A1AA"></div><strong>textTertiary</strong><br><span class="muted">#A1A1AA</span></div>
+      <div class="card"><div class="swatch" style="background:#D4D4D8"></div><strong>textDisabled</strong><br><span class="muted">#D4D4D8</span></div>
+      <div class="card"><div class="swatch" style="background:#E4E4E7"></div><strong>borderStrong</strong><br><span class="muted">#E4E4E7</span></div>
+      <div class="card"><div class="swatch" style="background:#22C55E"></div><strong>colorSuccess</strong><br><span class="muted">#22C55E</span></div>
+      <div class="card"><div class="swatch" style="background:#EF4444"></div><strong>colorError</strong><br><span class="muted">#EF4444</span></div>
+      <div class="card"><div class="swatch" style="background:#F59E0B"></div><strong>colorWarning</strong><br><span class="muted">#F59E0B</span></div>
+      <div class="card"><div class="swatch" style="background:#3B82F6"></div><strong>colorInfo</strong><br><span class="muted">#3B82F6</span></div>
+    </div>
+
+    <h3>Plain-text color table</h3>
+    <pre>| Code token | Hex | Source | Pencil var |
+|---|---:|---|---|
+| bgDark | #000000 | Color.kt | --bg-dark |
+| bgMuted | #27272A | Color.kt | --bg-muted |
+| bgPrimary | #FFFFFF | Color.kt | --bg-primary |
+| bgSurface | #F4F4F5 | Color.kt | --bg-surface |
+| textPrimary | #000000 | Color.kt | --text-primary |
+| textSecondary | #71717A | Color.kt | --text-secondary |
+| textTertiary | #A1A1AA | Color.kt | --text-tertiary |
+| textInverted | #FFFFFF | Color.kt | --text-inverted |
+| textDisabled | #D4D4D8 | Color.kt | --text-disabled |
+| borderStrong | #E4E4E7 | Color.kt | --border-strong |
+| borderSubtle | #F4F4F5 | Color.kt | --border-subtle |
+| colorSuccess | #22C55E | Color.kt | n/a |
+| colorSuccessBg | #DCFCE7 | Color.kt | n/a |
+| colorError | #EF4444 | Color.kt | n/a |
+| colorErrorBg | #FEE2E2 | Color.kt | n/a |
+| colorWarning | #F59E0B | Color.kt | n/a |
+| colorWarningBg | #FEF3C7 | Color.kt | n/a |
+| colorInfo | #3B82F6 | Color.kt | n/a |
+| colorInfoBg | #DBEAFE | Color.kt | n/a |
+| borderAccent | #000000 | DESIGN_SYSTEM.pen only | --border-accent maps to bgDark/border use |
+| textMuted | #E4E4E7 | DESIGN_SYSTEM.pen only | --text-muted maps nearest borderStrong/textDisabled |
+| fontDisplay | Outfit | Typography.kt + DESIGN_SYSTEM.pen | --font-display |
+| fontBody | Inter | Typography.kt + DESIGN_SYSTEM.pen | --font-body |</pre>
+  </section>
+
+  <section>
+    <h2>Typography</h2>
+    <p>Type scale from <code>Typography.kt</code>. Display uses Outfit; body uses Inter; this page falls back to system fonts offline.</p>
+    <div class="type-specimen display-large">Display Large</div>
+    <div class="type-specimen display-medium">Display Medium</div>
+    <div class="type-specimen headline">Headline</div>
+    <div class="type-specimen title">Title</div>
+    <div class="type-specimen section">Section</div>
+    <div class="type-specimen body-large">Body Large — Inter Semibold 16/22</div>
+    <div class="type-specimen body-medium">Body Medium — Inter Medium 14/20</div>
+    <div class="type-specimen body-small">Body Small — Inter Regular 12/16</div>
+    <div class="type-specimen caption">Caption — Outfit Semibold 11/14</div>
+    <pre>| Token | Family | Weight | Size | Line | Letter spacing | Source |
+|---|---|---:|---:|---:|---:|---|
+| displayLarge | Outfit | Black | 72sp | 72sp | -3sp | Typography.kt |
+| displayMedium | Outfit | Black | 56sp | 56sp | -2sp | Typography.kt |
+| headline | Outfit | ExtraBold | 40sp | 44sp | -1sp | Typography.kt |
+| title | Outfit | ExtraBold | 32sp | 36sp | -0.5sp | Typography.kt |
+| section | Outfit | ExtraBold | 24sp | 28sp | -0.5sp | Typography.kt |
+| cardTitle | Outfit | ExtraBold | 20sp | 24sp | 0 | Typography.kt |
+| bodyLarge | Inter | SemiBold | 16sp | 22sp | 0 | Typography.kt |
+| bodyMedium | Inter | Medium | 14sp | 20sp | 0 | Typography.kt |
+| bodySmall | Inter | Normal | 12sp | 16sp | 0 | Typography.kt |
+| caption | Outfit | SemiBold | 11sp | 14sp | 1sp | Typography.kt |
+| calendarDay | Outfit | Black | 32sp | 32sp | 0 | Typography.kt |
+| calendarAmount | Outfit | SemiBold | 11sp | 14sp | 0 | Typography.kt |</pre>
+  </section>
+
+  <section>
+    <h2>Spacing, radius, shadow</h2>
+    <p>Scales from <code>Spacing.kt</code>, <code>Radius.kt</code>, and <code>Shadow.kt</code>.</p>
+    <h3>Spacing</h3>
+    <div class="scale-row"><code>spacing1</code><div class="bar" style="width:4px"></div><span>4dp</span></div>
+    <div class="scale-row"><code>spacing2</code><div class="bar" style="width:8px"></div><span>8dp</span></div>
+    <div class="scale-row"><code>spacing3</code><div class="bar" style="width:12px"></div><span>12dp</span></div>
+    <div class="scale-row"><code>spacing4</code><div class="bar" style="width:16px"></div><span>16dp</span></div>
+    <div class="scale-row"><code>spacing5</code><div class="bar" style="width:20px"></div><span>20dp</span></div>
+    <div class="scale-row"><code>spacing6</code><div class="bar" style="width:24px"></div><span>24dp</span></div>
+    <div class="scale-row"><code>spacing8</code><div class="bar" style="width:32px"></div><span>32dp</span></div>
+    <div class="scale-row"><code>spacing10</code><div class="bar" style="width:40px"></div><span>40dp</span></div>
+    <div class="scale-row"><code>spacing12</code><div class="bar" style="width:48px"></div><span>48dp</span></div>
+    <h3>Radius</h3>
+    <div class="grid">
+      <div class="card"><div class="radius-box" style="border-radius:4px"></div><code>sm</code> 4dp</div>
+      <div class="card"><div class="radius-box" style="border-radius:8px"></div><code>md</code> 8dp</div>
+      <div class="card"><div class="radius-box" style="border-radius:12px"></div><code>lg</code> 12dp</div>
+      <div class="card"><div class="radius-box" style="border-radius:16px"></div><code>xl</code> 16dp</div>
+      <div class="card"><div class="radius-box" style="border-radius:20px"></div><code>xxl</code> 20dp</div>
+      <div class="card"><div class="radius-box" style="border-radius:9999px"></div><code>full</code> 9999dp</div>
+    </div>
+    <h3>Shadow elevation</h3>
+    <div class="grid">
+      <div class="card"><div class="shadow-box" style="box-shadow:0 1px 2px rgba(0,0,0,.16)"></div><code>sm</code> 1dp</div>
+      <div class="card"><div class="shadow-box" style="box-shadow:0 4px 8px rgba(0,0,0,.16)"></div><code>md</code> 4dp</div>
+      <div class="card"><div class="shadow-box" style="box-shadow:0 10px 20px rgba(0,0,0,.16)"></div><code>lg</code> 10dp</div>
+      <div class="card"><div class="shadow-box" style="box-shadow:0 20px 40px rgba(0,0,0,.16)"></div><code>xl</code> 20dp</div>
+    </div>
+    <pre>| Scale | Token | Value | Source |
+|---|---|---:|---|
+| spacing | spacing1, spacing2, spacing3, spacing4, spacing5, spacing6, spacing8, spacing10, spacing12 | 4, 8, 12, 16, 20, 24, 32, 40, 48dp | Spacing.kt |
+| radius | sm, md, lg, xl, xxl, full | 4, 8, 12, 16, 20, 9999dp | Radius.kt |
+| shadow | sm, md, lg, xl | 1, 4, 10, 20dp | Shadow.kt |</pre>
+  </section>
+
+  <section>
+    <h2>Component catalog</h2>
+    <p>Catalog lists core components; it does not recreate app screens. Feature-level components live under <code>features/*/presentation/components</code>.</p>
+    <table>
+      <thead><tr><th>Name</th><th>Purpose</th><th>Code path</th><th>Key props</th></tr></thead>
+      <tbody>
+        <tr><td>AccountPickerModal</td><td>Account selection modal.</td><td><code>core/designsystem/component/AccountPickerModal.kt</code></td><td><code>isVisible</code>, <code>accounts</code>, <code>selectedAccountId</code>, <code>title</code>, <code>onAccountSelected</code>, <code>onDismiss</code></td></tr>
+        <tr><td>AccountType.toBadgeVariant</td><td>Maps account type to badge variant.</td><td><code>core/designsystem/component/AccountTypeBadgeVariant.kt</code></td><td><code>AccountType</code> receiver</td></tr>
+        <tr><td>BcBadge</td><td>Status badge.</td><td><code>core/designsystem/component/BcBadge.kt</code></td><td><code>text</code>, <code>variant</code>, <code>modifier</code></td></tr>
+        <tr><td>BcButton</td><td>Primary/outline/ghost/destructive button.</td><td><code>core/designsystem/component/BcButton.kt</code></td><td><code>text</code>, <code>onClick</code>, <code>variant</code>, <code>enabled</code>, <code>leadingIcon</code>, <code>trailingIcon</code></td></tr>
+        <tr><td>BcHeader</td><td>Screen header with optional action.</td><td><code>core/designsystem/component/BcHeader.kt</code></td><td><code>title</code>, <code>actionIcon</code>, <code>actionContentDescription</code>, <code>onActionClick</code>, <code>actionContent</code></td></tr>
+        <tr><td>BcSearchBar</td><td>Search text field.</td><td><code>core/designsystem/component/BcSearchBar.kt</code></td><td><code>query</code>, <code>onQueryChange</code>, <code>placeholder</code></td></tr>
+        <tr><td>BcSectionHeader</td><td>Section title with optional action text.</td><td><code>core/designsystem/component/BcSectionHeader.kt</code></td><td><code>title</code>, <code>actionText</code>, <code>onActionClick</code></td></tr>
+        <tr><td>BcSegmentedControl</td><td>Pill segmented selector.</td><td><code>core/designsystem/component/BcSegmentedControl.kt</code></td><td><code>options</code>, <code>selectedIndex</code>, <code>onSelectedIndexChange</code></td></tr>
+        <tr><td>BcTabBarPill</td><td>Bottom/tab pill navigation with optional add action.</td><td><code>core/designsystem/component/BcTabBarPill.kt</code></td><td><code>tabs: List&lt;BcTabItem&gt;</code>, <code>onAddClick</code></td></tr>
+        <tr><td>HeroNetWorth</td><td>Large formatted net-worth amount.</td><td><code>core/designsystem/component/HeroNetWorth.kt</code></td><td><code>amount</code></td></tr>
+        <tr><td>HeroSafeToSpend</td><td>Large safe-to-spend amount with optional daily context.</td><td><code>core/designsystem/component/HeroSafeToSpend.kt</code></td><td><code>amount</code>, <code>dailyRate</code>, <code>daysRemaining</code>, <code>isLastDayOfMonth</code>, <code>label</code></td></tr>
+        <tr><td>BcCheckboxRow</td><td>Label + checkbox row.</td><td><code>core/designsystem/component/form/BcCheckboxRow.kt</code></td><td><code>label</code>, <code>checked</code>, <code>onCheckedChange</code></td></tr>
+        <tr><td>BcInputGroup</td><td>Labeled text input with error/trailing slot.</td><td><code>core/designsystem/component/form/BcInputGroup.kt</code></td><td><code>label</code>, <code>value</code>, <code>onValueChange</code>, <code>placeholder</code>, <code>readOnly</code>, <code>trailingContent</code>, <code>isError</code>, <code>errorText</code>, <code>keyboardOptions</code></td></tr>
+        <tr><td>LargeAmountInput</td><td>Centered amount entry for money flows.</td><td><code>core/designsystem/component/form/LargeAmountInput.kt</code></td><td><code>label</code>, <code>amount</code>, <code>onAmountChange</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>
