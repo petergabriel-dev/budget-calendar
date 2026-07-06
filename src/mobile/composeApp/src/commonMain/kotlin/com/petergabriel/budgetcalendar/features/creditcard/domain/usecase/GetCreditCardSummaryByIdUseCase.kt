@@ -3,12 +3,14 @@ package com.petergabriel.budgetcalendar.features.creditcard.domain.usecase
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
 import com.petergabriel.budgetcalendar.features.accounts.domain.repository.IAccountRepository
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
+import com.petergabriel.budgetcalendar.features.creditcard.domain.repository.ICreditCardRepository
 import kotlin.math.abs
+import kotlin.math.max
 
 class GetCreditCardSummaryByIdUseCase(
     private val getCreditCardSettingsUseCase: GetCreditCardSettingsUseCase,
     private val accountRepository: IAccountRepository,
-    private val calculateReservedAmountUseCase: CalculateReservedAmountUseCase,
+    private val creditCardRepository: ICreditCardRepository,
 ) {
     suspend operator fun invoke(accountId: Long): Result<CreditCardSummary> {
         val settings = getCreditCardSettingsUseCase(accountId).getOrElse { throwable ->
@@ -21,7 +23,7 @@ class GetCreditCardSummaryByIdUseCase(
             return Result.failure(IllegalArgumentException("Account with id=$accountId is not a credit card"))
         }
 
-        val reservedAmount = calculateReservedAmountUseCase(accountId).getOrElse { throwable ->
+        val projected = creditCardRepository.getProjectedBalance(accountId).getOrElse { throwable ->
             return Result.failure(throwable)
         }
 
@@ -29,11 +31,11 @@ class GetCreditCardSummaryByIdUseCase(
             CreditCardSummary(
                 accountId = account.id,
                 accountName = account.name,
-                currentBalance = account.balance,
-                reservedAmount = reservedAmount,
+                currentBalance = projected,
+                reservedAmount = max(0L, -projected),
                 statementBalance = settings.statementBalance,
                 creditLimit = settings.creditLimit,
-                availableCredit = settings.creditLimit?.minus(abs(account.balance)),
+                availableCredit = settings.creditLimit?.minus(abs(projected)),
                 dueDate = settings.dueDate,
             ),
         )

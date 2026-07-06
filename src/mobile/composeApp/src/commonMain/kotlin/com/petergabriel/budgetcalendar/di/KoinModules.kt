@@ -31,7 +31,6 @@ import com.petergabriel.budgetcalendar.features.calendar.presentation.CalendarVi
 import com.petergabriel.budgetcalendar.features.creditcard.data.mapper.CreditCardMapper
 import com.petergabriel.budgetcalendar.features.creditcard.data.repository.CreditCardRepositoryImpl
 import com.petergabriel.budgetcalendar.features.creditcard.domain.repository.ICreditCardRepository
-import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.CalculateReservedAmountUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.CreateCreditCardSettingsUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCreditCardSettingsUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCreditCardSummariesUseCase
@@ -183,7 +182,6 @@ val useCaseModule = module {
     factory { CreateCreditCardSettingsUseCase(get(), get()) }
     factory { GetCreditCardSettingsUseCase(get(), get()) }
     factory { UpdateCreditCardSettingsUseCase(get()) }
-    factory { CalculateReservedAmountUseCase(get()) }
     factory { GetCreditCardSummariesUseCase(get(), get(), get()) }
     factory { GetCreditCardSummaryByIdUseCase(get(), get(), get()) }
     factory { MakeCreditCardPaymentUseCase(get(), get()) }

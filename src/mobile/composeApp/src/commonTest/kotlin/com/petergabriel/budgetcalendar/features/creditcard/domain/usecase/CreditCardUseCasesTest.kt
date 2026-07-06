@@ -24,7 +24,6 @@ class CreditCardUseCasesTest {
     private lateinit var createCreditCardSettingsUseCase: CreateCreditCardSettingsUseCase
     private lateinit var getCreditCardSettingsUseCase: GetCreditCardSettingsUseCase
     private lateinit var updateCreditCardSettingsUseCase: UpdateCreditCardSettingsUseCase
-    private lateinit var calculateReservedAmountUseCase: CalculateReservedAmountUseCase
     private lateinit var getCreditCardSummariesUseCase: GetCreditCardSummariesUseCase
     private lateinit var getCreditCardSummaryByIdUseCase: GetCreditCardSummaryByIdUseCase
     private lateinit var makeCreditCardPaymentUseCase: MakeCreditCardPaymentUseCase
@@ -41,16 +40,15 @@ class CreditCardUseCasesTest {
         createCreditCardSettingsUseCase = CreateCreditCardSettingsUseCase(accountRepository, creditCardRepository)
         getCreditCardSettingsUseCase = GetCreditCardSettingsUseCase(creditCardRepository, createCreditCardSettingsUseCase)
         updateCreditCardSettingsUseCase = UpdateCreditCardSettingsUseCase(creditCardRepository)
-        calculateReservedAmountUseCase = CalculateReservedAmountUseCase(creditCardRepository)
         getCreditCardSummariesUseCase = GetCreditCardSummariesUseCase(
             creditCardRepository,
             accountRepository,
-            calculateReservedAmountUseCase,
+            transactionRepository,
         )
         getCreditCardSummaryByIdUseCase = GetCreditCardSummaryByIdUseCase(
             getCreditCardSettingsUseCase,
             accountRepository,
-            calculateReservedAmountUseCase,
+            creditCardRepository,
         )
         makeCreditCardPaymentUseCase = MakeCreditCardPaymentUseCase(
             accountRepository,
@@ -165,50 +163,13 @@ class CreditCardUseCasesTest {
     }
 
     @Test
-    fun calculateReservedAmount_noProjectedOwedBalance_returnsZero() = runBlocking {
-        val card = createAccount("CC A", AccountType.CREDIT_CARD, -1_200L, isInSpendingPool = false)
-        createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
-
-        val result = calculateReservedAmountUseCase(card.id)
-
-        assertTrue(result.isSuccess)
-        assertEquals(0L, result.getOrThrow())
-    }
-
-    @Test
-    fun calculateReservedAmount_projectedOwedBalance_returnsReservedAmount() = runBlocking {
-        val card = createAccount("CC B", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
-        createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
-        creditCardRepository.setReservedAmount(card.id, 2_750L)
-
-        val result = calculateReservedAmountUseCase(card.id)
-
-        assertTrue(result.isSuccess)
-        assertEquals(2_750L, result.getOrThrow())
-    }
-
-    @Test
-    fun calculateReservedAmount_confirmedAndPendingDebtCancelledExcluded_returnsProjectedOwed() = runBlocking {
-        val card = createAccount("CC C", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
-        createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
-
-        // Fake repository stores the DB-projected owed balance: confirmed + pending debt, cancelled excluded.
-        creditCardRepository.setReservedAmount(card.id, 1_900L)
-
-        val result = calculateReservedAmountUseCase(card.id)
-
-        assertTrue(result.isSuccess)
-        assertEquals(1_900L, result.getOrThrow())
-    }
-
-    @Test
     fun getCreditCardSummaries_multipleCards_producesIndependentSummaries() = runBlocking {
         val visa = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L, isInSpendingPool = false)
         val amex = createAccount("Amex", AccountType.CREDIT_CARD, -5_000L, isInSpendingPool = false)
         createCreditCardSettingsUseCase(accountId = visa.id, creditLimit = 12_000L).getOrThrow()
         createCreditCardSettingsUseCase(accountId = amex.id, creditLimit = 20_000L).getOrThrow()
-        creditCardRepository.setReservedAmount(visa.id, 800L)
-        creditCardRepository.setReservedAmount(amex.id, 1_900L)
+        creditCardRepository.setProjectedBalance(visa.id, -800L)
+        creditCardRepository.setProjectedBalance(amex.id, -1_900L)
 
         val summaries = getCreditCardSummariesUseCase().first()
 
@@ -225,6 +186,8 @@ class CreditCardUseCasesTest {
         val unlimited = createAccount("Unlimited", AccountType.CREDIT_CARD, -1_500L, isInSpendingPool = false)
         createCreditCardSettingsUseCase(accountId = limited.id, creditLimit = 10_000L).getOrThrow()
         createCreditCardSettingsUseCase(accountId = unlimited.id, creditLimit = null).getOrThrow()
+        creditCardRepository.setProjectedBalance(limited.id, -3_500L)
+        creditCardRepository.setProjectedBalance(unlimited.id, -1_500L)
 
         val summaries = getCreditCardSummariesUseCase().first()
         val limitedSummary = summaries.first { summary -> summary.accountId == limited.id }
@@ -238,7 +201,7 @@ class CreditCardUseCasesTest {
     fun getCreditCardSummaryById_returnsSingleSummaryWithReservedAmount() = runBlocking {
         val card = createAccount("Single", AccountType.CREDIT_CARD, -2_000L, isInSpendingPool = false)
         createCreditCardSettingsUseCase(accountId = card.id, creditLimit = 6_000L).getOrThrow()
-        creditCardRepository.setReservedAmount(card.id, 750L)
+        creditCardRepository.setProjectedBalance(card.id, -750L)
 
         val result = getCreditCardSummaryByIdUseCase(card.id)
 
@@ -246,7 +209,7 @@ class CreditCardUseCasesTest {
         val summary = result.getOrThrow()
         assertEquals(card.id, summary.accountId)
         assertEquals(750L, summary.reservedAmount)
-        assertEquals(4_000L, summary.availableCredit)
+        assertEquals(5_250L, summary.availableCredit)
     }
 
     @Test
@@ -320,7 +283,7 @@ class CreditCardUseCasesTest {
         val source = createAccount("Checking", AccountType.CHECKING, 30_000L, isInSpendingPool = true)
         val destination = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L, isInSpendingPool = false)
         createCreditCardSettingsUseCase(accountId = destination.id).getOrThrow()
-        creditCardRepository.setReservedAmount(destination.id, 700L)
+        creditCardRepository.setProjectedBalance(destination.id, -700L)
 
         val result = makeCreditCardPaymentUseCase(
             sourceAccountId = source.id,

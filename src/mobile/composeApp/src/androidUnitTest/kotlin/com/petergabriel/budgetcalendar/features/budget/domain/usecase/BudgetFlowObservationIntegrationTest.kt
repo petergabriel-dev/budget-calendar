@@ -549,19 +549,19 @@ class BudgetFlowObservationIntegrationTest {
             assertEquals(0L, reservations[overpaidCard.id])
             assertEquals(50_00L, fixture.database.budgetQueries.getCreditCardReservedAmount().executeAsOne())
             assertEquals(
-                50_00L,
+                -50_00L,
                 fixture.database.credit_card_settingsQueries
-                    .getCreditCardReservedAmount(cardWithDebt.id)
+                    .getCreditCardProjectedBalance(cardWithDebt.id)
                     .executeAsOne(),
             )
 
-            val settingsReservations = fixture.database.credit_card_settingsQueries
-                .getAllCreditCardReservedAmounts { accountId, reserved -> accountId to reserved }
+            val projectedBalances = fixture.database.credit_card_settingsQueries
+                .getAllCreditCardProjectedBalances { accountId, projectedBalance -> accountId to projectedBalance }
                 .executeAsList()
                 .associate { row -> row.first to row.second }
-            assertEquals(0L, settingsReservations[card.id])
-            assertEquals(50_00L, settingsReservations[cardWithDebt.id])
-            assertEquals(0L, settingsReservations[overpaidCard.id])
+            assertEquals(0L, projectedBalances[card.id])
+            assertEquals(-50_00L, projectedBalances[cardWithDebt.id])
+            assertEquals(10_00L, projectedBalances[overpaidCard.id])
         } finally {
             fixture.driver.close()
         }

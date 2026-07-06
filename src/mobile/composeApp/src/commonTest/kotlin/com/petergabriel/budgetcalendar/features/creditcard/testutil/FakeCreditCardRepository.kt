@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class FakeCreditCardRepository : ICreditCardRepository {
     private val settings = mutableListOf<CreditCardSettings>()
     private val settingsFlow = MutableStateFlow<List<CreditCardSettings>>(emptyList())
-    private val reservedAmounts = mutableMapOf<Long, Long>()
+    private val projectedBalances = mutableMapOf<Long, Long>()
     private var nextId = 1L
 
     override fun getAllSettings(): Flow<List<CreditCardSettings>> = settingsFlow
@@ -69,21 +69,21 @@ class FakeCreditCardRepository : ICreditCardRepository {
 
     override suspend fun delete(accountId: Long): Result<Unit> {
         settings.removeAll { item -> item.accountId == accountId }
-        reservedAmounts.remove(accountId)
+        projectedBalances.remove(accountId)
         emitSettings()
         return Result.success(Unit)
     }
 
-    override suspend fun getReservedAmount(accountId: Long): Result<Long> {
-        return Result.success(reservedAmounts[accountId] ?: 0L)
+    override suspend fun getProjectedBalance(accountId: Long): Result<Long> {
+        return Result.success(projectedBalances[accountId] ?: 0L)
     }
 
-    override suspend fun getAllReservedAmounts(): Result<Map<Long, Long>> {
-        return Result.success(reservedAmounts.toMap())
+    override suspend fun getAllProjectedBalances(): Result<Map<Long, Long>> {
+        return Result.success(projectedBalances.toMap())
     }
 
-    fun setReservedAmount(accountId: Long, amount: Long) {
-        reservedAmounts[accountId] = amount
+    fun setProjectedBalance(accountId: Long, amount: Long) {
+        projectedBalances[accountId] = amount
     }
 
     fun seedSettings(vararg seededSettings: CreditCardSettings) {

@@ -4,7 +4,6 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountTyp
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAccountRequest
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountsUseCase
 import com.petergabriel.budgetcalendar.features.accounts.testutil.FakeAccountRepository
-import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.CalculateReservedAmountUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCreditCardSummariesUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.testutil.FakeCreditCardRepository
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.CreateTransactionUseCase
@@ -57,7 +56,7 @@ class TransactionFormViewModelTest {
             statementBalance = null,
             dueDate = null,
         ).getOrThrow()
-        creditCardRepository.setReservedAmount(card.id, 2_500L)
+        creditCardRepository.setProjectedBalance(card.id, -2_500L)
 
         val viewModel = TransactionFormViewModel(
             createTransactionUseCase = CreateTransactionUseCase(transactionRepository),
@@ -67,7 +66,7 @@ class TransactionFormViewModelTest {
             getCreditCardSummariesUseCase = GetCreditCardSummariesUseCase(
                 creditCardRepository = creditCardRepository,
                 accountRepository = accountRepository,
-                calculateReservedAmountUseCase = CalculateReservedAmountUseCase(creditCardRepository),
+                transactionRepository = transactionRepository,
             ),
         )
         advanceUntilIdle()
