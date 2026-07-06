@@ -259,6 +259,156 @@ class BudgetFlowObservationIntegrationTest {
         }
     }
 
+    @Test
+    fun creditCardReserve_tracksProjectedUnpaidBalanceAcrossLifecycle() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val checking = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Primary Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 1_000_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+            val card = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card A",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = 0L,
+                    isInSpendingPool = false,
+                ),
+            ).getOrThrow()
+
+            val charge = fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = card.id,
+                    amount = 120_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Card charge",
+                ),
+            ).getOrThrow()
+
+            val pendingSummary = withTimeout(5_000) {
+                fixture.calculateSafeToSpendUseCase().first { summary ->
+                    summary.creditCardReserved == 120_00L && summary.availableToSpend == 880_00L
+                }
+            }
+            assertEquals(120_00L, pendingSummary.creditCardReserved)
+            assertEquals(120_00L, fixture.database.budgetQueries.getCreditCardReservedAmount().executeAsOne())
+
+            val confirmResult = fixture.updateTransactionStatusUseCase(
+                charge.id,
+                UpdateTransactionStatusRequest(status = TransactionStatus.CONFIRMED),
+            )
+            assertTrue(confirmResult.isSuccess)
+
+            val confirmedSummary = withTimeout(5_000) {
+                fixture.calculateSafeToSpendUseCase().first { summary ->
+                    summary.creditCardReserved == 120_00L && summary.availableToSpend == 880_00L
+                }
+            }
+            assertEquals(120_00L, confirmedSummary.creditCardReserved)
+            assertEquals(-120_00L, fixture.accountRepository.getAccountById(card.id)?.balance)
+
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = checking.id,
+                    destinationAccountId = card.id,
+                    amount = 120_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.TRANSFER,
+                    status = TransactionStatus.CONFIRMED,
+                    description = "Card payment",
+                ),
+            ).getOrThrow()
+
+            val paidSummary = withTimeout(5_000) {
+                fixture.calculateSafeToSpendUseCase().first { summary ->
+                    summary.creditCardReserved == 0L && summary.availableToSpend == 880_00L
+                }
+            }
+            assertEquals(0L, paidSummary.creditCardReserved)
+            assertEquals(0L, fixture.accountRepository.getAccountById(card.id)?.balance)
+
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = card.id,
+                    amount = 999_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.CANCELLED,
+                    description = "Cancelled card charge",
+                ),
+            ).getOrThrow()
+            val cardWithDebt = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card B",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = 0L,
+                    isInSpendingPool = false,
+                ),
+            ).getOrThrow()
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = cardWithDebt.id,
+                    amount = 50_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Second card charge",
+                ),
+            ).getOrThrow()
+            val overpaidCard = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card C",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = -30_00L,
+                    isInSpendingPool = false,
+                ),
+            ).getOrThrow()
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = checking.id,
+                    destinationAccountId = overpaidCard.id,
+                    amount = 40_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.TRANSFER,
+                    status = TransactionStatus.CONFIRMED,
+                    description = "Overpay card",
+                ),
+            ).getOrThrow()
+
+            val reservations = fixture.database.budgetQueries
+                .getCreditCardReservations()
+                .executeAsList()
+                .associate { reservation -> reservation.account_id to reservation.reserved_amount }
+            assertEquals(0L, reservations[card.id])
+            assertEquals(50_00L, reservations[cardWithDebt.id])
+            assertEquals(0L, reservations[overpaidCard.id])
+            assertEquals(50_00L, fixture.database.budgetQueries.getCreditCardReservedAmount().executeAsOne())
+            assertEquals(
+                50_00L,
+                fixture.database.credit_card_settingsQueries
+                    .getCreditCardReservedAmount(cardWithDebt.id)
+                    .executeAsOne(),
+            )
+
+            val settingsReservations = fixture.database.credit_card_settingsQueries
+                .getAllCreditCardReservedAmounts { accountId, reserved -> accountId to reserved }
+                .executeAsList()
+                .associate { row -> row.first to row.second }
+            assertEquals(0L, settingsReservations[card.id])
+            assertEquals(50_00L, settingsReservations[cardWithDebt.id])
+            assertEquals(0L, settingsReservations[overpaidCard.id])
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
     private fun createFixture(): Fixture {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         BudgetCalendarDatabase.Schema.create(driver)
@@ -273,6 +423,7 @@ class BudgetFlowObservationIntegrationTest {
 
         return Fixture(
             driver = driver,
+            database = database,
             transactionRepository = transactionRepository,
             notificationRepository = notificationRepository,
             accountRepository = accountRepository,
@@ -291,6 +442,7 @@ class BudgetFlowObservationIntegrationTest {
 
     private data class Fixture(
         val driver: JdbcSqliteDriver,
+        val database: BudgetCalendarDatabase,
         val transactionRepository: TransactionRepositoryImpl,
         val notificationRepository: NotificationRepositoryImpl,
         val accountRepository: AccountRepositoryImpl,

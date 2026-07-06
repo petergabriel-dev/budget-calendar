@@ -22,23 +22,37 @@ WHERE a.is_in_spending_pool = 1
 ORDER BY t.date ASC;
 
 getCreditCardReservedAmount:
-SELECT CAST(COALESCE(SUM(t.amount), 0) AS INTEGER)
-FROM transactions t
-JOIN accounts a ON t.account_id = a.id
-WHERE a.type = 'credit_card'
-  AND t.type = 'expense'
-  AND t.status IN ('pending', 'overdue')
-;
+SELECT CAST(COALESCE(SUM(reserved_amount), 0) AS INTEGER)
+FROM (
+  SELECT
+    CASE
+      WHEN a.initial_balance + COALESCE(SUM(t.signed_amount), 0) < 0
+        THEN -(a.initial_balance + COALESCE(SUM(t.signed_amount), 0))
+      ELSE 0
+    END AS reserved_amount
+  FROM accounts a
+  LEFT JOIN transactions t
+    ON t.account_id = a.id
+    AND t.status != 'cancelled'
+  WHERE a.type = 'credit_card'
+  GROUP BY a.id, a.initial_balance
+);
 
 getCreditCardReservations:
 SELECT
   a.id AS account_id,
   a.name AS account_name,
-  CAST(COALESCE(SUM(t.amount), 0) AS INTEGER) AS reserved_amount
+  CAST(
+    CASE
+      WHEN a.initial_balance + COALESCE(SUM(t.signed_amount), 0) < 0
+        THEN -(a.initial_balance + COALESCE(SUM(t.signed_amount), 0))
+      ELSE 0
+    END AS INTEGER
+  ) AS reserved_amount
 FROM accounts a
-LEFT JOIN transactions t ON t.account_id = a.id
-  AND t.type = 'expense'
-  AND t.status IN ('pending', 'overdue')
+LEFT JOIN transactions t
+  ON t.account_id = a.id
+  AND t.status != 'cancelled'
 WHERE a.type = 'credit_card'
-GROUP BY a.id, a.name
+GROUP BY a.id, a.name, a.initial_balance
 ORDER BY a.name ASC;

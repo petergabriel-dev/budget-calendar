@@ -25,18 +25,34 @@ DELETE FROM credit_card_settings
 WHERE account_id = ?;
 
 getCreditCardReservedAmount:
-SELECT CAST(COALESCE(SUM(amount), 0) AS INTEGER)
-FROM transactions
-WHERE account_id = ?
-  AND type = 'expense'
-  AND status IN ('pending', 'overdue')
- ;
+SELECT CAST(
+  CASE
+    WHEN a.initial_balance + COALESCE(SUM(t.signed_amount), 0) < 0
+      THEN -(a.initial_balance + COALESCE(SUM(t.signed_amount), 0))
+    ELSE 0
+  END AS INTEGER
+)
+FROM accounts a
+LEFT JOIN transactions t
+  ON t.account_id = a.id
+  AND t.status != 'cancelled'
+WHERE a.id = ?
+  AND a.type = 'credit_card'
+GROUP BY a.id, a.initial_balance;
 
 getAllCreditCardReservedAmounts:
-SELECT t.account_id, CAST(COALESCE(SUM(t.amount), 0) AS INTEGER) AS reserved
-FROM transactions t
-JOIN accounts a ON t.account_id = a.id
+SELECT
+  a.id AS account_id,
+  CAST(
+    CASE
+      WHEN a.initial_balance + COALESCE(SUM(t.signed_amount), 0) < 0
+        THEN -(a.initial_balance + COALESCE(SUM(t.signed_amount), 0))
+      ELSE 0
+    END AS INTEGER
+  ) AS reserved
+FROM accounts a
+LEFT JOIN transactions t
+  ON t.account_id = a.id
+  AND t.status != 'cancelled'
 WHERE a.type = 'credit_card'
-  AND t.type = 'expense'
-  AND t.status IN ('pending', 'overdue')
-GROUP BY t.account_id;
+GROUP BY a.id, a.initial_balance;
