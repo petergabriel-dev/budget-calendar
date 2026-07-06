@@ -11,6 +11,7 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountTyp
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAccountRequest
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.UpdateAccountRequest
 import com.petergabriel.budgetcalendar.features.accounts.domain.repository.IAccountRepository
+import com.petergabriel.budgetcalendar.features.creditcard.domain.repository.ICreditCardRepository
 import com.petergabriel.budgetcalendar.features.transactions.domain.repository.ITransactionRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -19,13 +20,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
-import kotlin.math.abs
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountRepositoryImpl(
     private val database: BudgetCalendarDatabase,
     private val accountMapper: AccountMapper,
     private val transactionRepository: ITransactionRepository,
+    private val creditCardRepository: ICreditCardRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : IAccountRepository {
     private val transactionRefreshTrigger = transactionRepository.transactionChangedTrigger.onStart { emit(Unit) }
@@ -122,9 +123,9 @@ class AccountRepositoryImpl(
 
     override suspend fun calculateNetWorth(): Long {
         val accounts = database.accountsQueries.getAllAccountsWithComputedBalance(::toEntity).executeAsList().map(accountMapper::toDomain)
-        val assets = accounts.filter { it.type != AccountType.CREDIT_CARD }.sumOf { it.balance }
-        val liabilities = accounts.filter { it.type == AccountType.CREDIT_CARD }.sumOf { abs(it.balance) }
-        return assets - liabilities
+        val nonCardAssets = accounts.filter { it.type != AccountType.CREDIT_CARD }.sumOf { it.balance }
+        val projectedCardBalances = creditCardRepository.getAllProjectedBalances().getOrThrow().values.sum()
+        return nonCardAssets + projectedCardBalances
     }
 
     private fun toEntity(

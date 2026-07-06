@@ -11,6 +11,8 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.CreateAc
 import com.petergabriel.budgetcalendar.features.budget.data.mapper.BudgetMapper
 import com.petergabriel.budgetcalendar.features.budget.data.repository.BudgetRepositoryImpl
 import com.petergabriel.budgetcalendar.features.budget.data.repository.MonthlyRolloverRepositoryImpl
+import com.petergabriel.budgetcalendar.features.creditcard.data.mapper.CreditCardMapper
+import com.petergabriel.budgetcalendar.features.creditcard.data.repository.CreditCardRepositoryImpl
 import com.petergabriel.budgetcalendar.features.notifications.data.mapper.NotificationMapper
 import com.petergabriel.budgetcalendar.features.notifications.data.repository.NotificationRepositoryImpl
 import com.petergabriel.budgetcalendar.features.notifications.domain.model.NotificationType
@@ -34,6 +36,54 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BudgetFlowObservationIntegrationTest {
+
+    @Test
+    fun calculateNetWorth_includesPendingCardChargeAsSignedProjectedDebt() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val checking = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 100_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+            val card = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = 0L,
+                    isInSpendingPool = false,
+                ),
+            ).getOrThrow()
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = card.id,
+                    amount = 30_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Pending card charge",
+                ),
+            ).getOrThrow()
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = checking.id,
+                    amount = 20_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Pending pool expense",
+                ),
+            ).getOrThrow()
+
+            assertEquals(70_00L, fixture.accountRepository.calculateNetWorth())
+        } finally {
+            fixture.driver.close()
+        }
+    }
 
     @Test
     fun calculateSafeToSpend_reemitsAfterCreatingPendingExpense() = runBlocking {
@@ -573,7 +623,8 @@ class BudgetFlowObservationIntegrationTest {
         val database = BudgetCalendarDatabase(driver)
 
         val transactionRepository = TransactionRepositoryImpl(database, TransactionMapper())
-        val accountRepository = AccountRepositoryImpl(database, AccountMapper(), transactionRepository)
+        val creditCardRepository = CreditCardRepositoryImpl(database, CreditCardMapper())
+        val accountRepository = AccountRepositoryImpl(database, AccountMapper(), transactionRepository, creditCardRepository)
         val budgetMapper = BudgetMapper()
         val budgetRepository = BudgetRepositoryImpl(database, budgetMapper, transactionRepository)
         val monthlyRolloverRepository = MonthlyRolloverRepositoryImpl(database, budgetMapper)
