@@ -165,7 +165,7 @@ class CreditCardUseCasesTest {
     }
 
     @Test
-    fun calculateReservedAmount_noPendingExpenses_returnsZero() = runBlocking {
+    fun calculateReservedAmount_noProjectedOwedBalance_returnsZero() = runBlocking {
         val card = createAccount("CC A", AccountType.CREDIT_CARD, -1_200L, isInSpendingPool = false)
         createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
 
@@ -176,7 +176,7 @@ class CreditCardUseCasesTest {
     }
 
     @Test
-    fun calculateReservedAmount_multiplePendingOverdueExpenses_returnsSummedAmount() = runBlocking {
+    fun calculateReservedAmount_projectedOwedBalance_returnsReservedAmount() = runBlocking {
         val card = createAccount("CC B", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
         createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
         creditCardRepository.setReservedAmount(card.id, 2_750L)
@@ -188,11 +188,11 @@ class CreditCardUseCasesTest {
     }
 
     @Test
-    fun calculateReservedAmount_confirmedCancelledExpensesExcluded_returnsPendingOverdueOnly() = runBlocking {
+    fun calculateReservedAmount_confirmedAndPendingDebtCancelledExcluded_returnsProjectedOwed() = runBlocking {
         val card = createAccount("CC C", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
         createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
 
-        // Fake repository stores pre-aggregated reserved amount from pending+overdue expenses only.
+        // Fake repository stores the DB-projected owed balance: confirmed + pending debt, cancelled excluded.
         creditCardRepository.setReservedAmount(card.id, 1_900L)
 
         val result = calculateReservedAmountUseCase(card.id)
