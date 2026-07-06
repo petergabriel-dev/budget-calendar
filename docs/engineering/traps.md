@@ -23,6 +23,13 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: keep STS formula as pool balance minus pending/overdue/CC reserved; do not subtract `confirmedSpending` again.
 - Current guard: `availableToSpend` excludes `confirmedSpending`, while still reporting it in summary: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:40-63`.
 
+## STS confirmedSpending tests must use current-month dates
+
+- Symptom: `calculateSafeToSpend_confirmedExpenseDoesNotIncreaseSTS` expected `confirmedSpending` but got 0 after calendar month changed.
+- Root cause: `CalculateSafeToSpendUseCase` samples wall-clock `DateUtils.currentMonthBounds()` and reports confirmed spending only for EXPENSE rows inside that current month.
+- Resolution: date STS confirmed-spending test transactions from `DateUtils.currentMonthBounds().first`, not hardcoded absolute dates that silently rot across months.
+- Current guard: filter and summary behavior live in `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:18-63`; test uses current-month bounds in `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetUseCasesTest.kt`.
+
 ## DatePicker one-day timezone drift
 
 - Symptom: Compose DatePicker can highlight/save adjacent day when local day-start millis are passed as UTC millis.
