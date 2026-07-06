@@ -44,8 +44,11 @@ import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcCheckb
 import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcInputGroup
 import com.petergabriel.budgetcalendar.core.designsystem.component.form.LargeAmountInput
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
+import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.core.utils.MoneyInputUtils
+import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
+import com.petergabriel.budgetcalendar.features.creditcard.domain.model.calculateCreditCardChargeImpact
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.CreateTransactionRequest
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
@@ -146,7 +149,22 @@ fun TransactionFormSheet(
         }
     }
     val parsedAmount = MoneyInputUtils.parseToCents(amountInput)
+    val selectedCreditCardSummary = uiState.creditCardSummaries.firstOrNull { summary -> summary.accountId == selectedAccountId }
+    val isCreditCardExpense = selectedType == TransactionType.EXPENSE && selectedAccount?.type == AccountType.CREDIT_CARD
+    val cardChargeImpact = if (isCreditCardExpense && parsedAmount != null && parsedAmount > 0L && selectedCreditCardSummary != null) {
+        calculateCreditCardChargeImpact(
+            currentBalance = selectedCreditCardSummary.currentBalance,
+            reservedAmount = selectedCreditCardSummary.reservedAmount,
+            availableCredit = selectedCreditCardSummary.availableCredit,
+            amount = parsedAmount,
+        )
+    } else {
+        null
+    }
+    val exceedsCredit = cardChargeImpact?.exceedsCredit == true
+    val overLimitMessage = "This charge exceeds available credit. Raise the limit in card settings before saving."
     val showInsufficientFunds = (selectedType == TransactionType.EXPENSE || selectedType == TransactionType.TRANSFER) &&
+        selectedAccount?.type != AccountType.CREDIT_CARD &&
         parsedAmount != null &&
         selectedAccount != null &&
         parsedAmount > selectedAccount.balance
@@ -400,6 +418,40 @@ fun TransactionFormSheet(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+
+                if (isCreditCardExpense && selectedCreditCardSummary != null && cardChargeImpact != null) {
+                    selectedCreditCardSummary.availableCredit?.let { availableCredit ->
+                        Text(
+                            text = "Available credit: ${CurrencyUtils.formatCents(availableCredit)}",
+                            color = colors.textSecondary,
+                            style = typography.bodySmall,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+
+                    Text(
+                        text = "Balance after charge: ${CurrencyUtils.formatCents(cardChargeImpact.owedAfter)}",
+                        color = colors.textSecondary,
+                        style = typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    Text(
+                        text = "Reserves ${CurrencyUtils.formatCents(cardChargeImpact.reserveDelta)} from Safe to Spend.",
+                        color = colors.colorWarning,
+                        style = typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    if (exceedsCredit) {
+                        Text(
+                            text = overLimitMessage,
+                            color = colors.colorError,
+                            style = typography.bodySmall,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
             }
 
             Column(
@@ -434,6 +486,10 @@ fun TransactionFormSheet(
                             errors["category"] = "Category is required"
                         }
 
+                        if (exceedsCredit) {
+                            errors["creditLimit"] = overLimitMessage
+                        }
+
                         localErrors.clear()
                         localErrors.putAll(errors)
                         if (errors.isNotEmpty()) {
@@ -455,7 +511,7 @@ fun TransactionFormSheet(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     variant = ButtonVariant.Primary,
-                    enabled = !uiState.isSubmitting,
+                    enabled = !uiState.isSubmitting && !exceedsCredit,
                 )
 
                 if (initialData != null && onDelete != null) {
