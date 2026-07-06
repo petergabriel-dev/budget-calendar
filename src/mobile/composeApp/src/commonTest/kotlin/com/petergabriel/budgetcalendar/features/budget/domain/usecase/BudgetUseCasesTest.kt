@@ -1,5 +1,6 @@
 package com.petergabriel.budgetcalendar.features.budget.domain.usecase
 
+import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.budget.domain.model.CreditCardReservation
 import com.petergabriel.budgetcalendar.features.budget.testutil.FakeBudgetRepository
 import com.petergabriel.budgetcalendar.features.budget.testutil.FakeMonthlyRolloverRepository
@@ -302,6 +303,8 @@ class BudgetUseCasesTest {
      */
     @Test
     fun calculateSafeToSpend_confirmedExpenseDoesNotIncreaseSTS() = runBlocking {
+        val inMonth = DateUtils.currentMonthBounds().first
+
         // Step 1: Initial state
         budgetRepository.setTotalSpendingPoolBalance(500_00L)  // $500.00
         budgetRepository.setPendingReservations(0L)
@@ -327,7 +330,7 @@ class BudgetUseCasesTest {
             CreateTransactionRequest(
                 accountId = 1L,
                 amount = 75_00L,
-                date = localDateMillis(2026, 4, 1),
+                date = inMonth,
                 type = TransactionType.EXPENSE,
                 status = TransactionStatus.CONFIRMED,
             ),
@@ -353,7 +356,7 @@ class BudgetUseCasesTest {
             CreateTransactionRequest(
                 accountId = 1L,
                 amount = 50_00L,
-                date = localDateMillis(2026, 4, 1),
+                date = inMonth,
                 type = TransactionType.EXPENSE,
                 status = TransactionStatus.CONFIRMED,
             ),
