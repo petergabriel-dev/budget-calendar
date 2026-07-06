@@ -1,8 +1,8 @@
 # Codebase Map — budget-calendar
 
-Last regenerated: 2026-05-22T06:41:57.311Z
+Last regenerated: 2026-05-24T05:12:14.732Z
 Languages: none detected
-Files indexed: 0 included / 660 visited (max 5000)
+Files indexed: 0 included / 650 visited (max 5000)
 
 ## Top-level structure
 

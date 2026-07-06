@@ -2,3 +2,6 @@
 /.cocoindex_code/
 
 /key-store-path
+.pi/memory/index.db
+.pi/memory/bridge/
+docs/engineering/manifest.json
