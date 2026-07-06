@@ -34,7 +34,7 @@ Source of truth: current code under package `com.petergabriel.budgetcalendar`.
 
 ## Design system
 
-- Shared Compose design tokens come from `BudgetCalendarTheme`: colors, typography, spacing, radius, shadows: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/theme/BudgetCalendarTheme.kt:14-37`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/theme/BudgetCalendarTheme.kt:89-114`.
+- Design-token reference is `docs/engineering/design-system.html`; implementation source is `BudgetCalendarTheme`: colors, typography, spacing, radius, shadows: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/theme/BudgetCalendarTheme.kt:14-37`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/theme/BudgetCalendarTheme.kt:89-114`.
 - Reusable components use `Bc*` names, e.g. `BcButton`, `BcBadge`, `BcHeader`, `BcTabBarPill`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcButton.kt:36-70`.
 
 ## State and errors

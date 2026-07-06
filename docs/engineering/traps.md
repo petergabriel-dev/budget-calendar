@@ -1,6 +1,6 @@
 # Traps
 
-Current-code guards for bugs this project has already hit. Specs are not authority; verify code first.
+Current-code guards for bugs this project has already hit. `docs/engineering/` and code are authoritative.
 
 ## Mutable balance drift
 
@@ -44,9 +44,9 @@ Current-code guards for bugs this project has already hit. Specs are not authori
 - Resolution: track `editingTransaction`, pass it into form, and route save/delete to replace/delete. Fix plan: `docs/prompts/17_bugfix_overdue-transaction-cannot-be-resolved.md:15-23`.
 - Current guard: Home stores editing state and row click sets it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:115-125`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:264-273`; form receives `initialData` and replace/delete callbacks: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:346-369`.
 
-## Old specs drift from code
+## Retired spec files are gone
 
-- Symptom: old spec text claims wrong package, per-platform UI, or SwiftUI feature screens.
-- Root cause: implementation changed to package `com.petergabriel.budgetcalendar` and shared Compose UI, but old spec files were not updated.
-- Resolution: treat code and engineering docs as current truth; use specs only as archaeology.
-- Current guard: actual package/entrypoints are Compose `App()` from Android and iOS: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:1`, `src/mobile/composeApp/src/androidMain/kotlin/com/petergabriel/budgetcalendar/MainActivity.kt:18-26`, `src/mobile/composeApp/src/iosMain/kotlin/com/petergabriel/budgetcalendar/MainViewController.kt:7-12`; drift examples are `specs/ARCHITECTURE.md:170-189` and `specs/DEPENDENCIES.md:242-249`.
+- Symptom: old references to removed spec files may appear in historical prompts or bug reports.
+- Root cause: the repo moved to `docs/engineering/` plus source code as the maintained truth.
+- Resolution: use `docs/engineering/`, ADRs, and current code; treat `docs/prompts/` and `bug-reports/` as archaeology only.
+- Current guard: actual package/entrypoints are Compose `App()` from Android and iOS: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:1`, `src/mobile/composeApp/src/androidMain/kotlin/com/petergabriel/budgetcalendar/MainActivity.kt:18-26`, `src/mobile/composeApp/src/iosMain/kotlin/com/petergabriel/budgetcalendar/MainViewController.kt:7-12`.

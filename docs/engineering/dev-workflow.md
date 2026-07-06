@@ -2,6 +2,12 @@
 
 Current mobile app lives under `src/mobile/`; Gradle root includes only `:composeApp`: `src/mobile/settings.gradle.kts:1-34`.
 
+## Pi workflow
+
+- Use Pi modes in order: discuss to clarify, plan to produce Section 4 task queues, build to implement one confirmed task at a time.
+- Engineering docs live under `docs/engineering/`; ADRs live under `docs/engineering/decisions/`.
+- Design-token and component reference is `docs/engineering/design-system.html` plus Compose code under `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/`.
+
 ## Code search
 
 - Prefer semantic search first: `ccc search "safe to spend calculation"` from repo root. Project skill docs own `ccc` indexing/search workflow: `.pi/skills/ccc/SKILL.md`.
