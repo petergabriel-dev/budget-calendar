@@ -200,7 +200,7 @@ val useCaseModule = module {
 val viewModelModule = module {
     viewModel { AccountViewModel(get(), get(), get(), get(), get()) }
     viewModel { TransactionViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { TransactionFormViewModel(get(), get(), get(), get()) }
+    viewModel { TransactionFormViewModel(get(), get(), get(), get(), get()) }
     viewModel { BudgetViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get()) }
     viewModel { RecurringViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }

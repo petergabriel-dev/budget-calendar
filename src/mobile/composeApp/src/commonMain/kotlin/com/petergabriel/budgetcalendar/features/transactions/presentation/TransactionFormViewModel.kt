@@ -3,6 +3,7 @@ package com.petergabriel.budgetcalendar.features.transactions.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountsUseCase
+import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCreditCardSummariesUseCase
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.CreateTransactionRequest
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
@@ -23,15 +24,18 @@ class TransactionFormViewModel(
     private val updateTransactionStatusUseCase: UpdateTransactionStatusUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val getAccountsUseCase: GetAccountsUseCase,
+    private val getCreditCardSummariesUseCase: GetCreditCardSummariesUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionFormUiState(isLoading = true))
     val uiState: StateFlow<TransactionFormUiState> = _uiState.asStateFlow()
 
     private var accountsJob: Job? = null
+    private var creditCardSummariesJob: Job? = null
 
     init {
         loadAccounts()
+        loadCreditCardSummaries()
     }
 
     fun setType(type: TransactionType) {
@@ -169,6 +173,20 @@ class TransactionFormViewModel(
                             error = null,
                         )
                     }
+                }
+        }
+    }
+
+    private fun loadCreditCardSummaries() {
+        creditCardSummariesJob?.cancel()
+
+        creditCardSummariesJob = viewModelScope.launch {
+            getCreditCardSummariesUseCase()
+                .catch { throwable ->
+                    _uiState.update { it.copy(error = throwable.message) }
+                }
+                .collect { summaries ->
+                    _uiState.update { it.copy(creditCardSummaries = summaries) }
                 }
         }
     }
