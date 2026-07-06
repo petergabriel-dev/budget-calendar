@@ -15,6 +15,13 @@ Must-not-break rules below are verified from current code only.
 - Pending/overdue reservations include spending-pool expenses only: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:15-22`.
 - Credit-card reserved = sum of each card's projected unpaid balance, clamped per card before summing: `max(0, -(initial_balance + SUM(signed_amount) WHERE status != 'cancelled'))`. This includes pending/overdue/confirmed charges and payments; `statement_balance`/`due_date` do not feed STS: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-58`.
 
+## Credit-card displayed balance is projected
+
+- Card displayed balance = `initial_balance + SUM(signed_amount WHERE status != 'cancelled')`; negative means owed, positive means overpaid credit. Query source: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/credit_card_settings.sq:27-46`.
+- Credit-card summaries are transaction-reactive and must re-query through `transactionChangedTrigger.onStart { emit(Unit) }.flatMapLatest { ... }`, not `combine(trigger)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/GetCreditCardSummariesUseCase.kt:22-49`.
+- Summary `currentBalance` is projected; `reservedAmount = max(0, -projected)`; `availableCredit = creditLimit - abs(projected)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/GetCreditCardSummariesUseCase.kt:34-44`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/GetCreditCardSummaryByIdUseCase.kt:26-39`.
+- Net worth = non-card confirmed balances + signed projected card balances. Pending card charges lower net worth; pending spending-pool expenses do not until confirmed: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:124-128`.
+
 ## Status lifecycle and overdue marking
 
 - Valid transitions: `PENDING -> OVERDUE | CONFIRMED | CANCELLED`; `OVERDUE -> CONFIRMED | CANCELLED`; `CONFIRMED` and `CANCELLED` are terminal: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/usecase/UpdateTransactionStatusUseCase.kt:31-40`.

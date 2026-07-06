@@ -30,6 +30,13 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: credit-card reserve now uses projected unpaid balance per card: `max(0, -(initial_balance + SUM(signed_amount) WHERE status != 'cancelled'))`; the total query sums the per-card clamp: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-58`.
 - Current guard: cards are never in the spending pool, so card debt reaches STS only through the reserve: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:23-31`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/UpdateAccountUseCase.kt:22-32`.
 
+## Stale credit-card summaries from settings-only flows
+
+- Symptom: Accounts showed a card section total of `₱0.00` while the card detail sheet showed real card debt after transaction writes.
+- Root cause: summary flow observed credit-card settings only; transaction writes did not cause projected card balances to re-query. Using `combine(trigger)` can still replay stale query values.
+- Resolution: wrap summary query work in `transactionChangedTrigger.onStart { emit(Unit) }.flatMapLatest { ... }`, then batch projected balances with `getAllProjectedBalances()` and derive displayed balance/reserve/available credit from projected: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/GetCreditCardSummariesUseCase.kt:22-49`.
+- Current guard: projected SQL includes non-cancelled pending/overdue/confirmed rows, and net worth uses signed projected card balances: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/credit_card_settings.sq:27-46`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:124-128`.
+
 ## Credit-card transactions are not cash withdrawals
 
 - Symptom: adding/editing a credit-card expense could show "Insufficient funds" against the card balance, which is meaningless for a liability account.
