@@ -12,20 +12,14 @@ Use it at the start of any implementation task to understand existing code befor
 
 ---
 
-## Pencil Design Fidelity
+## Pi Workflow & Engineering Docs
 
-**Any task that produces Compose UI must follow this confirmation loop — include it explicitly in every `/plan`-generated prompt that touches frontend:**
+Use Pi discuss/plan/build workflow: clarify requirements, create ordered task queues, then implement one confirmed task at a time.
 
-1. **Pre-implementation**: call `mcp__pencil__batch_get` with the component node ID(s) from `specs/DESIGN_SYSTEM.pen` to read the authoritative visual spec before writing code.
-2. **Implementation**: build the composable using exact tokens, sizes, spacing, and layout from step 1.
-3. **Post-implementation**: call `mcp__pencil__batch_get` again and diff the spec against your implementation. Fix any mismatches before marking the task done.
-
-Every UI component task in a prompt file must contain a sub-step in this form:
-```
-- Read component `<nodeId>` from `specs/DESIGN_SYSTEM.pen` via `mcp__pencil__batch_get`, implement to match, then re-read and confirm visual fidelity before marking done.
-```
-
-`DESIGN_SYSTEM.md` is a secondary reference. `specs/DESIGN_SYSTEM.pen` is the source of truth.
+Source of truth:
+- Current source code
+- `docs/engineering/` for architecture, workflow, conventions, invariants, traps, and ADRs
+- `docs/engineering/design-system.html` plus `core/designsystem/` for design tokens and reusable Compose components
 
 ---
 
@@ -54,29 +48,3 @@ Every UI component task in a prompt file must contain a sub-step in this form:
 
 ---
 
-### `agentic-engineering` — Shadow Specs & Planning Conventions
-
-**Path:** `.claude/skills/agentic-engineering/SKILL.md`
-
-**Activate for:** running `/spec` (writing shadow specs) or `/plan` (generating implementation task lists). Also relevant when interpreting or extending any file in `specs/shadow/`.
-
-**Covers:**
-- SudoLang syntax: interfaces, enums, constraints, data flow pipes, function signatures, UI component props
-- Required sections for every shadow spec in `specs/shadow/[FeatureName].shadow.md`
-- Naming conventions (PascalCase features, snake_case DB columns, `idx_[table]_[column]` indexes)
-- Shadow spec status values: `Planned`, `In Progress`, `Done`
-- How `/spec` maps feature requirements → shadow spec
-- How `/plan` decomposes a shadow spec into ordered implementation tasks
-
-**Relationship between spec files:**
-```
-specs/FEATURES.md       ← business rules, validation, use cases
-specs/ARCHITECTURE.md   ← layers, package structure, data flows
-specs/DB_DESIGN.md      ← schema, queries, indexes, migrations
-specs/DESIGN_SYSTEM.md  ← components, colors, typography, spacing
-specs/DEPENDENCIES.md   ← external libraries, versions, module graph
-
-specs/shadow/[Name].shadow.md
-  ← synthesizes all of the above into one implementable unit
-  ← consumed by /plan to generate docs/prompts/[NN]_[feature].md
-```
