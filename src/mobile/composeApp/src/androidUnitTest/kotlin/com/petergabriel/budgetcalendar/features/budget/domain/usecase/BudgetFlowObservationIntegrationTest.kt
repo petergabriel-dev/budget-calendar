@@ -260,6 +260,92 @@ class BudgetFlowObservationIntegrationTest {
     }
 
     @Test
+    fun migration11_confirmsExistingOverdueCreditCardChargesOnly() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val checking = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Primary Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 500_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+            val card = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card A",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = 0L,
+                    isInSpendingPool = false,
+                ),
+            ).getOrThrow()
+            val transactionDate = DateUtils.startOfDayMillis(DateUtils.nowMillis())
+            val overdueCard = fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = card.id,
+                    amount = 75_00L,
+                    date = transactionDate,
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.OVERDUE,
+                    description = "Overdue card",
+                ),
+            ).getOrThrow()
+            val pendingCard = fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = card.id,
+                    amount = 25_00L,
+                    date = transactionDate,
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Pending card",
+                ),
+            ).getOrThrow()
+            val cancelledCard = fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = card.id,
+                    amount = 10_00L,
+                    date = transactionDate,
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.CANCELLED,
+                    description = "Cancelled card",
+                ),
+            ).getOrThrow()
+            val overdueChecking = fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = checking.id,
+                    amount = 50_00L,
+                    date = transactionDate,
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.OVERDUE,
+                    description = "Overdue checking",
+                ),
+            ).getOrThrow()
+
+            BudgetCalendarDatabase.Schema.migrate(fixture.driver, oldVersion = 11, newVersion = 12)
+
+            assertEquals(
+                TransactionStatus.CONFIRMED,
+                fixture.transactionRepository.getTransactionById(overdueCard.id)?.status,
+            )
+            assertEquals(
+                TransactionStatus.PENDING,
+                fixture.transactionRepository.getTransactionById(pendingCard.id)?.status,
+            )
+            assertEquals(
+                TransactionStatus.CANCELLED,
+                fixture.transactionRepository.getTransactionById(cancelledCard.id)?.status,
+            )
+            assertEquals(
+                TransactionStatus.OVERDUE,
+                fixture.transactionRepository.getTransactionById(overdueChecking.id)?.status,
+            )
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
+    @Test
     fun markOverdueTransactions_excludesCreditCardChargesFromOverdueLifecycle() = runBlocking {
         val fixture = createFixture()
 
