@@ -45,8 +45,9 @@ features/<feature>/
 
 ## Balance and Safe-to-Spend model
 
-- Account balance is computed from ledger, not stored as mutable total: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:62-78`; base schema has `initial_balance` and transaction `signed_amount`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:1-29`.
-- Spending-pool total uses same formula over confirmed, non-sandbox transactions: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:1-14`.
+- Account balance is computed from ledger, not stored as mutable total: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:60-75`; base schema has `initial_balance` and transaction `signed_amount`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:1-28`.
+- Spending-pool total uses same formula over confirmed transactions: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:1-13`.
+- Sandbox transactions are separate rows in `sandbox_transactions`; main `transactions` has no `is_sandbox` flag: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:71-86`.
 - Safe-to-Spend combines pool balance, pending reservations, overdue reservations, credit-card reserved amount, rollovers, and confirmed transactions: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:17-64`.
 - Rationale: [ADR-0001](decisions/ADR-0001-computed-account-balance-from-ledger.md).
 

@@ -7,7 +7,7 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Symptom: confirmed transactions existed but account balance stayed stale (`bug-reports/account-management/2026-04-02_1200_stored-balance-permanently-drifts-from-transaction-history.md:11-30`).
 - Root cause: old mutable `accounts.balance` depended on every write path calling `adjustBalance()`.
 - Resolution: migration 7 renamed balance to `initial_balance` and added/backfilled `signed_amount`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/7.sqm:1-23`; fix plan: `docs/prompts/25_bugfix_computed-account-balance-from-transaction-history.md:1-19`.
-- Current guard: balance reads compute `initial_balance + SUM(signed_amount)` for confirmed, non-sandbox rows: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:62-78`.
+- Current guard: balance reads compute `initial_balance + SUM(signed_amount)` for confirmed rows; sandbox transactions live in `sandbox_transactions`, not main `transactions`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:60-75`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:71-86`.
 
 ## SQLDelight flows do not refresh dependent repos by magic
 
