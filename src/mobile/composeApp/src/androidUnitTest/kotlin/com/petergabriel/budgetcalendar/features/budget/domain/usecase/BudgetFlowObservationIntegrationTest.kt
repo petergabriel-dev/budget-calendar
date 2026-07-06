@@ -13,6 +13,8 @@ import com.petergabriel.budgetcalendar.features.budget.data.repository.BudgetRep
 import com.petergabriel.budgetcalendar.features.budget.data.repository.MonthlyRolloverRepositoryImpl
 import com.petergabriel.budgetcalendar.features.creditcard.data.mapper.CreditCardMapper
 import com.petergabriel.budgetcalendar.features.creditcard.data.repository.CreditCardRepositoryImpl
+import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
+import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCreditCardSummariesUseCase
 import com.petergabriel.budgetcalendar.features.notifications.data.mapper.NotificationMapper
 import com.petergabriel.budgetcalendar.features.notifications.data.repository.NotificationRepositoryImpl
 import com.petergabriel.budgetcalendar.features.notifications.domain.model.NotificationType
@@ -80,6 +82,114 @@ class BudgetFlowObservationIntegrationTest {
             ).getOrThrow()
 
             assertEquals(70_00L, fixture.accountRepository.calculateNetWorth())
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
+    @Test
+    fun calculateNetWorth_treatsOverpaidCardAsPositiveCredit() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val checking = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 100_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+            val card = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = -30_00L,
+                    isInSpendingPool = false,
+                ),
+            ).getOrThrow()
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = checking.id,
+                    destinationAccountId = card.id,
+                    amount = 40_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.TRANSFER,
+                    status = TransactionStatus.CONFIRMED,
+                    description = "Overpay card",
+                ),
+            ).getOrThrow()
+
+            assertEquals(70_00L, fixture.accountRepository.calculateNetWorth())
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
+    @Test
+    fun getCreditCardSummaries_reemitsProjectedPendingChargeOnTransactionWrite() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val card = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = 0L,
+                    isInSpendingPool = false,
+                ),
+            ).getOrThrow()
+            fixture.creditCardRepository.insert(
+                accountId = card.id,
+                creditLimit = 100_00L,
+                statementBalance = null,
+                dueDate = null,
+            ).getOrThrow()
+            val useCase = GetCreditCardSummariesUseCase(
+                creditCardRepository = fixture.creditCardRepository,
+                accountRepository = fixture.accountRepository,
+                transactionRepository = fixture.transactionRepository,
+            )
+            val balances = mutableListOf<Long>()
+            var finalSummary: CreditCardSummary? = null
+            val collectJob = launch {
+                withTimeout(5_000) {
+                    useCase().first { summaries ->
+                        val summary = summaries.singleOrNull() ?: return@first false
+                        balances += summary.currentBalance
+                        if (summary.currentBalance == -30_00L) {
+                            finalSummary = summary
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                }
+            }
+
+            withTimeout(5_000) {
+                while (balances.isEmpty()) {
+                    delay(10)
+                }
+            }
+            assertEquals(0L, balances.first())
+
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = card.id,
+                    amount = 30_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Pending card charge",
+                ),
+            ).getOrThrow()
+            collectJob.join()
+
+            val summary = requireNotNull(finalSummary)
+            assertEquals(-30_00L, summary.currentBalance)
+            assertEquals(30_00L, summary.reservedAmount)
+            assertEquals(70_00L, summary.availableCredit)
         } finally {
             fixture.driver.close()
         }
@@ -634,6 +744,7 @@ class BudgetFlowObservationIntegrationTest {
             driver = driver,
             database = database,
             transactionRepository = transactionRepository,
+            creditCardRepository = creditCardRepository,
             notificationRepository = notificationRepository,
             accountRepository = accountRepository,
             createAccountUseCase = CreateAccountUseCase(accountRepository),
@@ -653,6 +764,7 @@ class BudgetFlowObservationIntegrationTest {
         val driver: JdbcSqliteDriver,
         val database: BudgetCalendarDatabase,
         val transactionRepository: TransactionRepositoryImpl,
+        val creditCardRepository: CreditCardRepositoryImpl,
         val notificationRepository: NotificationRepositoryImpl,
         val accountRepository: AccountRepositoryImpl,
         val createAccountUseCase: CreateAccountUseCase,
