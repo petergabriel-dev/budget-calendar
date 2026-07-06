@@ -8,8 +8,7 @@ FROM (
   LEFT JOIN transactions t
     ON t.account_id = a.id
     AND t.status = 'confirmed'
-    AND t.is_sandbox = 0
-  WHERE a.is_in_spending_pool = 1
+    WHERE a.is_in_spending_pool = 1
   GROUP BY a.id, a.initial_balance
 );
 
@@ -20,7 +19,6 @@ JOIN accounts a ON t.account_id = a.id
 WHERE a.is_in_spending_pool = 1
   AND t.status IN ('pending', 'overdue')
   AND t.type = 'expense'
-  AND t.is_sandbox = 0
 ORDER BY t.date ASC;
 
 getCreditCardReservedAmount:
@@ -30,7 +28,7 @@ JOIN accounts a ON t.account_id = a.id
 WHERE a.type = 'credit_card'
   AND t.type = 'expense'
   AND t.status IN ('pending', 'overdue')
-  AND t.is_sandbox = 0;
+;
 
 getCreditCardReservations:
 SELECT
@@ -41,7 +39,6 @@ FROM accounts a
 LEFT JOIN transactions t ON t.account_id = a.id
   AND t.type = 'expense'
   AND t.status IN ('pending', 'overdue')
-  AND t.is_sandbox = 0
 WHERE a.type = 'credit_card'
 GROUP BY a.id, a.name
 ORDER BY a.name ASC;

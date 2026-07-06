@@ -30,7 +30,7 @@ FROM transactions
 WHERE account_id = ?
   AND type = 'expense'
   AND status IN ('pending', 'overdue')
-  AND is_sandbox = 0;
+ ;
 
 getAllCreditCardReservedAmounts:
 SELECT t.account_id, CAST(COALESCE(SUM(t.amount), 0) AS INTEGER) AS reserved
@@ -39,5 +39,4 @@ JOIN accounts a ON t.account_id = a.id
 WHERE a.type = 'credit_card'
   AND t.type = 'expense'
   AND t.status IN ('pending', 'overdue')
-  AND t.is_sandbox = 0
 GROUP BY t.account_id;

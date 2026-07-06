@@ -136,18 +136,17 @@ fun HomeScreen(
     }
 
     val overdueTransactions = remember(transactionState.transactions) {
-        transactionState.transactions.filter { it.status == TransactionStatus.OVERDUE && !it.isSandbox }
+        transactionState.transactions.filter { it.status == TransactionStatus.OVERDUE }
     }
     val pendingCount = remember(transactionState.transactions) {
-        transactionState.transactions.count { it.status == TransactionStatus.PENDING && !it.isSandbox }
+        transactionState.transactions.count { it.status == TransactionStatus.PENDING }
     }
     val weeklySpent = remember(transactionState.transactions, weekStartMillis, weekEndMillis) {
         transactionState.transactions
             .filter { txn ->
                 txn.date in weekStartMillis until weekEndMillis &&
                     txn.type == TransactionType.EXPENSE &&
-                    txn.status != TransactionStatus.CANCELLED &&
-                    !txn.isSandbox
+                    txn.status != TransactionStatus.CANCELLED
             }
             .sumOf { it.amount }
     }

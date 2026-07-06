@@ -94,7 +94,6 @@ class GenerateMonthlyTransactionsUseCase(
                     category = null,
                     linkedTransactionId = null,
                     signedAmount = if (recurring.type == RecurrenceType.INCOME) recurring.amount else -recurring.amount,
-                    isSandbox = false,
                 ),
             )
             return listOf(generated)
@@ -116,7 +115,6 @@ class GenerateMonthlyTransactionsUseCase(
                 category = null,
                 linkedTransactionId = null,
                 signedAmount = -recurring.amount,
-                isSandbox = false,
             ),
         )
 
@@ -132,7 +130,6 @@ class GenerateMonthlyTransactionsUseCase(
                 category = null,
                 linkedTransactionId = source.id,
                 signedAmount = recurring.amount,
-                isSandbox = false,
             ),
         )
 

@@ -63,7 +63,6 @@ class CalendarProjectionUseCasesTest {
             date = today,
             description = "Pending expense",
             category = null,
-            isSandbox = false,
             linkedTransactionId = null,
         )
         transactionRepository.createTransaction(pendingExpense)
@@ -105,7 +104,6 @@ class CalendarProjectionUseCasesTest {
             date = today,
             description = "Pending expense",
             category = null,
-            isSandbox = false,
             linkedTransactionId = null,
         )
         val transaction = transactionRepository.createTransaction(pendingExpense)

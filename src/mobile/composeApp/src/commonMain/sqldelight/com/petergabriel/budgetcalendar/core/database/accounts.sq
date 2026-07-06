@@ -17,7 +17,6 @@ FROM accounts a
 LEFT JOIN transactions t
   ON t.account_id = a.id
   AND t.status = 'confirmed'
-  AND t.is_sandbox = 0
 WHERE a.id = :id
 GROUP BY a.id, a.name, a.type, a.initial_balance, a.is_in_spending_pool, a.description, a.created_at, a.updated_at;
 
@@ -54,8 +53,7 @@ FROM (
   LEFT JOIN transactions t
     ON t.account_id = a.id
     AND t.status = 'confirmed'
-    AND t.is_sandbox = 0
-  WHERE a.is_in_spending_pool = 1
+    WHERE a.is_in_spending_pool = 1
   GROUP BY a.id, a.initial_balance
 );
 
@@ -73,7 +71,6 @@ FROM accounts a
 LEFT JOIN transactions t
   ON t.account_id = a.id
   AND t.status = 'confirmed'
-  AND t.is_sandbox = 0
 GROUP BY a.id, a.name, a.type, a.initial_balance, a.is_in_spending_pool, a.description, a.created_at, a.updated_at
 ORDER BY a.created_at DESC;
 

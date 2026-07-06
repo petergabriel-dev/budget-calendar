@@ -38,7 +38,6 @@ class PromoteTransactionUseCase(
                 status = sandboxTransaction.status,
                 description = sandboxTransaction.description,
                 category = sandboxTransaction.category,
-                isSandbox = false,
             )
 
             val result = createTransactionUseCase(request)
@@ -67,7 +66,6 @@ class PromoteTransactionUseCase(
                         TransactionType.EXPENSE -> -sandboxTransaction.amount
                         TransactionType.TRANSFER -> -sandboxTransaction.amount
                     },
-                    isSandbox = false,
                 ),
             )
         }.getOrElse { throwable ->

@@ -12,7 +12,6 @@ data class TransactionEntity(
     val description: String?,
     val category: String?,
     val linkedTransactionId: Long?,
-    val isSandbox: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
 )

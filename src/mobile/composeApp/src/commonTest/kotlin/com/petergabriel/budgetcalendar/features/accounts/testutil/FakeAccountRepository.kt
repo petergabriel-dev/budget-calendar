@@ -150,8 +150,7 @@ class FakeAccountRepository(
             .asSequence()
             .filter { transaction ->
                 transaction.accountId == account.id &&
-                    transaction.status == TransactionStatus.CONFIRMED &&
-                    !transaction.isSandbox
+                    transaction.status == TransactionStatus.CONFIRMED
             }
             .sumOf(::signedAmountFor)
 

@@ -11,7 +11,6 @@ data class CreateTransactionRequest(
     val category: String? = null,
     val linkedTransactionId: Long? = null,
     val signedAmount: Long = defaultSignedAmount(type, amount, linkedTransactionId),
-    val isSandbox: Boolean = false,
 ) {
     companion object {
         private fun defaultSignedAmount(

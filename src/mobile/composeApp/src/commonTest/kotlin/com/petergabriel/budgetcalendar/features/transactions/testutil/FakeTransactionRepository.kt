@@ -56,7 +56,7 @@ class FakeTransactionRepository : ITransactionRepository {
     override fun getPendingTransactions(): Flow<List<Transaction>> {
         return transactionsFlow.map { allTransactions ->
             allTransactions
-                .filter { transaction -> transaction.status == TransactionStatus.PENDING && !transaction.isSandbox }
+                .filter { transaction -> transaction.status == TransactionStatus.PENDING }
                 .sortedBy { transaction -> transaction.date }
         }
     }
@@ -64,7 +64,7 @@ class FakeTransactionRepository : ITransactionRepository {
     override fun getOverdueTransactions(): Flow<List<Transaction>> {
         return transactionsFlow.map { allTransactions ->
             allTransactions
-                .filter { transaction -> transaction.status == TransactionStatus.OVERDUE && !transaction.isSandbox }
+                .filter { transaction -> transaction.status == TransactionStatus.OVERDUE }
                 .sortedBy { transaction -> transaction.date }
         }
     }
@@ -72,7 +72,7 @@ class FakeTransactionRepository : ITransactionRepository {
     override fun getConfirmedTransactions(): Flow<List<Transaction>> {
         return transactionsFlow.map { allTransactions ->
             allTransactions
-                .filter { transaction -> transaction.status == TransactionStatus.CONFIRMED && !transaction.isSandbox }
+                .filter { transaction -> transaction.status == TransactionStatus.CONFIRMED }
                 .sortedByDescending { transaction -> transaction.date }
         }
     }
@@ -81,7 +81,6 @@ class FakeTransactionRepository : ITransactionRepository {
         return transactionsFlow.map { allTransactions ->
             allTransactions
                 .filter { transaction ->
-                    !transaction.isSandbox &&
                         (transaction.status == TransactionStatus.PENDING || transaction.status == TransactionStatus.OVERDUE)
                 }
                 .sortedBy { transaction -> transaction.date }
@@ -92,7 +91,6 @@ class FakeTransactionRepository : ITransactionRepository {
         return transactionsFlow.map { allTransactions ->
             allTransactions
                 .filter { transaction ->
-                    !transaction.isSandbox &&
                         transaction.date in startMillis..endMillis &&
                         (transaction.status == TransactionStatus.PENDING || transaction.status == TransactionStatus.OVERDUE)
                 }
@@ -106,8 +104,7 @@ class FakeTransactionRepository : ITransactionRepository {
                 .filter { transaction ->
                     transaction.accountId == accountId &&
                         transaction.type == TransactionType.EXPENSE &&
-                        !transaction.isSandbox &&
-                        (transaction.status == TransactionStatus.PENDING || transaction.status == TransactionStatus.OVERDUE)
+                            (transaction.status == TransactionStatus.PENDING || transaction.status == TransactionStatus.OVERDUE)
                 }
                 .sortedBy { transaction -> transaction.date }
         }
@@ -117,7 +114,6 @@ class FakeTransactionRepository : ITransactionRepository {
         return transactionsFlow.map { allTransactions ->
             allTransactions
                 .filter { transaction ->
-                    !transaction.isSandbox &&
                         transaction.status == TransactionStatus.CONFIRMED &&
                         transaction.date in startDate..endDate
                 }
@@ -143,7 +139,6 @@ class FakeTransactionRepository : ITransactionRepository {
             description = request.description,
             category = request.category,
             linkedTransactionId = request.linkedTransactionId,
-            isSandbox = request.isSandbox,
             createdAt = now,
             updatedAt = now,
         )

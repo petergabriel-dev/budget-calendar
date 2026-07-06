@@ -243,7 +243,6 @@ class GenerateNotificationsUseCaseTest {
             description = "Overdue #$id",
             category = "Bills",
             linkedTransactionId = null,
-            isSandbox = false,
             createdAt = millisFor(2026, 1, 1),
             updatedAt = millisFor(2026, 1, 1),
         )

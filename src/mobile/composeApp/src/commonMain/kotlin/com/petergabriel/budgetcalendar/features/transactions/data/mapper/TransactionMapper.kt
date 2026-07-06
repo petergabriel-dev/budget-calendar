@@ -19,7 +19,6 @@ class TransactionMapper {
             description = entity.description,
             category = entity.category,
             linkedTransactionId = entity.linkedTransactionId,
-            isSandbox = entity.isSandbox,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
         )

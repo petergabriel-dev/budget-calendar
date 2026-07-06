@@ -137,7 +137,6 @@ class TransactionRepositoryImpl(
             request.description,
             request.category,
             request.linkedTransactionId,
-            if (request.isSandbox) 1L else 0L,
             now,
             now,
         )
@@ -217,7 +216,6 @@ class TransactionRepositoryImpl(
         description: String?,
         category: String?,
         linkedTransactionId: Long?,
-        isSandbox: Long,
         createdAt: Long,
         updatedAt: Long,
     ): TransactionEntity {
@@ -233,7 +231,6 @@ class TransactionRepositoryImpl(
             description = description,
             category = category,
             linkedTransactionId = linkedTransactionId,
-            isSandbox = isSandbox == 1L,
             createdAt = createdAt,
             updatedAt = updatedAt,
         )
