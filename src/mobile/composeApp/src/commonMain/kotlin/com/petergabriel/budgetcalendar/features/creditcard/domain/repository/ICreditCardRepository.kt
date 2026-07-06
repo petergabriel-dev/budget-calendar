@@ -21,6 +21,6 @@ interface ICreditCardRepository {
     ): Result<CreditCardSettings>
 
     suspend fun delete(accountId: Long): Result<Unit>
-    suspend fun getReservedAmount(accountId: Long): Result<Long>
-    suspend fun getAllReservedAmounts(): Result<Map<Long, Long>>
+    suspend fun getProjectedBalance(accountId: Long): Result<Long>
+    suspend fun getAllProjectedBalances(): Result<Map<Long, Long>>
 }

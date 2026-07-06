@@ -10,7 +10,7 @@ data class CreditCardSettingsEntity(
     val updatedAt: Long,
 )
 
-data class CreditCardReservedAmountRow(
+data class CreditCardProjectedBalanceRow(
     val accountId: Long,
-    val reservedAmount: Long,
+    val projectedBalance: Long,
 )

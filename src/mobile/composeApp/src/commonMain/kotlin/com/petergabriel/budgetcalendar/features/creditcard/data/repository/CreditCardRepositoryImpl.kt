@@ -73,15 +73,15 @@ class CreditCardRepositoryImpl(
         database.credit_card_settingsQueries.deleteCreditCardSettings(accountId)
     }
 
-    override suspend fun getReservedAmount(accountId: Long): Result<Long> = runCatching {
-        database.credit_card_settingsQueries.getCreditCardReservedAmount(accountId).executeAsOne()
+    override suspend fun getProjectedBalance(accountId: Long): Result<Long> = runCatching {
+        database.credit_card_settingsQueries.getCreditCardProjectedBalance(accountId).executeAsOne()
     }
 
-    override suspend fun getAllReservedAmounts(): Result<Map<Long, Long>> = runCatching {
+    override suspend fun getAllProjectedBalances(): Result<Map<Long, Long>> = runCatching {
         database.credit_card_settingsQueries
-            .getAllCreditCardReservedAmounts(creditCardMapper::toReservedAmountRow)
+            .getAllCreditCardProjectedBalances(creditCardMapper::toProjectedBalanceRow)
             .executeAsList()
-            .associate { row -> row.accountId to row.reservedAmount }
+            .associate { row -> row.accountId to row.projectedBalance }
     }
 
     private fun toSettingsEntity(

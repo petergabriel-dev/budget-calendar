@@ -1,6 +1,6 @@
 package com.petergabriel.budgetcalendar.features.creditcard.data.mapper
 
-import com.petergabriel.budgetcalendar.features.creditcard.data.local.CreditCardReservedAmountRow
+import com.petergabriel.budgetcalendar.features.creditcard.data.local.CreditCardProjectedBalanceRow
 import com.petergabriel.budgetcalendar.features.creditcard.data.local.CreditCardSettingsEntity
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSettings
 
@@ -17,10 +17,10 @@ class CreditCardMapper {
         )
     }
 
-    fun toReservedAmountRow(accountId: Long, reservedAmount: Long): CreditCardReservedAmountRow {
-        return CreditCardReservedAmountRow(
+    fun toProjectedBalanceRow(accountId: Long, projectedBalance: Long): CreditCardProjectedBalanceRow {
+        return CreditCardProjectedBalanceRow(
             accountId = accountId,
-            reservedAmount = reservedAmount,
+            projectedBalance = projectedBalance,
         )
     }
 }
