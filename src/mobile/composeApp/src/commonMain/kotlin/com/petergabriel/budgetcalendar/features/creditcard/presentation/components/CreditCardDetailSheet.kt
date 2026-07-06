@@ -63,11 +63,6 @@ fun CreditCardDetailSheet(
                 valueColor = if (summary.currentBalance <= 0L) Color(0xFFC62828) else Color(0xFF2E7D32),
             )
             SummaryRow(
-                label = "Reserved Amount",
-                value = CurrencyUtils.formatCents(summary.reservedAmount),
-                valueColor = Color(0xFFB26A00),
-            )
-            SummaryRow(
                 label = "Statement Balance",
                 value = settings?.statementBalance?.let(CurrencyUtils::formatCents) ?: "Not set",
             )
