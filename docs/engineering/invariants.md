@@ -34,6 +34,12 @@ Must-not-break rules below are verified from current code only.
 - Credit-card account creation forces `isInSpendingPool = false`, even if the request asks for true: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:23-31`.
 - Updating an account to or as `credit_card` also forces `isInSpendingPool = false`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/UpdateAccountUseCase.kt:22-32`.
 
+## Transaction sheet treats credit-card expenses as card charges
+
+- The transaction form suppresses the balance-based insufficient-funds warning for credit-card source accounts; bank/cash/savings accounts keep the warning path: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:151-170`.
+- For credit-card EXPENSE rows with a card summary, the sheet shows available credit when present, balance after charge, and Safe-to-Spend reserve impact: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:422-452`.
+- When a credit limit exists and the charge exceeds available credit, the sheet shows error text, blocks click-time save, and disables Save: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/model/CreditCardChargeImpact.kt:11-26`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:489-514`.
+
 ## Transfers are paired rows
 
 - Creating a transfer writes a source row with `signedAmount = -amount`, a destination row with `signedAmount = amount`, then links both IDs: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/usecase/CreateTransactionUseCase.kt:59-82`.

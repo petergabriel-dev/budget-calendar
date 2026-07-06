@@ -30,6 +30,13 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: credit-card reserve now uses projected unpaid balance per card: `max(0, -(initial_balance + SUM(signed_amount) WHERE status != 'cancelled'))`; the total query sums the per-card clamp: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-58`.
 - Current guard: cards are never in the spending pool, so card debt reaches STS only through the reserve: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:23-31`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/UpdateAccountUseCase.kt:22-32`.
 
+## Credit-card transactions are not cash withdrawals
+
+- Symptom: adding/editing a credit-card expense could show "Insufficient funds" against the card balance, which is meaningless for a liability account.
+- Root cause: `TransactionFormSheet` reused the cash-account balance warning for all EXPENSE/TRANSFER sources.
+- Resolution: credit-card source accounts skip the cash insufficient-funds warning; credit-card EXPENSE rows instead use available-credit context and hard-block over-limit saves only when a credit limit is set.
+- Current guard: card-aware derivation, visible context/error text, click-time save guard, and disabled Save live in `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:151-170`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:422-452`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:489-514`.
+
 ## STS confirmedSpending tests must use current-month dates
 
 - Symptom: `calculateSafeToSpend_confirmedExpenseDoesNotIncreaseSTS` expected `confirmedSpending` but got 0 after calendar month changed.
