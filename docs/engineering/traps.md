@@ -34,7 +34,7 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 
 - Symptom: Accounts showed a card section total of `₱0.00` while the card detail sheet showed real card debt after transaction writes.
 - Root cause: summary flow observed credit-card settings only; transaction writes did not cause projected card balances to re-query. Using `combine(trigger)` can still replay stale query values.
-- Resolution: wrap summary query work in `transactionChangedTrigger.onStart { emit(Unit) }.flatMapLatest { ... }`, then batch projected balances with `getAllProjectedBalances()` and derive displayed balance/reserve/available credit from projected: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/GetCreditCardSummariesUseCase.kt:22-49`.
+- Resolution: wrap summary query work in `transactionChangedTrigger.onStart { emit(Unit) }.flatMapLatest { ... }`, then batch projected balances with `getAllProjectedBalances()` and derive displayed balance/reserve/available credit from projected: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/GetCreditCardSummariesUseCase.kt:24-61`.
 - Current guard: projected SQL includes non-cancelled pending/overdue/confirmed rows, and net worth uses signed projected card balances: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/credit_card_settings.sq:27-46`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:124-128`.
 
 ## Credit-card transactions are not cash withdrawals
@@ -49,7 +49,28 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Symptom: old settings UI may tempt reintroducing manual `statement_balance` / `due_date` edits as if they drive STS or payment timing.
 - Root cause: those columns still exist for migration safety, but recurring `statement_closing_day` / `payment_due_day` are now the UI source for statement-cycle display.
 - Resolution: keep `statement_balance` and `due_date` columns, but do not expose manual inputs; pass existing values through on save instead of nulling them.
-- Current guard: settings form shows Closing day + Due day, validates 1-31, and passes vestigial values from `initialSettings`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/components/CreditCardSettingsForm.kt:83-163`; detail sheet shows computed next due date, not manual statement rows: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/components/CreditCardDetailSheet.kt:63-73`.
+- Current guard: settings form shows Closing day + Due day, validates 1-31, and passes vestigial values from `initialSettings`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/components/CreditCardSettingsForm.kt:83-163`; detail sheet shows live statement due plus computed next due date, not manual statement rows: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/components/CreditCardDetailSheet.kt:58-86`.
+
+## Credit-card closing boundary is exclusive
+
+- Symptom: a charge dated on closing day can be shown on the already-closing statement if helper uses `>=` for the next close.
+- Root cause: inclusive boundary treats closing day as still before/on current cycle for charge display.
+- Resolution: charge cutoff is exclusive: charge on closing day bills to next statement. Use `statementClosingOnOrAfter` for charge display and `lastStatementClose` for live statement due: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/utils/DateUtils.kt:92-115`.
+- Current guard: tests cover closing-day rollover, last-close boundaries, and February/leap clamp: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/core/utils/DateUtilsStatementCycleTest.kt`.
+
+## Legacy credit cards may lack setup rows or cycle days
+
+- Symptom: existing cards from before mandatory setup can lack limit or cycle, causing tile/detail statement fields to look incomplete or crash if assumed non-null.
+- Root cause: setup is mandatory only for new account creation; backfill is out of scope.
+- Resolution: render missing limit/cycle gracefully: available credit/statement due/due date become "Not set" or null; no crash, no fallback ledger mutation.
+- Current guard: statement due returns null without both cycle days and tile avoids utilization without limit: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/GetCreditCardSummariesUseCase.kt:64-72`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/components/CreditCardTile.kt:39-48`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/components/CreditCardTile.kt:115-130`.
+
+## Current card owed is stored as negative initial balance
+
+- Symptom: double-negating or storing card owed as positive makes net worth, available credit, and reserve wrong.
+- Root cause: credit cards use signed projected balance; negative means owed, positive means overpaid.
+- Resolution: add-card UI accepts "Current balance owed" as positive input once, then `AccountScreen` negates it for `CreateAccountRequest.initialBalance`.
+- Current guard: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:151-159` and domain still permits negative card balances while rejecting negative non-card balances: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:19-20`.
 
 ## STS confirmedSpending tests must use current-month dates
 
