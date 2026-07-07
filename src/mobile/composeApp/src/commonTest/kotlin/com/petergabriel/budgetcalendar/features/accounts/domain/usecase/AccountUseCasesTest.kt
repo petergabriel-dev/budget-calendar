@@ -144,6 +144,38 @@ class AccountUseCasesTest {
     }
 
     @Test
+    fun createAccount_creditCardRequiresClosingAndDueDays() = runBlocking {
+        val missingClosing = createAccountUseCase(
+            CreateAccountRequest(
+                name = "Card",
+                type = AccountType.CREDIT_CARD,
+                initialBalance = -10_00L,
+                isInSpendingPool = false,
+                creditLimit = 50_000L,
+                statementClosingDay = null,
+                paymentDueDay = 5,
+            ),
+        )
+        val missingDue = createAccountUseCase(
+            CreateAccountRequest(
+                name = "Card",
+                type = AccountType.CREDIT_CARD,
+                initialBalance = -10_00L,
+                isInSpendingPool = false,
+                creditLimit = 50_000L,
+                statementClosingDay = 20,
+                paymentDueDay = null,
+            ),
+        )
+
+        assertTrue(missingClosing.isFailure)
+        assertEquals("Credit card cycle days must be 1-31", missingClosing.exceptionOrNull()?.message)
+        assertTrue(missingDue.isFailure)
+        assertEquals("Credit card cycle days must be 1-31", missingDue.exceptionOrNull()?.message)
+        assertTrue(accountRepository.currentAccounts().isEmpty())
+    }
+
+    @Test
     fun createAccount_creditCardPersistsSettingsWithAccount() = runBlocking {
         val result = createAccountUseCase(
             CreateAccountRequest(
