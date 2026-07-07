@@ -44,7 +44,16 @@ fun AccountFormSheet(
     isVisible: Boolean,
     initialData: Account?,
     isSubmitting: Boolean,
-    onSave: (name: String, type: AccountType, balance: Long, isInSpendingPool: Boolean, description: String) -> Unit,
+    onSave: (
+        name: String,
+        type: AccountType,
+        balance: Long,
+        isInSpendingPool: Boolean,
+        description: String,
+        creditLimit: Long?,
+        statementClosingDay: Int?,
+        paymentDueDay: Int?,
+    ) -> Unit,
     onCancel: () -> Unit,
     onDelete: ((Account) -> Unit)? = null,
 ) {
@@ -63,6 +72,9 @@ fun AccountFormSheet(
     var descriptionInput by remember(initialData?.id) {
         mutableStateOf(initialData?.description.orEmpty())
     }
+    var creditLimitInput by remember(initialData?.id) { mutableStateOf("") }
+    var statementClosingDayInput by remember(initialData?.id) { mutableStateOf("") }
+    var paymentDueDayInput by remember(initialData?.id) { mutableStateOf("") }
     val validationErrors = remember(initialData?.id) { mutableStateMapOf<String, String>() }
     var typeMenuExpanded by remember { mutableStateOf(false) }
 
@@ -144,7 +156,13 @@ fun AccountFormSheet(
                 },
                 label = {
                     Text(
-                        text = if (initialData == null) "Initial Balance" else "Balance",
+                        text = if (selectedType == AccountType.CREDIT_CARD && initialData == null) {
+                            "Current balance owed"
+                        } else if (initialData == null) {
+                            "Initial Balance"
+                        } else {
+                            "Balance"
+                        },
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -153,6 +171,53 @@ fun AccountFormSheet(
                 singleLine = true,
             )
             InlineError(validationErrors["balance"])
+
+            if (selectedType == AccountType.CREDIT_CARD && initialData == null) {
+                OutlinedTextField(
+                    value = creditLimitInput,
+                    onValueChange = {
+                        creditLimitInput = it
+                        validationErrors.remove("creditLimit")
+                    },
+                    label = { Text("Credit Limit") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = validationErrors.containsKey("creditLimit"),
+                    singleLine = true,
+                )
+                InlineError(validationErrors["creditLimit"])
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedTextField(
+                        value = statementClosingDayInput,
+                        onValueChange = {
+                            statementClosingDayInput = it
+                            validationErrors.remove("statementClosingDay")
+                        },
+                        label = { Text("Closing Day") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = validationErrors.containsKey("statementClosingDay"),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = paymentDueDayInput,
+                        onValueChange = {
+                            paymentDueDayInput = it
+                            validationErrors.remove("paymentDueDay")
+                        },
+                        label = { Text("Due Day") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = validationErrors.containsKey("paymentDueDay"),
+                        singleLine = true,
+                    )
+                }
+                InlineError(validationErrors["statementClosingDay"] ?: validationErrors["paymentDueDay"])
+            }
 
             BcInputGroup(
                 label = "Description",
@@ -179,10 +244,11 @@ fun AccountFormSheet(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
+            if (selectedType != AccountType.CREDIT_CARD) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Include in Safe to Spend",
@@ -199,12 +265,12 @@ fun AccountFormSheet(
                     )
                 }
 
-                Switch(
-                    modifier = Modifier.testTag(INCLUDE_IN_SPENDING_POOL_SWITCH_TAG),
-                    checked = includeInSpendingPool,
-                    onCheckedChange = { includeInSpendingPool = it },
-                    enabled = selectedType != AccountType.CREDIT_CARD,
-                )
+                    Switch(
+                        modifier = Modifier.testTag(INCLUDE_IN_SPENDING_POOL_SWITCH_TAG),
+                        checked = includeInSpendingPool,
+                        onCheckedChange = { includeInSpendingPool = it },
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -226,6 +292,10 @@ fun AccountFormSheet(
                         val errors = validateAccountForm(
                             name = name,
                             balanceInput = balanceInput,
+                            isCreateCreditCard = selectedType == AccountType.CREDIT_CARD && initialData == null,
+                            creditLimitInput = creditLimitInput,
+                            statementClosingDayInput = statementClosingDayInput,
+                            paymentDueDayInput = paymentDueDayInput,
                         )
                         validationErrors.clear()
                         validationErrors.putAll(errors)
@@ -234,7 +304,17 @@ fun AccountFormSheet(
                         }
 
                         val balance = checkNotNull(MoneyInputUtils.parseToCents(balanceInput.trim()))
-                        onSave(name.trim(), selectedType, balance, includeInSpendingPool, descriptionInput)
+                        val creditLimit = MoneyInputUtils.parseToCents(creditLimitInput.trim())
+                        onSave(
+                            name.trim(),
+                            selectedType,
+                            balance,
+                            if (selectedType == AccountType.CREDIT_CARD) false else includeInSpendingPool,
+                            descriptionInput,
+                            creditLimit,
+                            statementClosingDayInput.trim().toIntOrNull(),
+                            paymentDueDayInput.trim().toIntOrNull(),
+                        )
                     },
                     modifier = Modifier.weight(1f),
                     enabled = !isSubmitting,
@@ -264,6 +344,10 @@ fun AccountFormSheet(
 private fun validateAccountForm(
     name: String,
     balanceInput: String,
+    isCreateCreditCard: Boolean,
+    creditLimitInput: String,
+    statementClosingDayInput: String,
+    paymentDueDayInput: String,
 ): Map<String, String> {
     val errors = mutableMapOf<String, String>()
 
@@ -273,6 +357,19 @@ private fun validateAccountForm(
 
     if (MoneyInputUtils.parseToCents(balanceInput.trim()) == null) {
         errors["balance"] = "Enter a valid amount"
+    }
+
+    if (isCreateCreditCard) {
+        val creditLimit = MoneyInputUtils.parseToCents(creditLimitInput.trim())
+        if (creditLimit == null || creditLimit <= 0L) {
+            errors["creditLimit"] = "Credit limit is required"
+        }
+        if (statementClosingDayInput.trim().toIntOrNull() !in 1..31) {
+            errors["statementClosingDay"] = "Closing day must be 1-31"
+        }
+        if (paymentDueDayInput.trim().toIntOrNull() !in 1..31) {
+            errors["paymentDueDay"] = "Due day must be 1-31"
+        }
     }
 
     return errors

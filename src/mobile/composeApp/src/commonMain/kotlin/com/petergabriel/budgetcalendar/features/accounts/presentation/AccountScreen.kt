@@ -144,16 +144,19 @@ fun AccountScreen(
                 isVisible = uiState.showForm,
                 initialData = uiState.editingAccount,
                 isSubmitting = uiState.isLoading,
-                onSave = { name, type, balance, isInSpendingPool, description ->
+                onSave = { name, type, balance, isInSpendingPool, description, creditLimit, statementClosingDay, paymentDueDay ->
                     val editing = uiState.editingAccount
                     if (editing == null) {
                         viewModel.createAccount(
                             CreateAccountRequest(
                                 name = name,
                                 type = type,
-                                initialBalance = balance,
+                                initialBalance = if (type == AccountType.CREDIT_CARD) -balance else balance,
                                 isInSpendingPool = isInSpendingPool,
                                 description = description,
+                                creditLimit = creditLimit,
+                                statementClosingDay = statementClosingDay,
+                                paymentDueDay = paymentDueDay,
                             ),
                         )
                     } else {
