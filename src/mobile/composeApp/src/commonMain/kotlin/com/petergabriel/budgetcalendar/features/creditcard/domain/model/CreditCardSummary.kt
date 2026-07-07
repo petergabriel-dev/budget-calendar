@@ -11,4 +11,6 @@ data class CreditCardSummary(
     val dueDate: Long?,
     val statementClosingDay: Int?,
     val paymentDueDay: Int?,
+    val statementDueAmount: Long? = null,
+    val statementDueDate: Long? = null,
 )

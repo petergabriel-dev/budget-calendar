@@ -1,5 +1,6 @@
 package com.petergabriel.budgetcalendar.features.creditcard.domain.usecase
 
+import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
 import com.petergabriel.budgetcalendar.features.accounts.domain.repository.IAccountRepository
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
@@ -18,6 +19,7 @@ class GetCreditCardSummariesUseCase(
     private val creditCardRepository: ICreditCardRepository,
     private val accountRepository: IAccountRepository,
     private val transactionRepository: ITransactionRepository,
+    private val nowMillis: () -> Long = DateUtils::nowMillis,
 ) {
     operator fun invoke(): Flow<List<CreditCardSummary>> {
         return transactionRepository.transactionChangedTrigger
@@ -33,6 +35,12 @@ class GetCreditCardSummariesUseCase(
                             } else {
                                 val projected = projectedBalances[account.id] ?: 0L
 
+                                val statementDue = statementDueFor(
+                                    accountId = account.id,
+                                    closingDay = setting.statementClosingDay,
+                                    dueDay = setting.paymentDueDay,
+                                )
+
                                 CreditCardSummary(
                                     accountId = account.id,
                                     accountName = account.name,
@@ -44,10 +52,28 @@ class GetCreditCardSummariesUseCase(
                                     dueDate = setting.dueDate,
                                     statementClosingDay = setting.statementClosingDay,
                                     paymentDueDay = setting.paymentDueDay,
+                                    statementDueAmount = statementDue?.amount,
+                                    statementDueDate = statementDue?.dueDate,
                                 )
                             }
                         }.sortedBy { summary -> summary.accountName.lowercase() }
                     }
             }
     }
+
+    private suspend fun statementDueFor(accountId: Long, closingDay: Int?, dueDay: Int?): StatementDue? {
+        if (closingDay == null || dueDay == null) return null
+        val lastClose = DateUtils.lastStatementClose(closingDay, nowMillis())
+        val balanceAsOf = creditCardRepository.getBalanceAsOf(accountId, lastClose).getOrElse { return null }
+        val paymentsSince = creditCardRepository.getPaymentsSince(accountId, lastClose).getOrElse { return null }
+        return StatementDue(
+            amount = max(0L, -balanceAsOf - paymentsSince),
+            dueDate = DateUtils.paymentDueAfter(dueDay, lastClose),
+        )
+    }
+
+    private data class StatementDue(
+        val amount: Long,
+        val dueDate: Long,
+    )
 }

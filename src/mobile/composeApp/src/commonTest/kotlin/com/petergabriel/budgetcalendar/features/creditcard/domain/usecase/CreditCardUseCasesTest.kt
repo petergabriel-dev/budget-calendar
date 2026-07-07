@@ -1,5 +1,6 @@
 package com.petergabriel.budgetcalendar.features.creditcard.domain.usecase
 
+import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAccountRequest
@@ -17,6 +18,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class CreditCardUseCasesTest {
+    private val fixedNowMillis = 1_774_656_000_000L
     private lateinit var accountRepository: FakeAccountRepository
     private lateinit var creditCardRepository: FakeCreditCardRepository
     private lateinit var transactionRepository: FakeTransactionRepository
@@ -44,11 +46,13 @@ class CreditCardUseCasesTest {
             creditCardRepository,
             accountRepository,
             transactionRepository,
+            nowMillis = { fixedNowMillis },
         )
         getCreditCardSummaryByIdUseCase = GetCreditCardSummaryByIdUseCase(
             getCreditCardSettingsUseCase,
             accountRepository,
             creditCardRepository,
+            nowMillis = { fixedNowMillis },
         )
         makeCreditCardPaymentUseCase = MakeCreditCardPaymentUseCase(
             accountRepository,
@@ -236,6 +240,57 @@ class CreditCardUseCasesTest {
     }
 
     @Test
+    fun getCreditCardSummaries_statementDueUsesLastCloseBalanceAndPaymentsSince() = runBlocking {
+        val card = createAccount("Due", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
+        createCreditCardSettingsUseCase(
+            accountId = card.id,
+            creditLimit = 20_000L,
+            statementClosingDay = 20,
+            paymentDueDay = 5,
+        ).getOrThrow()
+        val lastClose = DateUtils.lastStatementClose(20, fixedNowMillis)
+        creditCardRepository.setProjectedBalance(card.id, -7_000L)
+        creditCardRepository.setBalanceAsOf(card.id, lastClose, -5_000L)
+        creditCardRepository.setPaymentsSince(card.id, lastClose, 1_500L)
+
+        val summary = getCreditCardSummariesUseCase().first().single()
+
+        assertEquals(3_500L, summary.statementDueAmount)
+        assertEquals(DateUtils.paymentDueAfter(5, lastClose), summary.statementDueDate)
+    }
+
+    @Test
+    fun getCreditCardSummaries_postClosingChargeDoesNotIncreaseStatementDue() = runBlocking {
+        val card = createAccount("Post Close", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
+        createCreditCardSettingsUseCase(
+            accountId = card.id,
+            creditLimit = 20_000L,
+            statementClosingDay = 20,
+            paymentDueDay = 5,
+        ).getOrThrow()
+        val lastClose = DateUtils.lastStatementClose(20, fixedNowMillis)
+        creditCardRepository.setProjectedBalance(card.id, -9_000L)
+        creditCardRepository.setBalanceAsOf(card.id, lastClose, -5_000L)
+        creditCardRepository.setPaymentsSince(card.id, lastClose, 0L)
+
+        val summary = getCreditCardSummariesUseCase().first().single()
+
+        assertEquals(5_000L, summary.statementDueAmount)
+    }
+
+    @Test
+    fun getCreditCardSummaries_missingCycleLeavesStatementDueNull() = runBlocking {
+        val card = createAccount("No Cycle", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
+        createCreditCardSettingsUseCase(accountId = card.id, creditLimit = 20_000L).getOrThrow()
+        creditCardRepository.setProjectedBalance(card.id, -4_000L)
+
+        val summary = getCreditCardSummariesUseCase().first().single()
+
+        assertNull(summary.statementDueAmount)
+        assertNull(summary.statementDueDate)
+    }
+
+    @Test
     fun getCreditCardSummaryById_returnsSingleSummaryWithReservedAmount() = runBlocking {
         val card = createAccount("Single", AccountType.CREDIT_CARD, -2_000L, isInSpendingPool = false)
         createCreditCardSettingsUseCase(
@@ -244,7 +299,10 @@ class CreditCardUseCasesTest {
             statementClosingDay = 31,
             paymentDueDay = 9,
         ).getOrThrow()
+        val lastClose = DateUtils.lastStatementClose(31, fixedNowMillis)
         creditCardRepository.setProjectedBalance(card.id, -750L)
+        creditCardRepository.setBalanceAsOf(card.id, lastClose, -1_200L)
+        creditCardRepository.setPaymentsSince(card.id, lastClose, 200L)
 
         val result = getCreditCardSummaryByIdUseCase(card.id)
 
@@ -255,6 +313,8 @@ class CreditCardUseCasesTest {
         assertEquals(5_250L, summary.availableCredit)
         assertEquals(31, summary.statementClosingDay)
         assertEquals(9, summary.paymentDueDay)
+        assertEquals(1_000L, summary.statementDueAmount)
+        assertEquals(DateUtils.paymentDueAfter(9, lastClose), summary.statementDueDate)
     }
 
     @Test
