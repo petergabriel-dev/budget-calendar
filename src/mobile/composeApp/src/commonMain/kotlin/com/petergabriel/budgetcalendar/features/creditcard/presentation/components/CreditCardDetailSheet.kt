@@ -25,6 +25,7 @@ import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCa
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionListItem
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +62,10 @@ fun CreditCardDetailSheet(
                 valueColor = if (summary.currentBalance <= 0L) Color(0xFFC62828) else Color(0xFF2E7D32),
             )
             SummaryRow(
+                label = "Statement Balance",
+                value = statementDueText(summary),
+            )
+            SummaryRow(
                 label = "Credit Limit",
                 value = settings?.creditLimit?.let(CurrencyUtils::formatCents) ?: "Not set",
             )
@@ -69,8 +74,15 @@ fun CreditCardDetailSheet(
                 value = summary.availableCredit?.let(CurrencyUtils::formatCents) ?: "Not set",
             )
             SummaryRow(
+                label = "Utilization",
+                value = utilizationText(summary),
+            )
+            SummaryRow(
                 label = "🗓 Next Due Date",
-                value = settings?.paymentDueDay?.let(::nextDueDateText) ?: "Not set",
+                value = nextDueDateText(
+                    statementClosingDay = summary.statementClosingDay,
+                    paymentDueDay = summary.paymentDueDay,
+                ) ?: "Not set",
             )
 
             Row(
@@ -145,10 +157,29 @@ private fun SummaryRow(
     }
 }
 
-private fun nextDueDateText(paymentDueDay: Int): String {
-    val dueMillis = DateUtils.statementClosingOnOrAfter(
-        day = paymentDueDay,
-        fromMillis = DateUtils.nowMillis(),
-    )
+private fun statementDueText(summary: CreditCardSummary): String {
+    val amount = summary.statementDueAmount ?: return "Not set"
+    val dueDate = summary.statementDueDate?.let(DateUtils::formatMonthDay)
+    return if (dueDate == null) {
+        CurrencyUtils.formatCents(amount)
+    } else {
+        "${CurrencyUtils.formatCents(amount)} due $dueDate"
+    }
+}
+
+private fun utilizationText(summary: CreditCardSummary): String {
+    val limit = summary.creditLimit?.takeIf { amount -> amount > 0L } ?: return "Not set"
+    val utilization = (abs(summary.currentBalance).toDouble() / limit.toDouble()).coerceIn(0.0, 1.0)
+    return "${(utilization * 100).toInt()}%"
+}
+
+private fun nextDueDateText(
+    statementClosingDay: Int?,
+    paymentDueDay: Int?,
+    nowMillis: Long = DateUtils.nowMillis(),
+): String? {
+    if (statementClosingDay == null || paymentDueDay == null) return null
+    val lastClose = DateUtils.lastStatementClose(statementClosingDay, nowMillis)
+    val dueMillis = DateUtils.paymentDueAfter(paymentDueDay, lastClose)
     return DateUtils.formatMonthDay(dueMillis)
 }
