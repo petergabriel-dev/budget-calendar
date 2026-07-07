@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.sp
 import com.petergabriel.budgetcalendar.core.designsystem.component.HeroNetWorth
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
-import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
 
 @Composable
@@ -102,20 +101,8 @@ fun AccountListScreen(
                     )
 
                     creditCards.forEach { summary ->
-                        val account = Account(
-                            id = summary.accountId,
-                            name = summary.accountName,
-                            type = AccountType.CREDIT_CARD,
-                            balance = summary.currentBalance,
-                            isInSpendingPool = false,
-                            createdAt = 0L,
-                            updatedAt = 0L,
-                            description = summary.accountName,
-                        )
-                        WalledGardenCard(
-                            account = account,
-                            balance = summary.currentBalance,
-                            isLiability = true,
+                        CreditCardTile(
+                            summary = summary,
                             onClick = { onCreditCardTap(summary) },
                             modifier = Modifier.fillMaxWidth(),
                         )
