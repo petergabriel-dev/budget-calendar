@@ -96,6 +96,7 @@ fun TransactionFormSheet(
     var selectedAccountId by remember(stateKey) { mutableStateOf(initialData?.accountId) }
     var categoryInput by remember(stateKey) { mutableStateOf(initialData?.category.orEmpty()) }
     var statusInput by remember(stateKey) { mutableStateOf(initialData?.status ?: TransactionStatus.PENDING) }
+    var userManuallyChangedStatus by remember(stateKey) { mutableStateOf(false) }
 
     val localErrors = remember(stateKey) { mutableStateMapOf<String, String>() }
     var showAccountPicker by remember(stateKey) { mutableStateOf(false) }
@@ -108,6 +109,7 @@ fun TransactionFormSheet(
         onSetType(initialType)
         localErrors.clear()
         userManuallyChangedDate = false
+        userManuallyChangedStatus = false
     }
 
     LaunchedEffect(initialDateMillis) {
@@ -128,6 +130,25 @@ fun TransactionFormSheet(
         else -> TransactionType.EXPENSE
     }
     val selectedAccount = uiState.availableAccounts.firstOrNull { account -> account.id == selectedAccountId }
+    val isSelectedAccountCreditCard = selectedAccount?.type == AccountType.CREDIT_CARD
+    val effectiveSelectedType = if (isSelectedAccountCreditCard) TransactionType.EXPENSE else selectedType
+
+    LaunchedEffect(isSelectedAccountCreditCard, selectedDateMillis) {
+        if (isSelectedAccountCreditCard) {
+            if (selectedType != TransactionType.EXPENSE) {
+                destinationAccountId = null
+                localErrors.remove("destinationAccountId")
+                onSetType(TransactionType.EXPENSE)
+            }
+            if (!isEditMode && !userManuallyChangedStatus) {
+                statusInput = if (DateUtils.isDateInPast(selectedDateMillis) || DateUtils.startOfDayMillis(selectedDateMillis) == DateUtils.startOfDayMillis(DateUtils.nowMillis())) {
+                    TransactionStatus.CONFIRMED
+                } else {
+                    TransactionStatus.PENDING
+                }
+            }
+        }
+    }
     val initialAccountId = initialData?.accountId ?: uiState.availableAccounts.firstOrNull()?.id
     val initialDestinationAccountId = initialData?.destinationAccountId
     val initialAmountInput = initialData?.amount?.let(MoneyInputUtils::centsToInput).orEmpty()
@@ -139,7 +160,7 @@ fun TransactionFormSheet(
         selectedAccountId != initialAccountId ||
         categoryInput != initialCategoryInput ||
         statusInput != initialStatusInput ||
-        selectedType != initialType ||
+        effectiveSelectedType != initialType ||
         destinationAccountId != initialDestinationAccountId
     fun handleClose() {
         if (confirmDiscardOnDirty && isDirty) {
@@ -150,7 +171,13 @@ fun TransactionFormSheet(
     }
     val parsedAmount = MoneyInputUtils.parseToCents(amountInput)
     val selectedCreditCardSummary = uiState.creditCardSummaries.firstOrNull { summary -> summary.accountId == selectedAccountId }
-    val isCreditCardExpense = selectedType == TransactionType.EXPENSE && selectedAccount?.type == AccountType.CREDIT_CARD
+    val isCreditCardExpense = effectiveSelectedType == TransactionType.EXPENSE && selectedAccount?.type == AccountType.CREDIT_CARD
+    val statementClosingMillis = selectedCreditCardSummary?.statementClosingDay?.let { day ->
+        DateUtils.statementClosingOnOrAfter(day = day, fromMillis = selectedDateMillis)
+    }
+    val paymentDueMillis = statementClosingMillis?.let { closing ->
+        selectedCreditCardSummary.paymentDueDay?.let { day -> DateUtils.paymentDueAfter(day = day, closingMillis = closing) }
+    }
     val cardChargeImpact = if (isCreditCardExpense && parsedAmount != null && parsedAmount > 0L && selectedCreditCardSummary != null) {
         calculateCreditCardChargeImpact(
             currentBalance = selectedCreditCardSummary.currentBalance,
@@ -163,12 +190,12 @@ fun TransactionFormSheet(
     }
     val exceedsCredit = cardChargeImpact?.exceedsCredit == true
     val overLimitMessage = "This charge exceeds available credit. Raise the limit in card settings before saving."
-    val showInsufficientFunds = (selectedType == TransactionType.EXPENSE || selectedType == TransactionType.TRANSFER) &&
+    val showInsufficientFunds = (effectiveSelectedType == TransactionType.EXPENSE || effectiveSelectedType == TransactionType.TRANSFER) &&
         selectedAccount?.type != AccountType.CREDIT_CARD &&
         parsedAmount != null &&
         selectedAccount != null &&
         parsedAmount > selectedAccount.balance
-    val ctaLabel = if (initialData == null) "Add ${selectedType.displayName}" else "Save"
+    val ctaLabel = if (initialData == null) "Add ${if (isSelectedAccountCreditCard) "Charge" else effectiveSelectedType.displayName}" else "Save"
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -219,27 +246,29 @@ fun TransactionFormSheet(
                     InlineError(uiState.error)
                 }
 
-                BcSegmentedControl(
-                    options = listOf("Expense", "Income", "Transfer"),
-                    selectedIndex = when (selectedType) {
-                        TransactionType.INCOME -> 1
-                        TransactionType.TRANSFER -> 2
-                        else -> 0
-                    },
-                    onSelectedIndexChange = { selectedIndex ->
-                        val newType = when (selectedIndex) {
-                            1 -> TransactionType.INCOME
-                            2 -> TransactionType.TRANSFER
-                            else -> TransactionType.EXPENSE
-                        }
-                        if (newType != TransactionType.TRANSFER) {
-                            destinationAccountId = null
-                        }
-                        localErrors.remove("destinationAccountId")
-                        onSetType(newType)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                if (!isSelectedAccountCreditCard) {
+                    BcSegmentedControl(
+                        options = listOf("Expense", "Income", "Transfer"),
+                        selectedIndex = when (selectedType) {
+                            TransactionType.INCOME -> 1
+                            TransactionType.TRANSFER -> 2
+                            else -> 0
+                        },
+                        onSelectedIndexChange = { selectedIndex ->
+                            val newType = when (selectedIndex) {
+                                1 -> TransactionType.INCOME
+                                2 -> TransactionType.TRANSFER
+                                else -> TransactionType.EXPENSE
+                            }
+                            if (newType != TransactionType.TRANSFER) {
+                                destinationAccountId = null
+                            }
+                            localErrors.remove("destinationAccountId")
+                            onSetType(newType)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
 
                 LargeAmountInput(
                     label = "AMOUNT",
@@ -319,7 +348,7 @@ fun TransactionFormSheet(
                     )
                 }
 
-                if (selectedType == TransactionType.TRANSFER) {
+                if (effectiveSelectedType == TransactionType.TRANSFER) {
                     val filteredAccounts = uiState.availableAccounts.filter { it.id != selectedAccountId }
                     val destinationAccount = filteredAccounts.find { it.id == destinationAccountId }
 
@@ -398,14 +427,20 @@ fun TransactionFormSheet(
                     BcCheckboxRow(
                         label = "Scheduled (Future)",
                         checked = statusInput == TransactionStatus.PENDING,
-                        onCheckedChange = { statusInput = TransactionStatus.PENDING },
+                        onCheckedChange = {
+                            statusInput = TransactionStatus.PENDING
+                            userManuallyChangedStatus = true
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     )
 
                     BcCheckboxRow(
-                        label = "Paid / Cleared",
+                        label = if (isSelectedAccountCreditCard) "Posted" else "Paid / Cleared",
                         checked = statusInput == TransactionStatus.CONFIRMED,
-                        onCheckedChange = { statusInput = TransactionStatus.CONFIRMED },
+                        onCheckedChange = {
+                            statusInput = TransactionStatus.CONFIRMED
+                            userManuallyChangedStatus = true
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -414,6 +449,15 @@ fun TransactionFormSheet(
                     Text(
                         text = "Insufficient funds warning: this expense exceeds the selected account balance.",
                         color = colors.colorWarning,
+                        style = typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                if (isCreditCardExpense && selectedCreditCardSummary != null && statementClosingMillis != null && paymentDueMillis != null) {
+                    Text(
+                        text = "Bills to statement closing ${DateUtils.formatMonthDay(statementClosingMillis)} · due ${DateUtils.formatMonthDay(paymentDueMillis)}",
+                        color = colors.textSecondary,
                         style = typography.bodySmall,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -475,14 +519,14 @@ fun TransactionFormSheet(
                             errors["accountId"] = "Account is required"
                         }
 
-                        if (selectedType == TransactionType.TRANSFER && destinationAccountId == null) {
+                        if (effectiveSelectedType == TransactionType.TRANSFER && destinationAccountId == null) {
                             errors["destinationAccountId"] = "Destination account is required"
                         }
-                        if (selectedType == TransactionType.TRANSFER && destinationAccountId == selectedAccountId) {
+                        if (effectiveSelectedType == TransactionType.TRANSFER && destinationAccountId == selectedAccountId) {
                             errors["destinationAccountId"] = "Cannot transfer to the same account"
                         }
 
-                        if (selectedType != TransactionType.TRANSFER && categoryInput.isBlank()) {
+                        if (effectiveSelectedType != TransactionType.TRANSFER && categoryInput.isBlank()) {
                             errors["category"] = "Category is required"
                         }
 
@@ -499,10 +543,10 @@ fun TransactionFormSheet(
                         onSave(
                             CreateTransactionRequest(
                                 accountId = checkNotNull(accountId),
-                                destinationAccountId = if (selectedType == TransactionType.TRANSFER) destinationAccountId else null,
+                                destinationAccountId = if (effectiveSelectedType == TransactionType.TRANSFER) destinationAccountId else null,
                                 amount = checkNotNull(amount),
                                 date = selectedDateMillis,
-                                type = selectedType,
+                                type = effectiveSelectedType,
                                 status = statusInput,
                                 description = null,
                                 category = categoryInput.trim().ifBlank { null },
