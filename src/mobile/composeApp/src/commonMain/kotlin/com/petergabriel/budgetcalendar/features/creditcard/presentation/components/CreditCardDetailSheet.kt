@@ -20,13 +20,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
+import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSettings
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionListItem
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,10 +61,6 @@ fun CreditCardDetailSheet(
                 valueColor = if (summary.currentBalance <= 0L) Color(0xFFC62828) else Color(0xFF2E7D32),
             )
             SummaryRow(
-                label = "Statement Balance",
-                value = settings?.statementBalance?.let(CurrencyUtils::formatCents) ?: "Not set",
-            )
-            SummaryRow(
                 label = "Credit Limit",
                 value = settings?.creditLimit?.let(CurrencyUtils::formatCents) ?: "Not set",
             )
@@ -75,8 +69,8 @@ fun CreditCardDetailSheet(
                 value = summary.availableCredit?.let(CurrencyUtils::formatCents) ?: "Not set",
             )
             SummaryRow(
-                label = "Due Date",
-                value = settings?.dueDate?.let(::formatDate) ?: "Not set",
+                label = "🗓 Next Due Date",
+                value = settings?.paymentDueDay?.let(::nextDueDateText) ?: "Not set",
             )
 
             Row(
@@ -151,10 +145,10 @@ private fun SummaryRow(
     }
 }
 
-private fun formatDate(dateMillis: Long): String {
-    return Instant
-        .fromEpochMilliseconds(dateMillis)
-        .toLocalDateTime(TimeZone.currentSystemDefault())
-        .date
-        .toString()
+private fun nextDueDateText(paymentDueDay: Int): String {
+    val dueMillis = DateUtils.statementClosingOnOrAfter(
+        day = paymentDueDay,
+        fromMillis = DateUtils.nowMillis(),
+    )
+    return DateUtils.formatMonthDay(dueMillis)
 }
