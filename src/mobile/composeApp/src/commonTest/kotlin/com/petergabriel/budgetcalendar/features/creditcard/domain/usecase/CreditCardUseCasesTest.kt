@@ -196,7 +196,12 @@ class CreditCardUseCasesTest {
     fun getCreditCardSummaries_multipleCards_producesIndependentSummaries() = runBlocking {
         val visa = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L, isInSpendingPool = false)
         val amex = createAccount("Amex", AccountType.CREDIT_CARD, -5_000L, isInSpendingPool = false)
-        createCreditCardSettingsUseCase(accountId = visa.id, creditLimit = 12_000L).getOrThrow()
+        createCreditCardSettingsUseCase(
+            accountId = visa.id,
+            creditLimit = 12_000L,
+            statementClosingDay = 28,
+            paymentDueDay = 15,
+        ).getOrThrow()
         createCreditCardSettingsUseCase(accountId = amex.id, creditLimit = 20_000L).getOrThrow()
         creditCardRepository.setProjectedBalance(visa.id, -800L)
         creditCardRepository.setProjectedBalance(amex.id, -1_900L)
@@ -208,6 +213,9 @@ class CreditCardUseCasesTest {
             mapOf(visa.id to 800L, amex.id to 1_900L),
             summaries.associate { summary -> summary.accountId to summary.reservedAmount },
         )
+        val visaSummary = summaries.first { summary -> summary.accountId == visa.id }
+        assertEquals(28, visaSummary.statementClosingDay)
+        assertEquals(15, visaSummary.paymentDueDay)
     }
 
     @Test
@@ -230,7 +238,12 @@ class CreditCardUseCasesTest {
     @Test
     fun getCreditCardSummaryById_returnsSingleSummaryWithReservedAmount() = runBlocking {
         val card = createAccount("Single", AccountType.CREDIT_CARD, -2_000L, isInSpendingPool = false)
-        createCreditCardSettingsUseCase(accountId = card.id, creditLimit = 6_000L).getOrThrow()
+        createCreditCardSettingsUseCase(
+            accountId = card.id,
+            creditLimit = 6_000L,
+            statementClosingDay = 31,
+            paymentDueDay = 9,
+        ).getOrThrow()
         creditCardRepository.setProjectedBalance(card.id, -750L)
 
         val result = getCreditCardSummaryByIdUseCase(card.id)
@@ -240,6 +253,8 @@ class CreditCardUseCasesTest {
         assertEquals(card.id, summary.accountId)
         assertEquals(750L, summary.reservedAmount)
         assertEquals(5_250L, summary.availableCredit)
+        assertEquals(31, summary.statementClosingDay)
+        assertEquals(9, summary.paymentDueDay)
     }
 
     @Test

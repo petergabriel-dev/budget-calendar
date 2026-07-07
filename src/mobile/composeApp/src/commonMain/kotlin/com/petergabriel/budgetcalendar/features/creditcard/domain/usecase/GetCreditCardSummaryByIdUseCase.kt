@@ -37,6 +37,8 @@ class GetCreditCardSummaryByIdUseCase(
                 creditLimit = settings.creditLimit,
                 availableCredit = settings.creditLimit?.minus(abs(projected)),
                 dueDate = settings.dueDate,
+                statementClosingDay = settings.statementClosingDay,
+                paymentDueDay = settings.paymentDueDay,
             ),
         )
     }

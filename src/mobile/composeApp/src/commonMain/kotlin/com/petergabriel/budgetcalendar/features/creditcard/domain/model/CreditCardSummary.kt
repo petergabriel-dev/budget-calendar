@@ -9,4 +9,6 @@ data class CreditCardSummary(
     val creditLimit: Long?,
     val availableCredit: Long?,
     val dueDate: Long?,
+    val statementClosingDay: Int?,
+    val paymentDueDay: Int?,
 )

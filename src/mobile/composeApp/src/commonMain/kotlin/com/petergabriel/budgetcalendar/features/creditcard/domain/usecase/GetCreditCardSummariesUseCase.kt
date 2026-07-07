@@ -42,6 +42,8 @@ class GetCreditCardSummariesUseCase(
                                     creditLimit = setting.creditLimit,
                                     availableCredit = setting.creditLimit?.minus(abs(projected)),
                                     dueDate = setting.dueDate,
+                                    statementClosingDay = setting.statementClosingDay,
+                                    paymentDueDay = setting.paymentDueDay,
                                 )
                             }
                         }.sortedBy { summary -> summary.accountName.lowercase() }
