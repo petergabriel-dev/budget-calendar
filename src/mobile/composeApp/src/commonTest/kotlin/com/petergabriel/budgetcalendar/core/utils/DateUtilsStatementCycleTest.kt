@@ -45,14 +45,14 @@ class DateUtilsStatementCycleTest {
     }
 
     @Test
-    fun statementClosingOnOrAfter_boundaryDayEqualsClosing_returnsSameDay() {
+    fun statementClosingOnOrAfter_boundaryDayEqualsClosing_returnsNextMonthClosing() {
         val closing = DateUtils.statementClosingOnOrAfter(
             day = 15,
             fromMillis = millis(LocalDate(2026, 3, 15)),
             tz = tz,
         )
 
-        assertEquals(LocalDate(2026, 3, 15), date(closing))
+        assertEquals(LocalDate(2026, 4, 15), date(closing))
     }
 
     @Test
@@ -64,6 +64,50 @@ class DateUtilsStatementCycleTest {
         )
 
         assertEquals(LocalDate(2026, 4, 10), date(closing))
+    }
+
+    @Test
+    fun lastStatementClose_onClosingDay_returnsSameDay() {
+        val closing = DateUtils.lastStatementClose(
+            day = 15,
+            nowMillis = millis(LocalDate(2026, 3, 15)),
+            tz = tz,
+        )
+
+        assertEquals(LocalDate(2026, 3, 15), date(closing))
+    }
+
+    @Test
+    fun lastStatementClose_beforeCurrentMonthClosing_returnsPreviousMonthClosing() {
+        val closing = DateUtils.lastStatementClose(
+            day = 20,
+            nowMillis = millis(LocalDate(2026, 3, 10)),
+            tz = tz,
+        )
+
+        assertEquals(LocalDate(2026, 2, 20), date(closing))
+    }
+
+    @Test
+    fun lastStatementClose_day31InMarchClampsPreviousFebruary() {
+        val closing = DateUtils.lastStatementClose(
+            day = 31,
+            nowMillis = millis(LocalDate(2026, 3, 10)),
+            tz = tz,
+        )
+
+        assertEquals(LocalDate(2026, 2, 28), date(closing))
+    }
+
+    @Test
+    fun lastStatementClose_day31InLeapMarchClampsPreviousFebruaryToLeapDay() {
+        val closing = DateUtils.lastStatementClose(
+            day = 31,
+            nowMillis = millis(LocalDate(2024, 3, 10)),
+            tz = tz,
+        )
+
+        assertEquals(LocalDate(2024, 2, 29), date(closing))
     }
 
     @Test

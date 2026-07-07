@@ -55,6 +55,16 @@ class TransactionFormSheetLogicTest {
         assertNull(cardStatementContextLine(summary(statementClosingDay = 28, paymentDueDay = null), millis(LocalDate(2026, 3, 10)), tz))
     }
 
+    @Test
+    fun cardStatementContextLine_chargeOnClosingDayBillsToNextStatement() {
+        val complete = summary(statementClosingDay = 28, paymentDueDay = 15)
+
+        assertEquals(
+            "Bills to statement closing Apr 28 · due May 15",
+            cardStatementContextLine(complete, millis(LocalDate(2026, 3, 28)), tz),
+        )
+    }
+
     private fun summary(statementClosingDay: Int?, paymentDueDay: Int?): CreditCardSummary {
         return CreditCardSummary(
             accountId = 1L,

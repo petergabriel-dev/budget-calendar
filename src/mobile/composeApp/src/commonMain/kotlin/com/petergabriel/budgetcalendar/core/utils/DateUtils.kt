@@ -93,11 +93,24 @@ object DateUtils {
         require(day in 1..31) { "Statement closing day must be 1-31" }
         val fromDate = Instant.fromEpochMilliseconds(fromMillis).toLocalDateTime(tz).date
         val thisMonthClosing = clampedDate(fromDate.year, fromDate.month.number, day)
-        val closingDate = if (thisMonthClosing >= fromDate) {
+        val closingDate = if (thisMonthClosing > fromDate) {
             thisMonthClosing
         } else {
             val nextMonth = LocalDate(fromDate.year, fromDate.month.number, 1).plus(DatePeriod(months = 1))
             clampedDate(nextMonth.year, nextMonth.month.number, day)
+        }
+        return closingDate.atStartOfDayIn(tz).toEpochMilliseconds()
+    }
+
+    fun lastStatementClose(day: Int, nowMillis: Long, tz: TimeZone = TimeZone.currentSystemDefault()): Long {
+        require(day in 1..31) { "Statement closing day must be 1-31" }
+        val nowDate = Instant.fromEpochMilliseconds(nowMillis).toLocalDateTime(tz).date
+        val thisMonthClosing = clampedDate(nowDate.year, nowDate.month.number, day)
+        val closingDate = if (thisMonthClosing <= nowDate) {
+            thisMonthClosing
+        } else {
+            val previousMonth = LocalDate(nowDate.year, nowDate.month.number, 1).minus(DatePeriod(months = 1))
+            clampedDate(previousMonth.year, previousMonth.month.number, day)
         }
         return closingDate.atStartOfDayIn(tz).toEpochMilliseconds()
     }
