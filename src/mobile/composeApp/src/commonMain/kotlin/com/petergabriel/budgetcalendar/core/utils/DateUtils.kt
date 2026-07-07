@@ -88,4 +88,55 @@ object DateUtils {
         val utcDate = Instant.fromEpochMilliseconds(utcDayStartMillis).toLocalDateTime(TimeZone.UTC).date
         return utcDate.atStartOfDayIn(timeZone).toEpochMilliseconds()
     }
+
+    fun statementClosingOnOrAfter(day: Int, fromMillis: Long, tz: TimeZone = TimeZone.currentSystemDefault()): Long {
+        require(day in 1..31) { "Statement closing day must be 1-31" }
+        val fromDate = Instant.fromEpochMilliseconds(fromMillis).toLocalDateTime(tz).date
+        val thisMonthClosing = clampedDate(fromDate.year, fromDate.month.number, day)
+        val closingDate = if (thisMonthClosing >= fromDate) {
+            thisMonthClosing
+        } else {
+            val nextMonth = LocalDate(fromDate.year, fromDate.month.number, 1).plus(DatePeriod(months = 1))
+            clampedDate(nextMonth.year, nextMonth.month.number, day)
+        }
+        return closingDate.atStartOfDayIn(tz).toEpochMilliseconds()
+    }
+
+    fun paymentDueAfter(day: Int, closingMillis: Long, tz: TimeZone = TimeZone.currentSystemDefault()): Long {
+        require(day in 1..31) { "Payment due day must be 1-31" }
+        val closingDate = Instant.fromEpochMilliseconds(closingMillis).toLocalDateTime(tz).date
+        val thisMonthDue = clampedDate(closingDate.year, closingDate.month.number, day)
+        val dueDate = if (thisMonthDue > closingDate) {
+            thisMonthDue
+        } else {
+            val nextMonth = LocalDate(closingDate.year, closingDate.month.number, 1).plus(DatePeriod(months = 1))
+            clampedDate(nextMonth.year, nextMonth.month.number, day)
+        }
+        return dueDate.atStartOfDayIn(tz).toEpochMilliseconds()
+    }
+
+    fun formatMonthDay(millis: Long, tz: TimeZone = TimeZone.currentSystemDefault()): String {
+        val date = Instant.fromEpochMilliseconds(millis).toLocalDateTime(tz).date
+        val month = when (date.month.number) {
+            1 -> "Jan"
+            2 -> "Feb"
+            3 -> "Mar"
+            4 -> "Apr"
+            5 -> "May"
+            6 -> "Jun"
+            7 -> "Jul"
+            8 -> "Aug"
+            9 -> "Sep"
+            10 -> "Oct"
+            11 -> "Nov"
+            else -> "Dec"
+        }
+        return "$month ${date.day}"
+    }
+
+    private fun clampedDate(year: Int, month: Int, day: Int): LocalDate {
+        val firstDay = LocalDate(year, month, 1)
+        val lastDay = firstDay.plus(DatePeriod(months = 1)).minus(DatePeriod(days = 1)).day
+        return LocalDate(year, month, day.coerceAtMost(lastDay))
+    }
 }
