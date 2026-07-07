@@ -6,6 +6,8 @@ data class CreditCardSettings(
     val creditLimit: Long?,
     val statementBalance: Long?,
     val dueDate: Long?,
+    val statementClosingDay: Int?,
+    val paymentDueDay: Int?,
     val createdAt: Long,
     val updatedAt: Long,
 )

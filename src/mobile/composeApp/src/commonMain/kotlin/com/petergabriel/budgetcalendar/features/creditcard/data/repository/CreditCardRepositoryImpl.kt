@@ -40,6 +40,8 @@ class CreditCardRepositoryImpl(
         creditLimit: Long?,
         statementBalance: Long?,
         dueDate: Long?,
+        statementClosingDay: Int?,
+        paymentDueDay: Int?,
     ): Result<CreditCardSettings> = runCatching {
         val now = DateUtils.nowMillis()
         database.credit_card_settingsQueries.insertCreditCardSettings(
@@ -47,8 +49,8 @@ class CreditCardRepositoryImpl(
             creditLimit,
             statementBalance,
             dueDate,
-            null,
-            null,
+            statementClosingDay?.toLong(),
+            paymentDueDay?.toLong(),
             now,
             now,
         )
@@ -60,13 +62,15 @@ class CreditCardRepositoryImpl(
         creditLimit: Long?,
         statementBalance: Long?,
         dueDate: Long?,
+        statementClosingDay: Int?,
+        paymentDueDay: Int?,
     ): Result<CreditCardSettings> = runCatching {
         database.credit_card_settingsQueries.updateCreditCardSettings(
             creditLimit,
             statementBalance,
             dueDate,
-            null,
-            null,
+            statementClosingDay?.toLong(),
+            paymentDueDay?.toLong(),
             DateUtils.nowMillis(),
             accountId,
         )

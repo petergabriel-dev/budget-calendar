@@ -11,6 +11,8 @@ interface ICreditCardRepository {
         creditLimit: Long?,
         statementBalance: Long?,
         dueDate: Long?,
+        statementClosingDay: Int? = null,
+        paymentDueDay: Int? = null,
     ): Result<CreditCardSettings>
 
     suspend fun update(
@@ -18,6 +20,8 @@ interface ICreditCardRepository {
         creditLimit: Long?,
         statementBalance: Long?,
         dueDate: Long?,
+        statementClosingDay: Int? = null,
+        paymentDueDay: Int? = null,
     ): Result<CreditCardSettings>
 
     suspend fun delete(accountId: Long): Result<Unit>

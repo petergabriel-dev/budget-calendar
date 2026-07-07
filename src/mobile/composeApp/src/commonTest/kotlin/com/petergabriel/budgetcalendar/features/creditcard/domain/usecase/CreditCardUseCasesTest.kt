@@ -65,6 +65,8 @@ class CreditCardUseCasesTest {
             creditLimit = 20_000L,
             statementBalance = 4_500L,
             dueDate = 1_234_567L,
+            statementClosingDay = 28,
+            paymentDueDay = 15,
         )
 
         assertTrue(result.isSuccess)
@@ -73,6 +75,8 @@ class CreditCardUseCasesTest {
         assertEquals(20_000L, settings.creditLimit)
         assertEquals(4_500L, settings.statementBalance)
         assertEquals(1_234_567L, settings.dueDate)
+        assertEquals(28, settings.statementClosingDay)
+        assertEquals(15, settings.paymentDueDay)
     }
 
     @Test
@@ -137,6 +141,8 @@ class CreditCardUseCasesTest {
             creditLimit = 12_000L,
             statementBalance = 2_300L,
             dueDate = 9_999_000L,
+            statementClosingDay = 31,
+            paymentDueDay = 9,
         )
 
         assertTrue(result.isSuccess)
@@ -144,6 +150,30 @@ class CreditCardUseCasesTest {
         assertEquals(12_000L, updated.creditLimit)
         assertEquals(2_300L, updated.statementBalance)
         assertEquals(9_999_000L, updated.dueDate)
+        assertEquals(31, updated.statementClosingDay)
+        assertEquals(9, updated.paymentDueDay)
+
+        val loaded = getCreditCardSettingsUseCase(card.id).getOrThrow()
+        assertEquals(31, loaded.statementClosingDay)
+        assertEquals(9, loaded.paymentDueDay)
+    }
+
+    @Test
+    fun updateCreditCardSettings_invalidCycleDay_returnsValidationError() = runBlocking {
+        val card = createAccount("Discover", AccountType.CREDIT_CARD, -800L, isInSpendingPool = false)
+        createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
+
+        val result = updateCreditCardSettingsUseCase(
+            accountId = card.id,
+            creditLimit = null,
+            statementBalance = null,
+            dueDate = null,
+            statementClosingDay = 32,
+            paymentDueDay = 9,
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals("Statement cycle days must be 1-31", result.exceptionOrNull()?.message)
     }
 
     @Test

@@ -12,6 +12,8 @@ class CreditCardMapper {
             creditLimit = entity.creditLimit,
             statementBalance = entity.statementBalance,
             dueDate = entity.dueDate,
+            statementClosingDay = entity.statementClosingDay?.toInt(),
+            paymentDueDay = entity.paymentDueDay?.toInt(),
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
         )

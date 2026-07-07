@@ -165,6 +165,8 @@ class CreditCardViewModel(
                 creditLimit = request.creditLimit,
                 statementBalance = request.statementBalance,
                 dueDate = request.dueDate,
+                statementClosingDay = request.statementClosingDay,
+                paymentDueDay = request.paymentDueDay,
             ).onSuccess { updatedSettings ->
                 _uiState.update { state ->
                     state.copy(

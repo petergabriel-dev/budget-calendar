@@ -25,6 +25,8 @@ class FakeCreditCardRepository : ICreditCardRepository {
         creditLimit: Long?,
         statementBalance: Long?,
         dueDate: Long?,
+        statementClosingDay: Int?,
+        paymentDueDay: Int?,
     ): Result<CreditCardSettings> {
         if (settings.any { item -> item.accountId == accountId }) {
             return Result.failure(IllegalStateException("Credit card settings for accountId=$accountId already exist"))
@@ -37,6 +39,8 @@ class FakeCreditCardRepository : ICreditCardRepository {
             creditLimit = creditLimit,
             statementBalance = statementBalance,
             dueDate = dueDate,
+            statementClosingDay = statementClosingDay,
+            paymentDueDay = paymentDueDay,
             createdAt = now,
             updatedAt = now,
         )
@@ -50,6 +54,8 @@ class FakeCreditCardRepository : ICreditCardRepository {
         creditLimit: Long?,
         statementBalance: Long?,
         dueDate: Long?,
+        statementClosingDay: Int?,
+        paymentDueDay: Int?,
     ): Result<CreditCardSettings> {
         val index = settings.indexOfFirst { item -> item.accountId == accountId }
         if (index < 0) {
@@ -60,6 +66,8 @@ class FakeCreditCardRepository : ICreditCardRepository {
             creditLimit = creditLimit,
             statementBalance = statementBalance,
             dueDate = dueDate,
+            statementClosingDay = statementClosingDay,
+            paymentDueDay = paymentDueDay,
             updatedAt = DateUtils.nowMillis(),
         )
         settings[index] = updated
