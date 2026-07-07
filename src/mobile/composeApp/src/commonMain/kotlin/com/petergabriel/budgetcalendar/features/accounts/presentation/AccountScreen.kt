@@ -206,6 +206,11 @@ fun AccountScreen(
                         creditCardViewModel.updateSettings(request)
                     },
                     onCancel = { showCreditCardSettingsForm = false },
+                    onDelete = {
+                        showCreditCardSettingsForm = false
+                        creditCardViewModel.dismissSelectedCard()
+                        viewModel.deleteAccount(selectedCard.accountId)
+                    },
                 )
             }
         }

@@ -37,6 +37,7 @@ fun CreditCardSettingsForm(
     initialSettings: CreditCardSettings?,
     onSave: (UpdateCreditCardSettingsRequest) -> Unit,
     onCancel: () -> Unit,
+    onDelete: (() -> Unit)? = null,
 ) {
     if (!isVisible) {
         return
@@ -72,7 +73,7 @@ fun CreditCardSettingsForm(
                     creditLimitInput = it
                     validationErrors.remove("creditLimit")
                 },
-                label = { Text("Credit Limit (optional)") },
+                label = { Text("Credit Limit") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 isError = validationErrors.containsKey("creditLimit"),
@@ -86,7 +87,7 @@ fun CreditCardSettingsForm(
                     statementClosingDayInput = it
                     validationErrors.remove("statementClosingDay")
                 },
-                label = { Text("Closing day (1-31, optional)") },
+                label = { Text("Closing day (1-31)") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 isError = validationErrors.containsKey("statementClosingDay"),
@@ -100,7 +101,7 @@ fun CreditCardSettingsForm(
                     paymentDueDayInput = it
                     validationErrors.remove("paymentDueDay")
                 },
-                label = { Text("Due day (1-31, optional)") },
+                label = { Text("Due day (1-31)") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 isError = validationErrors.containsKey("paymentDueDay"),
@@ -124,27 +125,27 @@ fun CreditCardSettingsForm(
                 Button(
                     onClick = {
                         val errors = mutableMapOf<String, String>()
-                        val creditLimit = parseOptionalMoney(
+                        val creditLimit = parseRequiredMoney(
                             value = creditLimitInput,
                             fieldName = "credit limit",
                             errors = errors,
                             key = "creditLimit",
                         )
-                        val statementClosingDay = parseOptionalDay(
+                        val statementClosingDay = parseRequiredDay(
                             value = statementClosingDayInput,
                             fieldName = "closing day",
                             errors = errors,
                             key = "statementClosingDay",
                         )
-                        val paymentDueDay = parseOptionalDay(
+                        val paymentDueDay = parseRequiredDay(
                             value = paymentDueDayInput,
                             fieldName = "due day",
                             errors = errors,
                             key = "paymentDueDay",
                         )
 
-                        if (creditLimit != null && creditLimit < 0L) {
-                            errors["creditLimit"] = "Credit limit must be non-negative"
+                        if (creditLimit != null && creditLimit <= 0L) {
+                            errors["creditLimit"] = "Credit limit must be greater than 0"
                         }
 
                         validationErrors.clear()
@@ -169,12 +170,24 @@ fun CreditCardSettingsForm(
                 }
             }
 
+            if (onDelete != null) {
+                TextButton(
+                    onClick = onDelete,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "Delete Card",
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
 
-private fun parseOptionalMoney(
+private fun parseRequiredMoney(
     value: String,
     fieldName: String,
     errors: MutableMap<String, String>,
@@ -182,6 +195,7 @@ private fun parseOptionalMoney(
 ): Long? {
     val trimmed = value.trim()
     if (trimmed.isEmpty()) {
+        errors[key] = "${fieldName.replaceFirstChar { it.titlecase() }} is required"
         return null
     }
 
@@ -206,7 +220,7 @@ private fun InlineError(message: String?) {
     )
 }
 
-private fun parseOptionalDay(
+private fun parseRequiredDay(
     value: String,
     fieldName: String,
     errors: MutableMap<String, String>,
@@ -214,6 +228,7 @@ private fun parseOptionalDay(
 ): Int? {
     val trimmed = value.trim()
     if (trimmed.isEmpty()) {
+        errors[key] = "${fieldName.replaceFirstChar { it.titlecase() }} is required"
         return null
     }
 
