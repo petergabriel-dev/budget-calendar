@@ -48,6 +48,7 @@ import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.core.utils.MoneyInputUtils
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
+import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.calculateCreditCardChargeImpact
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.CreateTransactionRequest
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
@@ -131,7 +132,7 @@ fun TransactionFormSheet(
     }
     val selectedAccount = uiState.availableAccounts.firstOrNull { account -> account.id == selectedAccountId }
     val isSelectedAccountCreditCard = selectedAccount?.type == AccountType.CREDIT_CARD
-    val effectiveSelectedType = if (isSelectedAccountCreditCard) TransactionType.EXPENSE else selectedType
+    val effectiveSelectedType = transactionFormEffectiveType(selectedType, selectedAccount?.type)
 
     LaunchedEffect(isSelectedAccountCreditCard, selectedDateMillis) {
         if (isSelectedAccountCreditCard) {
@@ -141,11 +142,7 @@ fun TransactionFormSheet(
                 onSetType(TransactionType.EXPENSE)
             }
             if (!isEditMode && !userManuallyChangedStatus) {
-                statusInput = if (DateUtils.isDateInPast(selectedDateMillis) || DateUtils.startOfDayMillis(selectedDateMillis) == DateUtils.startOfDayMillis(DateUtils.nowMillis())) {
-                    TransactionStatus.CONFIRMED
-                } else {
-                    TransactionStatus.PENDING
-                }
+                statusInput = defaultCardChargeStatus(selectedDateMillis, DateUtils.nowMillis())
             }
         }
     }
@@ -172,12 +169,7 @@ fun TransactionFormSheet(
     val parsedAmount = MoneyInputUtils.parseToCents(amountInput)
     val selectedCreditCardSummary = uiState.creditCardSummaries.firstOrNull { summary -> summary.accountId == selectedAccountId }
     val isCreditCardExpense = effectiveSelectedType == TransactionType.EXPENSE && selectedAccount?.type == AccountType.CREDIT_CARD
-    val statementClosingMillis = selectedCreditCardSummary?.statementClosingDay?.let { day ->
-        DateUtils.statementClosingOnOrAfter(day = day, fromMillis = selectedDateMillis)
-    }
-    val paymentDueMillis = statementClosingMillis?.let { closing ->
-        selectedCreditCardSummary.paymentDueDay?.let { day -> DateUtils.paymentDueAfter(day = day, closingMillis = closing) }
-    }
+    val statementContextLine = cardStatementContextLine(selectedCreditCardSummary, selectedDateMillis)
     val cardChargeImpact = if (isCreditCardExpense && parsedAmount != null && parsedAmount > 0L && selectedCreditCardSummary != null) {
         calculateCreditCardChargeImpact(
             currentBalance = selectedCreditCardSummary.currentBalance,
@@ -454,9 +446,9 @@ fun TransactionFormSheet(
                     )
                 }
 
-                if (isCreditCardExpense && selectedCreditCardSummary != null && statementClosingMillis != null && paymentDueMillis != null) {
+                if (isCreditCardExpense && statementContextLine != null) {
                     Text(
-                        text = "Bills to statement closing ${DateUtils.formatMonthDay(statementClosingMillis)} · due ${DateUtils.formatMonthDay(paymentDueMillis)}",
+                        text = statementContextLine,
                         color = colors.textSecondary,
                         style = typography.bodySmall,
                         modifier = Modifier.fillMaxWidth(),
@@ -644,4 +636,32 @@ private fun formatDate(dateMillis: Long): String {
         .toLocalDateTime(TimeZone.currentSystemDefault())
         .date
         .toString()
+}
+
+internal fun transactionFormEffectiveType(selectedType: TransactionType, accountType: AccountType?): TransactionType {
+    return if (accountType == AccountType.CREDIT_CARD) TransactionType.EXPENSE else selectedType
+}
+
+internal fun defaultCardChargeStatus(
+    chargeDateMillis: Long,
+    nowMillis: Long,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): TransactionStatus {
+    return if (DateUtils.startOfDayMillis(chargeDateMillis, timeZone) <= DateUtils.startOfDayMillis(nowMillis, timeZone)) {
+        TransactionStatus.CONFIRMED
+    } else {
+        TransactionStatus.PENDING
+    }
+}
+
+internal fun cardStatementContextLine(
+    summary: CreditCardSummary?,
+    chargeDateMillis: Long,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): String? {
+    val closingDay = summary?.statementClosingDay ?: return null
+    val dueDay = summary.paymentDueDay ?: return null
+    val closingMillis = DateUtils.statementClosingOnOrAfter(closingDay, chargeDateMillis, timeZone)
+    val dueMillis = DateUtils.paymentDueAfter(dueDay, closingMillis, timeZone)
+    return "Bills to statement closing ${DateUtils.formatMonthDay(closingMillis, timeZone)} · due ${DateUtils.formatMonthDay(dueMillis, timeZone)}"
 }

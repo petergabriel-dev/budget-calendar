@@ -578,6 +578,74 @@ class BudgetFlowObservationIntegrationTest {
     }
 
     @Test
+    fun creditCardCycleSettings_doNotChangeSafeToSpendOrNetWorth() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 1_000_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+            val card = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = 0L,
+                    isInSpendingPool = false,
+                ),
+            ).getOrThrow()
+            fixture.creditCardRepository.insert(
+                accountId = card.id,
+                creditLimit = 500_00L,
+                statementBalance = null,
+                dueDate = null,
+                statementClosingDay = null,
+                paymentDueDay = null,
+            ).getOrThrow()
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = card.id,
+                    amount = 120_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Card charge",
+                ),
+            ).getOrThrow()
+
+            val beforeSummary = withTimeout(5_000) {
+                fixture.calculateSafeToSpendUseCase().first { summary -> summary.creditCardReserved == 120_00L }
+            }
+            val beforeNetWorth = fixture.accountRepository.calculateNetWorth()
+
+            fixture.creditCardRepository.update(
+                accountId = card.id,
+                creditLimit = 500_00L,
+                statementBalance = null,
+                dueDate = null,
+                statementClosingDay = 28,
+                paymentDueDay = 15,
+            ).getOrThrow()
+
+            val afterSummary = withTimeout(5_000) {
+                fixture.calculateSafeToSpendUseCase().first { summary -> summary.creditCardReserved == 120_00L }
+            }
+            val afterNetWorth = fixture.accountRepository.calculateNetWorth()
+
+            assertEquals(beforeSummary.availableToSpend, afterSummary.availableToSpend)
+            assertEquals(beforeSummary.creditCardReserved, afterSummary.creditCardReserved)
+            assertEquals(beforeSummary.pendingReservations, afterSummary.pendingReservations)
+            assertEquals(beforeNetWorth, afterNetWorth)
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
+    @Test
     fun creditCardReserve_tracksProjectedUnpaidBalanceAcrossLifecycle() = runBlocking {
         val fixture = createFixture()
 
