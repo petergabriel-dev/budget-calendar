@@ -1,6 +1,5 @@
 package com.petergabriel.budgetcalendar.features.creditcard.presentation.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,15 +11,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -33,9 +29,6 @@ import androidx.compose.ui.unit.dp
 import com.petergabriel.budgetcalendar.core.utils.MoneyInputUtils
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSettings
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.UpdateCreditCardSettingsRequest
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,11 +45,12 @@ fun CreditCardSettingsForm(
     var creditLimitInput by remember(initialSettings?.accountId) {
         mutableStateOf(initialSettings?.creditLimit?.let(MoneyInputUtils::centsToInput).orEmpty())
     }
-    var statementBalanceInput by remember(initialSettings?.accountId) {
-        mutableStateOf(initialSettings?.statementBalance?.let(MoneyInputUtils::centsToInput).orEmpty())
+    var statementClosingDayInput by remember(initialSettings?.accountId) {
+        mutableStateOf(initialSettings?.statementClosingDay?.toString().orEmpty())
     }
-    var dueDateMillis by remember(initialSettings?.accountId) { mutableStateOf(initialSettings?.dueDate) }
-    var showDatePicker by remember { mutableStateOf(false) }
+    var paymentDueDayInput by remember(initialSettings?.accountId) {
+        mutableStateOf(initialSettings?.paymentDueDay?.toString().orEmpty())
+    }
     val validationErrors = remember(initialSettings?.accountId) { mutableStateMapOf<String, String>() }
 
     ModalBottomSheet(onDismissRequest = onCancel) {
@@ -87,62 +81,32 @@ fun CreditCardSettingsForm(
             InlineError(validationErrors["creditLimit"])
 
             OutlinedTextField(
-                value = statementBalanceInput,
+                value = statementClosingDayInput,
                 onValueChange = {
-                    statementBalanceInput = it
-                    validationErrors.remove("statementBalance")
+                    statementClosingDayInput = it
+                    validationErrors.remove("statementClosingDay")
                 },
-                label = { Text("Statement Balance (optional)") },
+                label = { Text("Closing day (1-31, optional)") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                isError = validationErrors.containsKey("statementBalance"),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = validationErrors.containsKey("statementClosingDay"),
                 singleLine = true,
             )
-            InlineError(validationErrors["statementBalance"])
+            InlineError(validationErrors["statementClosingDay"])
 
             OutlinedTextField(
-                value = dueDateMillis?.let(::formatDate) ?: "",
-                onValueChange = {},
-                label = { Text("Due Date (optional)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true },
-                readOnly = true,
-                trailingIcon = { Text("v") },
+                value = paymentDueDayInput,
+                onValueChange = {
+                    paymentDueDayInput = it
+                    validationErrors.remove("paymentDueDay")
+                },
+                label = { Text("Due day (1-31, optional)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = validationErrors.containsKey("paymentDueDay"),
+                singleLine = true,
             )
-
-            if (dueDateMillis != null) {
-                TextButton(
-                    onClick = { dueDateMillis = null },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Clear due date")
-                }
-            }
-
-            if (showDatePicker) {
-                val datePickerState = rememberDatePickerState(initialSelectedDateMillis = dueDateMillis)
-                DatePickerDialog(
-                    onDismissRequest = { showDatePicker = false },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                dueDateMillis = datePickerState.selectedDateMillis
-                                showDatePicker = false
-                            },
-                        ) {
-                            Text("OK")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDatePicker = false }) {
-                            Text("Cancel")
-                        }
-                    },
-                ) {
-                    DatePicker(state = datePickerState)
-                }
-            }
+            InlineError(validationErrors["paymentDueDay"])
 
             Spacer(modifier = Modifier.height(4.dp))
 
@@ -166,11 +130,17 @@ fun CreditCardSettingsForm(
                             errors = errors,
                             key = "creditLimit",
                         )
-                        val statementBalance = parseOptionalMoney(
-                            value = statementBalanceInput,
-                            fieldName = "statement balance",
+                        val statementClosingDay = parseOptionalDay(
+                            value = statementClosingDayInput,
+                            fieldName = "closing day",
                             errors = errors,
-                            key = "statementBalance",
+                            key = "statementClosingDay",
+                        )
+                        val paymentDueDay = parseOptionalDay(
+                            value = paymentDueDayInput,
+                            fieldName = "due day",
+                            errors = errors,
+                            key = "paymentDueDay",
                         )
 
                         if (creditLimit != null && creditLimit < 0L) {
@@ -186,8 +156,10 @@ fun CreditCardSettingsForm(
                         onSave(
                             UpdateCreditCardSettingsRequest(
                                 creditLimit = creditLimit,
-                                statementBalance = statementBalance,
-                                dueDate = dueDateMillis,
+                                statementBalance = initialSettings?.statementBalance,
+                                dueDate = initialSettings?.dueDate,
+                                statementClosingDay = statementClosingDay,
+                                paymentDueDay = paymentDueDay,
                             ),
                         )
                     },
@@ -234,10 +206,20 @@ private fun InlineError(message: String?) {
     )
 }
 
-private fun formatDate(dateMillis: Long): String {
-    return Instant
-        .fromEpochMilliseconds(dateMillis)
-        .toLocalDateTime(TimeZone.currentSystemDefault())
-        .date
-        .toString()
+private fun parseOptionalDay(
+    value: String,
+    fieldName: String,
+    errors: MutableMap<String, String>,
+    key: String,
+): Int? {
+    val trimmed = value.trim()
+    if (trimmed.isEmpty()) {
+        return null
+    }
+
+    val parsed = trimmed.toIntOrNull()
+    if (parsed == null || parsed !in 1..31) {
+        errors[key] = "Enter a valid $fieldName from 1 to 31"
+    }
+    return parsed
 }
