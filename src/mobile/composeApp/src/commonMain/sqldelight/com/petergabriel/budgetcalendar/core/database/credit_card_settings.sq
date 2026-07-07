@@ -1,22 +1,24 @@
 getAllCreditCardSettings:
-SELECT id, account_id, credit_limit, statement_balance, due_date, created_at, updated_at
+SELECT id, account_id, credit_limit, statement_balance, due_date, statement_closing_day, payment_due_day, created_at, updated_at
 FROM credit_card_settings
 ORDER BY created_at DESC;
 
 getCreditCardSettingsByAccountId:
-SELECT id, account_id, credit_limit, statement_balance, due_date, created_at, updated_at
+SELECT id, account_id, credit_limit, statement_balance, due_date, statement_closing_day, payment_due_day, created_at, updated_at
 FROM credit_card_settings
 WHERE account_id = ?;
 
 insertCreditCardSettings:
-INSERT INTO credit_card_settings(account_id, credit_limit, statement_balance, due_date, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO credit_card_settings(account_id, credit_limit, statement_balance, due_date, statement_closing_day, payment_due_day, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 updateCreditCardSettings:
 UPDATE credit_card_settings
 SET credit_limit = ?,
     statement_balance = ?,
     due_date = ?,
+    statement_closing_day = ?,
+    payment_due_day = ?,
     updated_at = ?
 WHERE account_id = ?;
 

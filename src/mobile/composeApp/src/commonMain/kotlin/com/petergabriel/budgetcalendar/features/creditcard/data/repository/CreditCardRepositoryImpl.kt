@@ -47,6 +47,8 @@ class CreditCardRepositoryImpl(
             creditLimit,
             statementBalance,
             dueDate,
+            null,
+            null,
             now,
             now,
         )
@@ -63,6 +65,8 @@ class CreditCardRepositoryImpl(
             creditLimit,
             statementBalance,
             dueDate,
+            null,
+            null,
             DateUtils.nowMillis(),
             accountId,
         )
@@ -90,6 +94,8 @@ class CreditCardRepositoryImpl(
         creditLimit: Long?,
         statementBalance: Long?,
         dueDate: Long?,
+        statementClosingDay: Long?,
+        paymentDueDay: Long?,
         createdAt: Long,
         updatedAt: Long,
     ): CreditCardSettingsEntity {
@@ -99,6 +105,8 @@ class CreditCardRepositoryImpl(
             creditLimit = creditLimit,
             statementBalance = statementBalance,
             dueDate = dueDate,
+            statementClosingDay = statementClosingDay,
+            paymentDueDay = paymentDueDay,
             createdAt = createdAt,
             updatedAt = updatedAt,
         )

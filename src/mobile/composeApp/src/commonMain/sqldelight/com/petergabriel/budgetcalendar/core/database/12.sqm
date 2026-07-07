@@ -1,0 +1,2 @@
+ALTER TABLE credit_card_settings ADD COLUMN statement_closing_day INTEGER;
+ALTER TABLE credit_card_settings ADD COLUMN payment_due_day INTEGER;

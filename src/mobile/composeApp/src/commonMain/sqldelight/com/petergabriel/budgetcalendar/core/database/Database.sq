@@ -49,6 +49,8 @@ CREATE TABLE credit_card_settings (
   credit_limit INTEGER,
   statement_balance INTEGER,
   due_date INTEGER,
+  statement_closing_day INTEGER,
+  payment_due_day INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   UNIQUE(account_id)
