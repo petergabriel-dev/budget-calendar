@@ -11,6 +11,8 @@ class FakeCreditCardRepository : ICreditCardRepository {
     private val settings = mutableListOf<CreditCardSettings>()
     private val settingsFlow = MutableStateFlow<List<CreditCardSettings>>(emptyList())
     private val projectedBalances = mutableMapOf<Long, Long>()
+    private val balancesAsOf = mutableMapOf<Pair<Long, Long>, Long>()
+    private val paymentsSince = mutableMapOf<Pair<Long, Long>, Long>()
     private var nextId = 1L
 
     override fun getAllSettings(): Flow<List<CreditCardSettings>> = settingsFlow
@@ -93,8 +95,24 @@ class FakeCreditCardRepository : ICreditCardRepository {
         return Result.success(projectedBalances.toMap())
     }
 
+    override suspend fun getBalanceAsOf(accountId: Long, asOfMillis: Long): Result<Long> {
+        return Result.success(balancesAsOf[accountId to asOfMillis] ?: projectedBalances[accountId] ?: 0L)
+    }
+
+    override suspend fun getPaymentsSince(accountId: Long, sinceMillis: Long): Result<Long> {
+        return Result.success(paymentsSince[accountId to sinceMillis] ?: 0L)
+    }
+
     fun setProjectedBalance(accountId: Long, amount: Long) {
         projectedBalances[accountId] = amount
+    }
+
+    fun setBalanceAsOf(accountId: Long, asOfMillis: Long, amount: Long) {
+        balancesAsOf[accountId to asOfMillis] = amount
+    }
+
+    fun setPaymentsSince(accountId: Long, sinceMillis: Long, amount: Long) {
+        paymentsSince[accountId to sinceMillis] = amount
     }
 
     fun seedSettings(vararg seededSettings: CreditCardSettings) {

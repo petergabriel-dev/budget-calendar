@@ -92,6 +92,18 @@ class CreditCardRepositoryImpl(
             .associate { row -> row.accountId to row.projectedBalance }
     }
 
+    override suspend fun getBalanceAsOf(accountId: Long, asOfMillis: Long): Result<Long> = runCatching {
+        database.credit_card_settingsQueries
+            .getCreditCardBalanceAsOf(accountId = accountId, asOfMillis = asOfMillis)
+            .executeAsOne()
+    }
+
+    override suspend fun getPaymentsSince(accountId: Long, sinceMillis: Long): Result<Long> = runCatching {
+        database.credit_card_settingsQueries
+            .getCreditCardPaymentsSince(accountId = accountId, sinceMillis = sinceMillis)
+            .executeAsOne()
+    }
+
     private fun toSettingsEntity(
         id: Long,
         accountId: Long,

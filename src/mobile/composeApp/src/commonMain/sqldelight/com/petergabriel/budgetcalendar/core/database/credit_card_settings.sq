@@ -46,3 +46,24 @@ LEFT JOIN transactions t
   AND t.status != 'cancelled'
 WHERE a.type = 'credit_card'
 GROUP BY a.id, a.initial_balance;
+
+getCreditCardBalanceAsOf:
+SELECT CAST(a.initial_balance + COALESCE(SUM(t.signed_amount), 0) AS INTEGER)
+FROM accounts a
+LEFT JOIN transactions t
+  ON t.account_id = a.id
+  AND t.date < :asOfMillis
+  AND t.status != 'cancelled'
+WHERE a.id = :accountId
+  AND a.type = 'credit_card'
+GROUP BY a.id, a.initial_balance;
+
+getCreditCardPaymentsSince:
+SELECT CAST(COALESCE(SUM(t.signed_amount), 0) AS INTEGER)
+FROM transactions t
+JOIN accounts a ON a.id = t.account_id
+WHERE t.account_id = :accountId
+  AND a.type = 'credit_card'
+  AND t.date >= :sinceMillis
+  AND t.signed_amount > 0
+  AND t.status != 'cancelled';

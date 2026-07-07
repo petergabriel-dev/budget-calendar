@@ -27,4 +27,6 @@ interface ICreditCardRepository {
     suspend fun delete(accountId: Long): Result<Unit>
     suspend fun getProjectedBalance(accountId: Long): Result<Long>
     suspend fun getAllProjectedBalances(): Result<Map<Long, Long>>
+    suspend fun getBalanceAsOf(accountId: Long, asOfMillis: Long): Result<Long>
+    suspend fun getPaymentsSince(accountId: Long, sinceMillis: Long): Result<Long>
 }
