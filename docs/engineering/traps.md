@@ -41,8 +41,15 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 
 - Symptom: adding/editing a credit-card expense could show "Insufficient funds" against the card balance, which is meaningless for a liability account.
 - Root cause: `TransactionFormSheet` reused the cash-account balance warning for all EXPENSE/TRANSFER sources.
-- Resolution: credit-card source accounts skip the cash insufficient-funds warning; credit-card EXPENSE rows instead use available-credit context and hard-block over-limit saves only when a credit limit is set.
-- Current guard: card-aware derivation, visible context/error text, click-time save guard, and disabled Save live in `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:151-170`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:422-452`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:489-514`.
+- Resolution: credit-card source accounts skip the cash insufficient-funds warning; credit-card charges are forced to EXPENSE, use Posted/Scheduled status wording, and hard-block over-limit saves only when a credit limit is set.
+- Current guard: card-aware type/status derivation, visible statement/credit context, click-time save guard, and disabled Save live in `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:133-145`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:420-480`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:525-550`.
+
+## Retired manual credit-card statement fields
+
+- Symptom: old settings UI may tempt reintroducing manual `statement_balance` / `due_date` edits as if they drive STS or payment timing.
+- Root cause: those columns still exist for migration safety, but recurring `statement_closing_day` / `payment_due_day` are now the UI source for statement-cycle display.
+- Resolution: keep `statement_balance` and `due_date` columns, but do not expose manual inputs; pass existing values through on save instead of nulling them.
+- Current guard: settings form shows Closing day + Due day, validates 1-31, and passes vestigial values from `initialSettings`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/components/CreditCardSettingsForm.kt:83-163`; detail sheet shows computed next due date, not manual statement rows: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/components/CreditCardDetailSheet.kt:63-73`.
 
 ## STS confirmedSpending tests must use current-month dates
 
