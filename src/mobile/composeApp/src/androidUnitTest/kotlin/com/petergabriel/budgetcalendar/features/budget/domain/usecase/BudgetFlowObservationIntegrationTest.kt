@@ -14,6 +14,7 @@ import com.petergabriel.budgetcalendar.features.budget.data.repository.MonthlyRo
 import com.petergabriel.budgetcalendar.features.creditcard.data.mapper.CreditCardMapper
 import com.petergabriel.budgetcalendar.features.creditcard.data.repository.CreditCardRepositoryImpl
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
+import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.CreateCreditCardSettingsUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCreditCardSummariesUseCase
 import com.petergabriel.budgetcalendar.features.notifications.data.mapper.NotificationMapper
 import com.petergabriel.budgetcalendar.features.notifications.data.repository.NotificationRepositoryImpl
@@ -58,6 +59,9 @@ class BudgetFlowObservationIntegrationTest {
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
                     isInSpendingPool = false,
+                    creditLimit = 100_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
                 ),
             ).getOrThrow()
             fixture.createTransactionUseCase(
@@ -106,6 +110,9 @@ class BudgetFlowObservationIntegrationTest {
                     type = AccountType.CREDIT_CARD,
                     initialBalance = -30_00L,
                     isInSpendingPool = false,
+                    creditLimit = 100_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
                 ),
             ).getOrThrow()
             fixture.createTransactionUseCase(
@@ -137,13 +144,10 @@ class BudgetFlowObservationIntegrationTest {
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
                     isInSpendingPool = false,
+                    creditLimit = 100_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
                 ),
-            ).getOrThrow()
-            fixture.creditCardRepository.insert(
-                accountId = card.id,
-                creditLimit = 100_00L,
-                statementBalance = null,
-                dueDate = null,
             ).getOrThrow()
             val useCase = GetCreditCardSummariesUseCase(
                 creditCardRepository = fixture.creditCardRepository,
@@ -438,6 +442,9 @@ class BudgetFlowObservationIntegrationTest {
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
                     isInSpendingPool = false,
+                    creditLimit = 100_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
                 ),
             ).getOrThrow()
             val transactionDate = DateUtils.startOfDayMillis(DateUtils.nowMillis())
@@ -524,6 +531,9 @@ class BudgetFlowObservationIntegrationTest {
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
                     isInSpendingPool = false,
+                    creditLimit = 100_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
                 ),
             ).getOrThrow()
             val overdueDate = DateUtils.startOfDayMillis(DateUtils.nowMillis()) - (2L * DateUtils.MILLIS_IN_DAY)
@@ -596,15 +606,10 @@ class BudgetFlowObservationIntegrationTest {
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
                     isInSpendingPool = false,
+                    creditLimit = 100_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
                 ),
-            ).getOrThrow()
-            fixture.creditCardRepository.insert(
-                accountId = card.id,
-                creditLimit = 500_00L,
-                statementBalance = null,
-                dueDate = null,
-                statementClosingDay = null,
-                paymentDueDay = null,
             ).getOrThrow()
             fixture.createTransactionUseCase(
                 CreateTransactionRequest(
@@ -664,6 +669,9 @@ class BudgetFlowObservationIntegrationTest {
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
                     isInSpendingPool = false,
+                    creditLimit = 100_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
                 ),
             ).getOrThrow()
 
@@ -736,6 +744,9 @@ class BudgetFlowObservationIntegrationTest {
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
                     isInSpendingPool = false,
+                    creditLimit = 100_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
                 ),
             ).getOrThrow()
             fixture.createTransactionUseCase(
@@ -754,6 +765,9 @@ class BudgetFlowObservationIntegrationTest {
                     type = AccountType.CREDIT_CARD,
                     initialBalance = -30_00L,
                     isInSpendingPool = false,
+                    creditLimit = 100_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
                 ),
             ).getOrThrow()
             fixture.createTransactionUseCase(
@@ -815,7 +829,10 @@ class BudgetFlowObservationIntegrationTest {
             creditCardRepository = creditCardRepository,
             notificationRepository = notificationRepository,
             accountRepository = accountRepository,
-            createAccountUseCase = CreateAccountUseCase(accountRepository),
+            createAccountUseCase = CreateAccountUseCase(
+                accountRepository,
+                CreateCreditCardSettingsUseCase(accountRepository, creditCardRepository),
+            ),
             createTransactionUseCase = CreateTransactionUseCase(transactionRepository),
             updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(transactionRepository),
             markOverdueTransactionsUseCase = MarkOverdueTransactionsUseCase(transactionRepository),

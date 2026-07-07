@@ -6,4 +6,7 @@ data class CreateAccountRequest(
     val initialBalance: Long,
     val isInSpendingPool: Boolean,
     val description: String? = null,
+    val creditLimit: Long? = null,
+    val statementClosingDay: Int? = null,
+    val paymentDueDay: Int? = null,
 )

@@ -4,6 +4,8 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountTyp
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAccountRequest
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.UpdateAccountRequest
 import com.petergabriel.budgetcalendar.features.accounts.testutil.FakeAccountRepository
+import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.CreateCreditCardSettingsUseCase
+import com.petergabriel.budgetcalendar.features.creditcard.testutil.FakeCreditCardRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlin.test.BeforeTest
@@ -14,6 +16,7 @@ import kotlin.test.assertTrue
 
 class AccountUseCasesTest {
     private lateinit var accountRepository: FakeAccountRepository
+    private lateinit var creditCardRepository: FakeCreditCardRepository
     private lateinit var createAccountUseCase: CreateAccountUseCase
     private lateinit var updateAccountUseCase: UpdateAccountUseCase
     private lateinit var deleteAccountUseCase: DeleteAccountUseCase
@@ -23,7 +26,11 @@ class AccountUseCasesTest {
     @BeforeTest
     fun setUp() {
         accountRepository = FakeAccountRepository()
-        createAccountUseCase = CreateAccountUseCase(accountRepository)
+        creditCardRepository = FakeCreditCardRepository()
+        createAccountUseCase = CreateAccountUseCase(
+            accountRepository,
+            CreateCreditCardSettingsUseCase(accountRepository, creditCardRepository),
+        )
         updateAccountUseCase = UpdateAccountUseCase(accountRepository)
         deleteAccountUseCase = DeleteAccountUseCase(accountRepository)
         getSpendingPoolAccountsUseCase = GetSpendingPoolAccountsUseCase(accountRepository)
@@ -107,11 +114,76 @@ class AccountUseCasesTest {
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -10_00L,
                 isInSpendingPool = false,
+                creditLimit = 50_000L,
+                statementClosingDay = 20,
+                paymentDueDay = 5,
             ),
         )
 
         assertTrue(result.isSuccess)
         assertEquals(-10_00L, result.getOrThrow().balance)
+    }
+
+    @Test
+    fun createAccount_creditCardRequiresLimitAndCycle() = runBlocking {
+        val result = createAccountUseCase(
+            CreateAccountRequest(
+                name = "Card",
+                type = AccountType.CREDIT_CARD,
+                initialBalance = -10_00L,
+                isInSpendingPool = false,
+                creditLimit = null,
+                statementClosingDay = 20,
+                paymentDueDay = 5,
+            ),
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals("Credit card limit must be greater than 0", result.exceptionOrNull()?.message)
+        assertTrue(accountRepository.currentAccounts().isEmpty())
+    }
+
+    @Test
+    fun createAccount_creditCardPersistsSettingsWithAccount() = runBlocking {
+        val result = createAccountUseCase(
+            CreateAccountRequest(
+                name = "Card",
+                type = AccountType.CREDIT_CARD,
+                initialBalance = -10_00L,
+                isInSpendingPool = false,
+                creditLimit = 50_000L,
+                statementClosingDay = 20,
+                paymentDueDay = 5,
+            ),
+        )
+
+        assertTrue(result.isSuccess)
+        val settings = creditCardRepository.getAllSettings().first().single()
+        assertEquals(result.getOrThrow().id, settings.accountId)
+        assertEquals(50_000L, settings.creditLimit)
+        assertEquals(20, settings.statementClosingDay)
+        assertEquals(5, settings.paymentDueDay)
+    }
+
+    @Test
+    fun createAccount_creditCardRollsBackAccountWhenSettingsFail() = runBlocking {
+        creditCardRepository.insertFailure = IllegalStateException("settings write failed")
+
+        val result = createAccountUseCase(
+            CreateAccountRequest(
+                name = "Card",
+                type = AccountType.CREDIT_CARD,
+                initialBalance = -10_00L,
+                isInSpendingPool = false,
+                creditLimit = 50_000L,
+                statementClosingDay = 20,
+                paymentDueDay = 5,
+            ),
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals("settings write failed", result.exceptionOrNull()?.message)
+        assertTrue(accountRepository.currentAccounts().isEmpty())
     }
 
     @Test
@@ -122,6 +194,9 @@ class AccountUseCasesTest {
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -1_000L,
                 isInSpendingPool = true,
+                creditLimit = 50_000L,
+                statementClosingDay = 20,
+                paymentDueDay = 5,
             ),
         )
 

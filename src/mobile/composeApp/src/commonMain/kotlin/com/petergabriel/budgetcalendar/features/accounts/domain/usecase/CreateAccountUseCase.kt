@@ -20,6 +20,22 @@ class CreateAccountUseCase(
             return Result.failure(IllegalArgumentException("Asset accounts cannot have negative initial balance"))
         }
 
+        val cardSettingsUseCase = if (request.type == AccountType.CREDIT_CARD) {
+            createCreditCardSettingsUseCase
+                ?: return Result.failure(IllegalStateException("Credit card settings use case is required"))
+        } else {
+            null
+        }
+
+        if (request.type == AccountType.CREDIT_CARD) {
+            if (request.creditLimit == null || request.creditLimit <= 0L) {
+                return Result.failure(IllegalArgumentException("Credit card limit must be greater than 0"))
+            }
+            if (request.statementClosingDay !in 1..31 || request.paymentDueDay !in 1..31) {
+                return Result.failure(IllegalArgumentException("Credit card cycle days must be 1-31"))
+            }
+        }
+
         val createdAccount = accountRepository.createAccount(
             request.copy(
                 name = trimmedName,
@@ -32,12 +48,17 @@ class CreateAccountUseCase(
         )
 
         if (createdAccount.type == AccountType.CREDIT_CARD) {
-            createCreditCardSettingsUseCase
-                ?.invoke(accountId = createdAccount.id)
-                ?.onFailure { throwable ->
-                    accountRepository.deleteAccount(createdAccount.id)
-                    return Result.failure(throwable)
-                }
+            val settingsUseCase = cardSettingsUseCase
+                ?: error("Credit card settings use case was validated before account creation")
+            settingsUseCase(
+                accountId = createdAccount.id,
+                creditLimit = request.creditLimit,
+                statementClosingDay = request.statementClosingDay,
+                paymentDueDay = request.paymentDueDay,
+            ).onFailure { throwable ->
+                accountRepository.deleteAccount(createdAccount.id)
+                return Result.failure(throwable)
+            }
         }
 
         return Result.success(createdAccount)

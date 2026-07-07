@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class FakeCreditCardRepository : ICreditCardRepository {
+    var insertFailure: Throwable? = null
     private val settings = mutableListOf<CreditCardSettings>()
     private val settingsFlow = MutableStateFlow<List<CreditCardSettings>>(emptyList())
     private val projectedBalances = mutableMapOf<Long, Long>()
@@ -28,6 +29,8 @@ class FakeCreditCardRepository : ICreditCardRepository {
         statementClosingDay: Int?,
         paymentDueDay: Int?,
     ): Result<CreditCardSettings> {
+        insertFailure?.let { throwable -> return Result.failure(throwable) }
+
         if (settings.any { item -> item.accountId == accountId }) {
             return Result.failure(IllegalStateException("Credit card settings for accountId=$accountId already exist"))
         }
