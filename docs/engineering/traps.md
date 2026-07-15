@@ -30,6 +30,13 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: credit-card reserve now uses projected unpaid balance per card: `max(0, -(initial_balance + SUM(signed_amount) WHERE status != 'cancelled'))`; the total query sums the per-card clamp: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-58`.
 - Current guard: cards are never in the spending pool, so card debt reaches STS only through the reserve: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:23-31`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/UpdateAccountUseCase.kt:22-32`.
 
+## Pending card payments release STS early
+
+- Symptom: submitting a card payment could increase STS before source cash was confirmed as spent.
+- Root cause: card reserve includes non-cancelled destination payment rows, but pool balance includes only confirmed source rows. A pending payment releases reserve without lowering pool cash.
+- Resolution: payment-sheet submissions create confirmed paired transfers; source cash decrease and reserve release reach final ledger state together.
+- Current guard: `MakeCreditCardPaymentUseCase` sets `TransactionStatus.CONFIRMED`, while SQLite integration asserts $1,000 cash plus $120 card debt becomes $880 cash, $0 reserve, and $880 STS: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/MakeCreditCardPaymentUseCase.kt:36-48`, `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:684-732`.
+
 ## Stale credit-card summaries from settings-only flows
 
 - Symptom: Accounts showed a card section total of `₱0.00` while the card detail sheet showed real card debt after transaction writes.
