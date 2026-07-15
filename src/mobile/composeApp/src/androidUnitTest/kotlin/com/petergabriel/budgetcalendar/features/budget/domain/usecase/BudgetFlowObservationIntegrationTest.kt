@@ -16,6 +16,7 @@ import com.petergabriel.budgetcalendar.features.creditcard.data.repository.Credi
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.CreateCreditCardSettingsUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCreditCardSummariesUseCase
+import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.MakeCreditCardPaymentUseCase
 import com.petergabriel.budgetcalendar.features.notifications.data.mapper.NotificationMapper
 import com.petergabriel.budgetcalendar.features.notifications.data.repository.NotificationRepositoryImpl
 import com.petergabriel.budgetcalendar.features.notifications.domain.model.NotificationType
@@ -36,6 +37,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class BudgetFlowObservationIntegrationTest {
@@ -708,17 +710,17 @@ class BudgetFlowObservationIntegrationTest {
             assertEquals(120_00L, confirmedSummary.creditCardReserved)
             assertEquals(-120_00L, fixture.accountRepository.getAccountById(card.id)?.balance)
 
-            fixture.createTransactionUseCase(
-                CreateTransactionRequest(
-                    accountId = checking.id,
-                    destinationAccountId = card.id,
-                    amount = 120_00L,
-                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
-                    type = TransactionType.TRANSFER,
-                    status = TransactionStatus.CONFIRMED,
-                    description = "Card payment",
-                ),
+            val payment = fixture.makeCreditCardPaymentUseCase(
+                sourceAccountId = checking.id,
+                ccAccountId = card.id,
+                amount = 120_00L,
             ).getOrThrow()
+            assertEquals(TransactionStatus.CONFIRMED, payment.status)
+            val linkedPaymentId = assertNotNull(payment.linkedTransactionId)
+            assertEquals(
+                TransactionStatus.CONFIRMED,
+                fixture.transactionRepository.getTransactionById(linkedPaymentId)?.status,
+            )
 
             val paidSummary = withTimeout(5_000) {
                 fixture.calculateSafeToSpendUseCase().first { summary ->
@@ -726,6 +728,7 @@ class BudgetFlowObservationIntegrationTest {
                 }
             }
             assertEquals(0L, paidSummary.creditCardReserved)
+            assertEquals(880_00L, fixture.accountRepository.getAccountById(checking.id)?.balance)
             assertEquals(0L, fixture.accountRepository.getAccountById(card.id)?.balance)
 
             fixture.createTransactionUseCase(
@@ -821,6 +824,7 @@ class BudgetFlowObservationIntegrationTest {
         val budgetRepository = BudgetRepositoryImpl(database, budgetMapper, transactionRepository)
         val monthlyRolloverRepository = MonthlyRolloverRepositoryImpl(database, budgetMapper)
         val notificationRepository = NotificationRepositoryImpl(database, NotificationMapper())
+        val createTransactionUseCase = CreateTransactionUseCase(transactionRepository)
 
         return Fixture(
             driver = driver,
@@ -833,7 +837,11 @@ class BudgetFlowObservationIntegrationTest {
                 accountRepository,
                 CreateCreditCardSettingsUseCase(accountRepository, creditCardRepository),
             ),
-            createTransactionUseCase = CreateTransactionUseCase(transactionRepository),
+            createTransactionUseCase = createTransactionUseCase,
+            makeCreditCardPaymentUseCase = MakeCreditCardPaymentUseCase(
+                accountRepository,
+                createTransactionUseCase,
+            ),
             updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(transactionRepository),
             markOverdueTransactionsUseCase = MarkOverdueTransactionsUseCase(transactionRepository),
             generateNotificationsUseCase = GenerateNotificationsUseCase(notificationRepository),
@@ -854,6 +862,7 @@ class BudgetFlowObservationIntegrationTest {
         val accountRepository: AccountRepositoryImpl,
         val createAccountUseCase: CreateAccountUseCase,
         val createTransactionUseCase: CreateTransactionUseCase,
+        val makeCreditCardPaymentUseCase: MakeCreditCardPaymentUseCase,
         val updateTransactionStatusUseCase: UpdateTransactionStatusUseCase,
         val markOverdueTransactionsUseCase: MarkOverdueTransactionsUseCase,
         val generateNotificationsUseCase: GenerateNotificationsUseCase,
