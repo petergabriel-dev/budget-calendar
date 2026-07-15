@@ -23,7 +23,6 @@ fun DayTransactionList(
     accountNameProvider: (Long) -> String = { accountId -> "Account #$accountId" },
     maxItems: Int? = null,
     onTransactionTap: (Transaction) -> Unit = {},
-    onTransactionLongPress: (Transaction) -> Unit = {},
 ) {
     val displayTransactions = buildDisplayTransactions(
         transactions = transactions,
@@ -56,7 +55,6 @@ fun DayTransactionList(
                 accountName = accountNameProvider(transaction.accountId),
                 destinationAccountName = transaction.destinationAccountId?.let(accountNameProvider),
                 onTap = { onTransactionTap(transaction) },
-                onLongPress = { onTransactionLongPress(transaction) },
             )
         }
     }

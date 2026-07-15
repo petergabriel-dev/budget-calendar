@@ -122,7 +122,6 @@ fun CreditCardDetailSheet(
                         transaction = transaction,
                         accountName = summary.accountName,
                         onTap = {},
-                        onLongPress = {},
                     )
                 }
             }

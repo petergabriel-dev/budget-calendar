@@ -11,12 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,6 +36,7 @@ import com.petergabriel.budgetcalendar.features.calendar.presentation.components
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.formatDayTransactionHeaderLabel
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormViewModel
+import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionDetailsSheet
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionFormSheet
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -60,26 +59,25 @@ fun CalendarScreen(
     var horizontalDragTotal by remember { mutableFloatStateOf(0f) }
     var showTransactionForm by remember { mutableStateOf(false) }
     var showExpandSheet by remember { mutableStateOf(false) }
+    var selectedTransaction by remember { mutableStateOf<Transaction?>(null) }
     var editingTransaction by remember { mutableStateOf<Transaction?>(null) }
-    var deleteCandidate by remember { mutableStateOf<Transaction?>(null) }
 
     val selectedDateMillis = remember(uiState.selectedDate) {
         uiState.selectedDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
     }
 
-    val openTransactionForm: (Transaction) -> Unit = { transaction ->
-        showExpandSheet = false
-        deleteCandidate = null
-        editingTransaction = transaction
-        transactionFormViewModel.setType(transaction.type)
-        showTransactionForm = true
-    }
-
-    val openDeleteDialog: (Transaction) -> Unit = { transaction ->
+    val openTransactionDetails: (Transaction) -> Unit = { transaction ->
         showExpandSheet = false
         showTransactionForm = false
         editingTransaction = null
-        deleteCandidate = transaction
+        selectedTransaction = transaction
+    }
+
+    val openTransactionForm: (Transaction) -> Unit = { transaction ->
+        selectedTransaction = null
+        editingTransaction = transaction
+        transactionFormViewModel.setType(transaction.type)
+        showTransactionForm = true
     }
 
     val swipeModifier = if (showExpandSheet) {
@@ -150,8 +148,7 @@ fun CalendarScreen(
                 uiState.accountNamesById[accountId] ?: "Account #$accountId"
             },
             maxItems = 1,
-            onTransactionTap = openTransactionForm,
-            onTransactionLongPress = openDeleteDialog,
+            onTransactionTap = openTransactionDetails,
         )
 
         if (uiState.isLoading) {
@@ -201,8 +198,7 @@ fun CalendarScreen(
                     accountNameProvider = { accountId ->
                         uiState.accountNamesById[accountId] ?: "Account #$accountId"
                     },
-                    onTransactionTap = openTransactionForm,
-                    onTransactionLongPress = openDeleteDialog,
+                    onTransactionTap = openTransactionDetails,
                 )
             }
         }
@@ -229,35 +225,21 @@ fun CalendarScreen(
             showTransactionForm = false
             editingTransaction = null
         },
-        onDelete = { transaction ->
-            transactionFormViewModel.delete(transaction.id)
-            showTransactionForm = false
-            editingTransaction = null
-        },
     )
 
-    deleteCandidate?.let { transaction ->
-        AlertDialog(
-            onDismissRequest = { deleteCandidate = null },
-            title = { Text("Delete transaction?") },
-            text = { Text("This action cannot be undone.") },
-            dismissButton = {
-                TextButton(onClick = { deleteCandidate = null }) {
-                    Text("Cancel")
-                }
+    selectedTransaction?.let { transaction ->
+        TransactionDetailsSheet(
+            isVisible = true,
+            transaction = transaction,
+            accountName = uiState.accountNamesById[transaction.accountId] ?: "Account #${transaction.accountId}",
+            destinationAccountName = transaction.destinationAccountId?.let { accountId ->
+                uiState.accountNamesById[accountId] ?: "Account #$accountId"
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        transactionFormViewModel.delete(transaction.id)
-                        deleteCandidate = null
-                    },
-                ) {
-                    Text(
-                        text = "Delete",
-                        color = colors.colorError,
-                    )
-                }
+            onDismiss = { selectedTransaction = null },
+            onEdit = openTransactionForm,
+            onDelete = { transactionToDelete ->
+                transactionFormViewModel.delete(transactionToDelete.id)
+                selectedTransaction = null
             },
         )
     }

@@ -1,8 +1,7 @@
 package com.petergabriel.budgetcalendar.features.transactions.presentation.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,7 +23,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TransactionListItem(
     transaction: Transaction,
@@ -32,7 +30,6 @@ fun TransactionListItem(
     destinationAccountName: String? = null,
     modifier: Modifier = Modifier,
     onTap: () -> Unit,
-    onLongPress: () -> Unit,
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
@@ -72,10 +69,7 @@ fun TransactionListItem(
                 color = colors.bgSurface,
                 shape = RoundedCornerShape(radius.lg),
             )
-            .combinedClickable(
-                onClick = onTap,
-                onLongClick = onLongPress,
-            )
+            .clickable(onClick = onTap)
             .padding(horizontal = spacing.spacing3, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
