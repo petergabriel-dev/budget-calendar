@@ -38,6 +38,7 @@ import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCre
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.MakeCreditCardPaymentUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.UpdateCreditCardSettingsUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.presentation.CreditCardViewModel
+import com.petergabriel.budgetcalendar.features.home.presentation.HomeViewModel
 import com.petergabriel.budgetcalendar.features.notifications.data.mapper.NotificationMapper
 import com.petergabriel.budgetcalendar.features.notifications.data.mapper.UserSettingsMapper
 import com.petergabriel.budgetcalendar.features.notifications.data.repository.NotificationRepositoryImpl
@@ -197,6 +198,7 @@ val useCaseModule = module {
 
 val viewModelModule = module {
     viewModel { AccountViewModel(get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get()) }
     viewModel { TransactionViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { TransactionFormViewModel(get(), get(), get(), get(), get()) }
     viewModel { BudgetViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
