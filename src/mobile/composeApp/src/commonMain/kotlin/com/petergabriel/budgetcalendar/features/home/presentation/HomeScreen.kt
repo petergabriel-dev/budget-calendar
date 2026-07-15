@@ -79,6 +79,7 @@ import kotlin.time.Instant
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
+    homeViewModel: HomeViewModel = koinViewModel(),
     budgetViewModel: BudgetViewModel = koinViewModel(),
     transactionViewModel: TransactionViewModel = koinViewModel(),
     transactionFormViewModel: TransactionFormViewModel = koinViewModel(),
@@ -89,6 +90,7 @@ fun HomeScreen(
     val spacing = BudgetCalendarTheme.spacing
     val typography = BudgetCalendarTheme.typography
 
+    val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val budgetState by budgetViewModel.uiState.collectAsStateWithLifecycle()
     val transactionState by transactionViewModel.uiState.collectAsStateWithLifecycle()
     val formState by transactionFormViewModel.uiState.collectAsStateWithLifecycle()
@@ -213,6 +215,16 @@ fun HomeScreen(
                     isLastDayOfMonth = isLastDayOfMonth,
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+
+            homeState.availableCreditForSpending?.let { availableCredit ->
+                item {
+                    HeroSafeToSpend(
+                        amount = availableCredit,
+                        label = "AVAILABLE CREDIT",
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
 
             item {
