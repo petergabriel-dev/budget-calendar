@@ -108,7 +108,9 @@ fun AccountFormSheet(
                     validationErrors.remove("name")
                 },
                 label = { Text("Name") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(ACCOUNT_NAME_FIELD_TAG),
                 isError = validationErrors.containsKey("name"),
                 singleLine = true,
             )
@@ -165,7 +167,9 @@ fun AccountFormSheet(
                         },
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(ACCOUNT_BALANCE_FIELD_TAG),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 isError = validationErrors.containsKey("balance"),
                 singleLine = true,
@@ -180,7 +184,9 @@ fun AccountFormSheet(
                         validationErrors.remove("creditLimit")
                     },
                     label = { Text("Credit Limit") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(ACCOUNT_CREDIT_LIMIT_FIELD_TAG),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = validationErrors.containsKey("creditLimit"),
                     singleLine = true,
@@ -198,7 +204,9 @@ fun AccountFormSheet(
                             validationErrors.remove("statementClosingDay")
                         },
                         label = { Text("Closing Day") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag(ACCOUNT_CLOSING_DAY_FIELD_TAG),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = validationErrors.containsKey("statementClosingDay"),
                         singleLine = true,
@@ -210,7 +218,9 @@ fun AccountFormSheet(
                             validationErrors.remove("paymentDueDay")
                         },
                         label = { Text("Due Day") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag(ACCOUNT_DUE_DAY_FIELD_TAG),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = validationErrors.containsKey("paymentDueDay"),
                         singleLine = true,
@@ -404,5 +414,10 @@ private fun AccountType.displayName(): String {
 private fun accountTypeOptionTag(type: AccountType): String = "account_type_option_${type.name}"
 
 private const val ACCOUNT_DESCRIPTION_SOFT_CAP = 100
+private const val ACCOUNT_NAME_FIELD_TAG = "account_name_field"
 private const val ACCOUNT_TYPE_FIELD_TAG = "account_type_field"
+private const val ACCOUNT_BALANCE_FIELD_TAG = "account_balance_field"
+private const val ACCOUNT_CREDIT_LIMIT_FIELD_TAG = "account_credit_limit_field"
+private const val ACCOUNT_CLOSING_DAY_FIELD_TAG = "account_closing_day_field"
+private const val ACCOUNT_DUE_DAY_FIELD_TAG = "account_due_day_field"
 private const val INCLUDE_IN_SPENDING_POOL_SWITCH_TAG = "include_in_spending_pool_switch"

@@ -4,10 +4,11 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
@@ -29,30 +30,32 @@ class AccountFormSheetTest {
 
         composeTestRule.onNodeWithTag(ACCOUNT_TYPE_FIELD_TAG).performClick()
 
-        ACCOUNT_TYPE_OPTIONS.forEach { (_, label) ->
-            composeTestRule.onNodeWithText(label).assertIsDisplayed()
+        ACCOUNT_TYPE_OPTIONS.forEach { (type, _) ->
+            composeTestRule.onNodeWithTag(accountTypeOptionTag(type)).assertIsDisplayed()
         }
     }
 
     @Test
     fun selectingAccountType_updatesSavedType_andCreditCardDisablesSpendingPoolToggle() {
-        ACCOUNT_TYPE_OPTIONS.forEach { (expectedType, _) ->
-            var savedType: AccountType? = null
-            var savedInSpendingPool: Boolean? = null
+        var savedType: AccountType? = null
+        var savedInSpendingPool: Boolean? = null
 
-            setFormContent(
-                initialData = EDIT_ACCOUNT,
-                onSave = { _, type, _, isInSpendingPool, _, _, _, _ ->
-                    savedType = type
-                    savedInSpendingPool = isInSpendingPool
-                },
-            )
+        setFormContent(
+            initialData = EDIT_ACCOUNT,
+            onSave = { _, type, _, isInSpendingPool, _, _, _, _ ->
+                savedType = type
+                savedInSpendingPool = isInSpendingPool
+            },
+        )
 
+        ACCOUNT_TYPE_OPTIONS.sortedBy { (type, _) -> type == AccountType.CREDIT_CARD }.forEach { (expectedType, _) ->
             composeTestRule.onNodeWithTag(ACCOUNT_TYPE_FIELD_TAG).performClick()
             composeTestRule.onNodeWithTag(accountTypeOptionTag(expectedType)).performClick()
 
             if (expectedType == AccountType.CREDIT_CARD) {
                 composeTestRule.onAllNodesWithTag(INCLUDE_IN_SPENDING_POOL_SWITCH_TAG).assertCountEquals(0)
+            } else {
+                composeTestRule.onAllNodesWithTag(INCLUDE_IN_SPENDING_POOL_SWITCH_TAG).assertCountEquals(1)
             }
 
             composeTestRule.onNodeWithText("Save").performClick()
@@ -86,7 +89,7 @@ class AccountFormSheetTest {
             },
         )
 
-        composeTestRule.onNodeWithText("Name").performTextInput("Visa")
+        composeTestRule.onNodeWithTag(ACCOUNT_NAME_FIELD_TAG).performTextReplacement("Visa")
         composeTestRule.onNodeWithTag(ACCOUNT_TYPE_FIELD_TAG).performClick()
         composeTestRule.onNodeWithTag(accountTypeOptionTag(AccountType.CREDIT_CARD)).performClick()
         composeTestRule.onNodeWithText("Current balance owed").assertIsDisplayed()
@@ -95,11 +98,16 @@ class AccountFormSheetTest {
         composeTestRule.onNodeWithText("Save").performClick()
         composeTestRule.onNodeWithText("Credit limit is required").assertIsDisplayed()
 
-        composeTestRule.onNodeWithText("Current balance owed").performTextInput("123.45")
-        composeTestRule.onNodeWithText("Credit Limit").performTextInput("1000")
-        composeTestRule.onNodeWithText("Closing Day").performTextInput("20")
-        composeTestRule.onNodeWithText("Due Day").performTextInput("5")
+        composeTestRule.onNodeWithTag(ACCOUNT_BALANCE_FIELD_TAG).performTextReplacement("123.45")
+        composeTestRule.onNodeWithTag(ACCOUNT_CREDIT_LIMIT_FIELD_TAG).performTextReplacement("1000")
+        composeTestRule.onNodeWithTag(ACCOUNT_CLOSING_DAY_FIELD_TAG).performTextReplacement("20")
+        composeTestRule.onNodeWithTag(ACCOUNT_DUE_DAY_FIELD_TAG).performTextReplacement("5")
         composeTestRule.onNodeWithText("Save").performClick()
+        composeTestRule.onAllNodesWithText("Name is required").assertCountEquals(0)
+        composeTestRule.onAllNodesWithText("Enter a valid amount").assertCountEquals(0)
+        composeTestRule.onAllNodesWithText("Credit limit is required").assertCountEquals(0)
+        composeTestRule.onAllNodesWithText("Closing day must be 1-31").assertCountEquals(0)
+        composeTestRule.onAllNodesWithText("Due day must be 1-31").assertCountEquals(0)
 
         composeTestRule.runOnIdle {
             assertEquals(AccountType.CREDIT_CARD, savedType)
@@ -156,7 +164,12 @@ private val EDIT_ACCOUNT = Account(
     updatedAt = 0L,
 )
 
+private const val ACCOUNT_NAME_FIELD_TAG = "account_name_field"
 private const val ACCOUNT_TYPE_FIELD_TAG = "account_type_field"
+private const val ACCOUNT_BALANCE_FIELD_TAG = "account_balance_field"
+private const val ACCOUNT_CREDIT_LIMIT_FIELD_TAG = "account_credit_limit_field"
+private const val ACCOUNT_CLOSING_DAY_FIELD_TAG = "account_closing_day_field"
+private const val ACCOUNT_DUE_DAY_FIELD_TAG = "account_due_day_field"
 private const val INCLUDE_IN_SPENDING_POOL_SWITCH_TAG = "include_in_spending_pool_switch"
 
 private fun accountTypeOptionTag(type: AccountType): String = "account_type_option_${type.name}"
