@@ -34,7 +34,10 @@ features/<feature>/
   presentation/  Compose screen/ViewModel/UiState
 ```
 
-`home` is presentation-only today: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation`.
+`home` is presentation-only and contains `HomeScreen`, `HomeViewModel`, and `HomeUiState`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation`.
+
+- `HomeViewModel` collects `GetCreditCardSummariesUseCase` and exposes nullable `availableCreditForSpending`; it sums configured-card availability with a per-card zero floor and clears the value when the stream fails: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeViewModel.kt:15-36`.
+- Live Home renders `AVAILABLE CREDIT` only when that aggregate is non-null; Sandbox does not render it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:80-231`.
 
 ## Reactive backbone
 

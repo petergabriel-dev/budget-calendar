@@ -38,6 +38,15 @@ cd src/mobile
 
 These task names are present in Gradle task output for `:composeApp`; `CLAUDE.md:41-64` lists the same commands.
 
+Home available-credit regression is in common tests and can run alone:
+
+```bash
+cd src/mobile
+./gradlew :composeApp:testDebugUnitTest --tests "com.petergabriel.budgetcalendar.features.home.presentation.HomeViewModelTest"
+```
+
+`HomeViewModelTest` uses fake account, credit-card, and transaction repositories with `StandardTestDispatcher`; it covers configured and unconfigured limits, per-card over-limit clamping, and transaction-triggered updates: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeViewModelTest.kt:1-120`.
+
 ## iOS
 
 - Open `src/mobile/iosApp/iosApp.xcodeproj` in Xcode and run the `iosApp` target. Xcode project exists at `src/mobile/iosApp/iosApp.xcodeproj/project.pbxproj`.
