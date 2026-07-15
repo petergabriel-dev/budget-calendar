@@ -55,6 +55,12 @@ Must-not-break rules below are verified from current code only.
 - For credit-card EXPENSE rows with a card summary, the sheet shows available credit when present, balance after charge, and Safe-to-Spend reserve impact: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:458-480`.
 - When a credit limit exists and the charge exceeds available credit, the sheet shows error text, blocks click-time save, and disables Save: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/model/CreditCardChargeImpact.kt:11-26`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:525-550`.
 
+## Calendar transaction interaction
+
+- Calendar transaction rows, inline and expanded, open read-only `TransactionDetailsSheet`; they do not open `TransactionFormSheet` directly: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:69-81`, `:142-152`, `:193-202`, `:230-244`.
+- Calendar row gestures remain tap-only. Do not reintroduce `combinedClickable`, a long-press callback, or long-press deletion: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionListItem.kt:27-33`, `:65-73`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/DayTransactionList.kt:20-59`.
+- Calendar Edit and Delete are reachable only through details overflow. Edit opens the prefilled form; Delete must require confirmation, and Cancel performs no delete: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionDetailsSheet.kt:100-126`, `:180-211`.
+
 ## Transfers are paired rows
 
 - Creating a transfer writes a source row with `signedAmount = -amount`, a destination row with `signedAmount = amount`, then links both IDs: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/usecase/CreateTransactionUseCase.kt:59-82`.
