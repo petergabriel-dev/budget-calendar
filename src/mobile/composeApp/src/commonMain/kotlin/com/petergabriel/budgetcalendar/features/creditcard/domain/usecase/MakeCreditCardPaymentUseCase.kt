@@ -5,6 +5,7 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountTyp
 import com.petergabriel.budgetcalendar.features.accounts.domain.repository.IAccountRepository
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.CreateTransactionRequest
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
+import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.CreateTransactionUseCase
 
@@ -40,6 +41,7 @@ class MakeCreditCardPaymentUseCase(
                 amount = amount,
                 date = date,
                 type = TransactionType.TRANSFER,
+                status = TransactionStatus.CONFIRMED,
                 description = "Credit card payment",
             ),
         )

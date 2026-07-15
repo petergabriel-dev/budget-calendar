@@ -6,6 +6,7 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountTyp
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAccountRequest
 import com.petergabriel.budgetcalendar.features.accounts.testutil.FakeAccountRepository
 import com.petergabriel.budgetcalendar.features.creditcard.testutil.FakeCreditCardRepository
+import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.CreateTransactionUseCase
 import com.petergabriel.budgetcalendar.features.transactions.testutil.FakeTransactionRepository
@@ -14,6 +15,7 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -334,6 +336,10 @@ class CreditCardUseCasesTest {
         assertEquals(TransactionType.TRANSFER, payment.type)
         assertEquals(source.id, payment.accountId)
         assertEquals(destination.id, payment.destinationAccountId)
+        assertEquals(TransactionStatus.CONFIRMED, payment.status)
+        val linkedPaymentId = assertNotNull(payment.linkedTransactionId)
+        val linkedPayment = transactionRepository.allTransactions().single { it.id == linkedPaymentId }
+        assertEquals(TransactionStatus.CONFIRMED, linkedPayment.status)
         assertEquals(2, transactionRepository.allTransactions().size)
     }
 
