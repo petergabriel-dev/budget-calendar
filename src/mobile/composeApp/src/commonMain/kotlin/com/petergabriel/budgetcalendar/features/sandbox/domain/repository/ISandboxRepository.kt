@@ -29,6 +29,5 @@ interface ISandboxRepository {
     ): Result<SandboxTransaction>
 
     suspend fun deleteSandboxTransaction(id: Long): Result<Unit>
-    suspend fun getSandboxBalanceDelta(snapshotId: Long): Result<Long>
     suspend fun deleteExpiredSnapshots(cutoffMs: Long): Result<Int>
 }

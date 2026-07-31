@@ -108,19 +108,6 @@ class FakeSandboxRepository : ISandboxRepository {
         return Result.success(Unit)
     }
 
-    override suspend fun getSandboxBalanceDelta(snapshotId: Long): Result<Long> {
-        val delta = transactions
-            .filter { item -> item.snapshotId == snapshotId }
-            .sumOf { item ->
-                item.signedAmount ?: when (item.type) {
-                    TransactionType.INCOME -> item.amount
-                    TransactionType.EXPENSE -> -item.amount
-                    TransactionType.TRANSFER -> 0L
-                }
-            }
-        return Result.success(delta)
-    }
-
     override suspend fun deleteExpiredSnapshots(cutoffMs: Long): Result<Int> {
         val expiredIds = snapshots
             .filter { snapshot -> snapshot.lastAccessedAt < cutoffMs }

@@ -45,14 +45,6 @@ class RecurringTransactionRepositoryImpl(
             ?.let(recurringMapper::toDomain)
     }
 
-    override fun getByAccount(accountId: Long): Flow<List<RecurringTransaction>> {
-        return database.recurring_transactionsQueries
-            .getRecurringTransactionsByAccount(accountId, ::toEntity)
-            .asFlow()
-            .mapToList(dispatcher)
-            .map { entities -> entities.map(recurringMapper::toDomain) }
-    }
-
     override suspend fun insert(request: CreateRecurringTransactionRequest): RecurringTransaction {
         val now = DateUtils.nowMillis()
         database.recurring_transactionsQueries.insertRecurringTransaction(

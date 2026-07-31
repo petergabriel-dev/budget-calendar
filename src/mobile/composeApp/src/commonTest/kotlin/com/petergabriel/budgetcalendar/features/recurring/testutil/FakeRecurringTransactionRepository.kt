@@ -39,17 +39,6 @@ class FakeRecurringTransactionRepository : IRecurringTransactionRepository {
         return recurringTransactions.firstOrNull { recurring -> recurring.id == id }
     }
 
-    override fun getByAccount(accountId: Long): Flow<List<RecurringTransaction>> {
-        return recurringFlow.map { items ->
-            items
-                .filter { recurring -> recurring.accountId == accountId }
-                .sortedWith(
-                    compareBy<RecurringTransaction> { recurring -> recurring.dayOfMonth }
-                        .thenBy { recurring -> recurring.createdAt },
-                )
-        }
-    }
-
     override suspend fun insert(request: CreateRecurringTransactionRequest): RecurringTransaction {
         val now = DateUtils.nowMillis()
         val recurring = RecurringTransaction(

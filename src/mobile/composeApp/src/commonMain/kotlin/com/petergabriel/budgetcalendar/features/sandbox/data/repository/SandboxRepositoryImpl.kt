@@ -118,10 +118,6 @@ class SandboxRepositoryImpl(
         database.sandbox_transactionsQueries.deleteSandboxTransaction(id)
     }
 
-    override suspend fun getSandboxBalanceDelta(snapshotId: Long): Result<Long> = runCatching {
-        database.sandbox_transactionsQueries.getSandboxBalanceDeltaBySnapshot(snapshotId).executeAsOne()
-    }
-
     override suspend fun deleteExpiredSnapshots(cutoffMs: Long): Result<Int> = runCatching {
         val expired = database.sandboxQueries
             .getExpiredSnapshots(cutoffMs, ::toSnapshotEntity)

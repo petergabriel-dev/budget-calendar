@@ -69,24 +69,6 @@ class FakeTransactionRepository : ITransactionRepository {
         }
     }
 
-    override fun getConfirmedTransactions(): Flow<List<Transaction>> {
-        return transactionsFlow.map { allTransactions ->
-            allTransactions
-                .filter { transaction -> transaction.status == TransactionStatus.CONFIRMED }
-                .sortedByDescending { transaction -> transaction.date }
-        }
-    }
-
-    override fun getPendingAndOverdueTransactionsForSpendingPool(): Flow<List<Transaction>> {
-        return transactionsFlow.map { allTransactions ->
-            allTransactions
-                .filter { transaction ->
-                        (transaction.status == TransactionStatus.PENDING || transaction.status == TransactionStatus.OVERDUE)
-                }
-                .sortedBy { transaction -> transaction.date }
-        }
-    }
-
     override fun getMonthProjectionTransactions(startMillis: Long, endMillis: Long): Flow<List<Transaction>> {
         return transactionsFlow.map { allTransactions ->
             allTransactions

@@ -36,12 +36,6 @@ FROM transactions
 WHERE status = 'overdue'
 ORDER BY date ASC;
 
-getConfirmedTransactions:
-SELECT id, account_id, destination_account_id, amount, signed_amount, date, type, status, description, category, linked_transaction_id, created_at, updated_at
-FROM transactions
-WHERE status = 'confirmed'
-ORDER BY date DESC;
-
 getTransactionById:
 SELECT id, account_id, destination_account_id, amount, signed_amount, date, type, status, description, category, linked_transaction_id, created_at, updated_at
 FROM transactions
@@ -90,14 +84,6 @@ countTransactionsByAccount:
 SELECT COUNT(*)
 FROM transactions
 WHERE account_id = ? OR destination_account_id = ?;
-
-getPendingTransactionsForSpendingPool:
-SELECT t.id, t.account_id, t.destination_account_id, t.amount, t.signed_amount, t.date, t.type, t.status, t.description, t.category, t.linked_transaction_id, t.created_at, t.updated_at
-FROM transactions t
-JOIN accounts a ON t.account_id = a.id
-WHERE a.is_in_spending_pool = 1
-  AND t.status IN ('pending', 'overdue')
-ORDER BY t.date ASC;
 
 getPendingAndOverdueForSpendingPoolInRange:
 SELECT

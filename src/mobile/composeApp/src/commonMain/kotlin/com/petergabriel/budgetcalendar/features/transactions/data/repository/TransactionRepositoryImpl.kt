@@ -77,22 +77,6 @@ class TransactionRepositoryImpl(
             .map { entities -> entities.map(transactionMapper::toDomain) }
     }
 
-    override fun getConfirmedTransactions(): Flow<List<Transaction>> {
-        return database.transactionsQueries
-            .getConfirmedTransactions(::toEntity)
-            .asFlow()
-            .mapToList(dispatcher)
-            .map { entities -> entities.map(transactionMapper::toDomain) }
-    }
-
-    override fun getPendingAndOverdueTransactionsForSpendingPool(): Flow<List<Transaction>> {
-        return database.transactionsQueries
-            .getPendingTransactionsForSpendingPool(::toEntity)
-            .asFlow()
-            .mapToList(dispatcher)
-            .map { entities -> entities.map(transactionMapper::toDomain) }
-    }
-
     override fun getMonthProjectionTransactions(startMillis: Long, endMillis: Long): Flow<List<Transaction>> {
         return database.transactionsQueries
             .getPendingAndOverdueForSpendingPoolInRange(startMillis, endMillis, ::toEntity)

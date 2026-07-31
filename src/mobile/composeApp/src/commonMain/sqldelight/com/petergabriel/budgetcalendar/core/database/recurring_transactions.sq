@@ -35,12 +35,6 @@ SELECT id, account_id, destination_account_id, amount, day_of_month, type, descr
 FROM recurring_transactions
 WHERE id = ?;
 
-getRecurringTransactionsByAccount:
-SELECT id, account_id, destination_account_id, amount, day_of_month, type, description, is_active, created_at, updated_at
-FROM recurring_transactions
-WHERE account_id = ?
-ORDER BY day_of_month, created_at ASC;
-
 insertRecurringTransaction:
 INSERT INTO recurring_transactions(
   account_id,
