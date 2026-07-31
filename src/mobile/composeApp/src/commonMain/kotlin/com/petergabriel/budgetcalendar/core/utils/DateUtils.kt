@@ -22,10 +22,6 @@ object DateUtils {
         return localDate.atStartOfDayIn(timeZone).toEpochMilliseconds()
     }
 
-    fun endOfDayMillis(dateMillis: Long, timeZone: TimeZone = TimeZone.currentSystemDefault()): Long {
-        return startOfDayMillis(dateMillis, timeZone) + MILLIS_IN_DAY - 1
-    }
-
     fun isDateInPast(dateMillis: Long, nowMillis: Long = nowMillis()): Boolean {
         return startOfDayMillis(dateMillis) < startOfDayMillis(nowMillis)
     }

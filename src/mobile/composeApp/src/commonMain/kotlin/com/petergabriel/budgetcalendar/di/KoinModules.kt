@@ -7,7 +7,6 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.repository.IAcco
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.CalculateNetWorthUseCase
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.CreateAccountUseCase
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.DeleteAccountUseCase
-import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountByIdUseCase
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountsUseCase
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetSpendingPoolAccountsUseCase
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.UpdateAccountUseCase
@@ -60,7 +59,6 @@ import com.petergabriel.budgetcalendar.features.recurring.domain.repository.IRec
 import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.CreateRecurringTransactionUseCase
 import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.DeleteRecurringTransactionUseCase
 import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.GenerateMonthlyTransactionsUseCase
-import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.GetActiveRecurringTransactionsUseCase
 import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.GetRecurringTransactionsUseCase
 import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.GetUpcomingGeneratedTransactionsUseCase
 import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.ToggleRecurringActiveUseCase
@@ -132,7 +130,6 @@ val repositoryModule = module {
 val useCaseModule = module {
     factory { CreateAccountUseCase(get(), get()) }
     factory { GetAccountsUseCase(get()) }
-    factory { GetAccountByIdUseCase(get()) }
     factory { UpdateAccountUseCase(get()) }
     factory { DeleteAccountUseCase(get()) }
     factory { GetSpendingPoolAccountsUseCase(get()) }
@@ -160,7 +157,6 @@ val useCaseModule = module {
 
     factory { CreateRecurringTransactionUseCase(get()) }
     factory { GetRecurringTransactionsUseCase(get()) }
-    factory { GetActiveRecurringTransactionsUseCase(get()) }
     factory { UpdateRecurringTransactionUseCase(get()) }
     factory { GenerateMonthlyTransactionsUseCase(get(), get()) }
     factory { ToggleRecurringActiveUseCase(get(), get()) }

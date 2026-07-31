@@ -16,8 +16,6 @@ object CurrencyUtils {
         return "$sign$currencySymbol${major.withThousandsSeparator()}.${minor.toString().padStart(2, '0')}"
     }
 
-    fun dollarsToCents(amount: Double): Long = (amount * 100.0).toLong()
-
     private fun Long.withThousandsSeparator(): String {
         val str = this.toString()
         return buildString {
