@@ -7,6 +7,7 @@ import com.petergabriel.budgetcalendar.core.database.BudgetCalendarDatabase
 import com.petergabriel.budgetcalendar.features.budget.data.mapper.BudgetMapper
 import com.petergabriel.budgetcalendar.features.budget.domain.model.CreditCardReservation
 import com.petergabriel.budgetcalendar.features.budget.domain.repository.IBudgetRepository
+import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.repository.ITransactionRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +45,7 @@ class BudgetRepositoryImpl(
                 .mapToList(dispatcher)
                 .map { rows ->
                     rows
-                        .filter { row -> row.status.equals("pending", ignoreCase = true) }
+                        .filter { row -> row.status.equals(TransactionStatus.PENDING.dbValue, ignoreCase = true) }
                         .sumOf { row -> row.amount }
                 }
         }
@@ -58,7 +59,7 @@ class BudgetRepositoryImpl(
                 .mapToList(dispatcher)
                 .map { rows ->
                     rows
-                        .filter { row -> row.status.equals("overdue", ignoreCase = true) }
+                        .filter { row -> row.status.equals(TransactionStatus.OVERDUE.dbValue, ignoreCase = true) }
                         .sumOf { row -> row.amount }
                 }
         }
