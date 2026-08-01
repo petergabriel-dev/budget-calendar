@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSettings
@@ -42,6 +43,8 @@ fun CreditCardDetailSheet(
         return
     }
 
+    val colors = BudgetCalendarTheme.colors
+
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -59,7 +62,7 @@ fun CreditCardDetailSheet(
             SummaryRow(
                 label = "Current Balance",
                 value = CurrencyUtils.formatCents(summary.currentBalance),
-                valueColor = if (summary.currentBalance <= 0L) Color(0xFFC62828) else Color(0xFF2E7D32),
+                valueColor = if (summary.currentBalance <= 0L) colors.colorErrorText else colors.colorSuccessText,
             )
             SummaryRow(
                 label = "Statement Balance",

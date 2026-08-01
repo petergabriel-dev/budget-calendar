@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,14 +40,14 @@ fun WalledGardenCard(
     } else {
         Modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.Black)
+            .background(colors.bgDark)
             .padding(horizontal = 12.dp, vertical = 6.dp)
     }
 
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFF4F4F5))
+            .background(colors.bgSurface)
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -61,7 +60,7 @@ fun WalledGardenCard(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.sp,
                 ),
-                color = if (isLiability) colors.textSecondary else Color.White,
+                color = if (isLiability) colors.textSecondary else colors.textInverted,
             )
         }
 
@@ -74,12 +73,12 @@ fun WalledGardenCard(
                     lineHeight = 26.4.sp,
                     letterSpacing = 0.sp,
                 ),
-                color = Color.Black,
+                color = colors.textPrimary,
             )
             Text(
                 text = account.description ?: account.name,
                 style = typography.bodySmall.copy(fontWeight = FontWeight.Normal),
-                color = Color(0xFF71717A),
+                color = colors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

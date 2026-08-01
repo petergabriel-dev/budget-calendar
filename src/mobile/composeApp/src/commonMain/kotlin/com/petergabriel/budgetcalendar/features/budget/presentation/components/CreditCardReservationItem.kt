@@ -13,9 +13,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.features.budget.domain.model.CreditCardReservation
 
@@ -25,6 +25,7 @@ fun CreditCardReservationItem(
     onPaymentTap: (CreditCardReservation) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = BudgetCalendarTheme.colors
     val hasReservation = reservation.reservedAmount > 0L
 
     Card(
@@ -66,13 +67,13 @@ fun CreditCardReservationItem(
                         "$0.00 reserved"
                     },
                     style = MaterialTheme.typography.labelLarge,
-                    color = if (hasReservation) MaterialTheme.colorScheme.onSecondaryContainer else Color(0xFF90A4AE),
+                    color = if (hasReservation) colors.colorSuccessText else colors.textDisabled,
                     modifier = Modifier
                         .background(
                             color = if (hasReservation) {
-                                MaterialTheme.colorScheme.secondaryContainer
+                                colors.colorSuccessBg
                             } else {
-                                MaterialTheme.colorScheme.surfaceVariant
+                                colors.bgSurface
                             },
                             shape = RoundedCornerShape(999.dp),
                         )

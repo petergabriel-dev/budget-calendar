@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,7 +54,7 @@ fun CreditCardTile(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFF4F4F5))
+            .background(colors.bgSurface)
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -86,7 +85,7 @@ fun CreditCardTile(
             Text(
                 text = summary.accountName,
                 style = typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                color = Color(0xFF71717A),
+                color = colors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -101,12 +100,12 @@ fun CreditCardTile(
                     lineHeight = 26.4.sp,
                     letterSpacing = 0.sp,
                 ),
-                color = Color.Black,
+                color = colors.textPrimary,
             )
             Text(
                 text = if (creditLimit == null) secondary else "$secondary · of ${creditLimit.formatCurrency()}",
                 style = typography.bodySmall.copy(fontWeight = FontWeight.Normal),
-                color = Color(0xFF71717A),
+                color = colors.textSecondary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -119,7 +118,7 @@ fun CreditCardTile(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(999.dp)),
-                    color = Color.Black,
+                    color = colors.bgDark,
                     trackColor = colors.borderSubtle,
                 )
                 Text(

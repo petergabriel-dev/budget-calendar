@@ -12,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,13 +26,14 @@ fun SpendingPoolCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(Color.Black)
+            .background(colors.bgDark)
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -41,7 +41,7 @@ fun SpendingPoolCard(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color.White)
+                .background(colors.bgPrimary)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
         ) {
             Text(
@@ -51,7 +51,7 @@ fun SpendingPoolCard(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.sp,
                 ),
-                color = Color.Black,
+                color = colors.textPrimary,
             )
         }
 
@@ -64,12 +64,12 @@ fun SpendingPoolCard(
                     lineHeight = 26.4.sp,
                     letterSpacing = 0.sp,
                 ),
-                color = Color.White,
+                color = colors.textInverted,
             )
             Text(
                 text = account.description.orEmpty(),
                 style = typography.bodySmall.copy(fontWeight = FontWeight.Normal),
-                color = Color(0xFFA1A1AA),
+                color = colors.textTertiary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
