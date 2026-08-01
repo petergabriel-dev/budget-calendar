@@ -172,6 +172,8 @@ fun App() {
 
                 AppTab.ME -> NotificationSettingsScreen(
                     modifier = Modifier.padding(innerPadding),
+                    unreadCount = unreadCount,
+                    onBellClick = { showNotificationCenter = true },
                 )
             }
         }

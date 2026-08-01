@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcNotificationBell
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcInputGroup
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
@@ -24,6 +26,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun NotificationSettingsScreen(
     modifier: Modifier = Modifier,
+    unreadCount: Int,
+    onBellClick: () -> Unit,
     viewModel: NotificationSettingsViewModel = koinViewModel(),
 ) {
     val colors = BudgetCalendarTheme.colors
@@ -41,10 +45,15 @@ fun NotificationSettingsScreen(
             .padding(horizontal = spacing.spacing4, vertical = spacing.spacing4),
         verticalArrangement = Arrangement.spacedBy(spacing.spacing4),
     ) {
-        Text(
-            text = "Settings",
-            style = typography.section,
-            color = colors.textPrimary,
+        BcHeader(
+            title = "Settings",
+            modifier = Modifier.fillMaxWidth(),
+            actionContent = {
+                BcNotificationBell(
+                    unreadCount = unreadCount,
+                    onClick = onBellClick,
+                )
+            },
         )
 
         Column(
