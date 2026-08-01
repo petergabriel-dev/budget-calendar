@@ -20,6 +20,10 @@ Source of truth: current code under package `com.petergabriel.budgetcalendar`.
 - Default signs: income positive, expense negative, transfer source negative, transfer destination positive: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/model/CreateTransactionRequest.kt:3-29`.
 - Balance/accounting reads should use `signed_amount`; reservation totals use magnitude `amount` where pending/overdue obligation size matters: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:62-78`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:16-33`.
 
+## Transaction status
+
+- In Kotlin, compare persisted status strings through `TransactionStatus.*.dbValue`; raw `"pending"`/`"overdue"`/`"confirmed"`/`"cancelled"` comparisons are forbidden outside enum conversion. Definitions and case-insensitive comparison: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/model/Transaction.kt:15-25`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/data/repository/BudgetRepositoryImpl.kt:48-62`.
+
 ## SQLDelight and DB IDs
 
 - SQL belongs in `.sq` query files and numbered `.sqm` migrations under `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/`.
@@ -35,6 +39,7 @@ Source of truth: current code under package `com.petergabriel.budgetcalendar`.
 ## Design system
 
 - Design-token reference is `docs/engineering/design-system.html`; implementation source is `BudgetCalendarTheme`: colors, typography, spacing, radius, shadows: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/theme/BudgetCalendarTheme.kt:14-37`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/theme/BudgetCalendarTheme.kt:89-114`.
+- Feature UI must use `BudgetCalendarTheme.colors`/`BcColors`; raw `Color(0x...)`, `Color.Black`, and `Color.White` literals are forbidden. Token definitions and feature usage: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/theme/Color.kt:8-54`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/components/CreditCardTile.kt:35-132`.
 - Reusable components use `Bc*` names, e.g. `BcButton`, `BcBadge`, `BcHeader`, `BcTabBarPill`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcButton.kt:36-70`.
 
 ## State and errors
