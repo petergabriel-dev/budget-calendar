@@ -38,6 +38,8 @@ import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.Calculat
 import com.petergabriel.budgetcalendar.features.home.presentation.HomeScreen
 import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GenerateNotificationsUseCase
 import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GetUserSettingsUseCase
+import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationCenterSheet
+import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationCenterViewModel
 import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationSettingsScreen
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.GetOverdueTransactionsUseCase
@@ -69,8 +71,10 @@ fun App() {
     BudgetCalendarTheme {
         var selectedTab by rememberSaveable { mutableStateOf(AppTab.HOME) }
         var showAddForm by remember { mutableStateOf(false) }
+        var showNotificationCenter by remember { mutableStateOf(false) }
         var hasSkippedFirstResume by remember { mutableStateOf(false) }
         val transactionFormViewModel: TransactionFormViewModel = koinViewModel()
+        val notificationCenterViewModel: NotificationCenterViewModel = koinViewModel()
         val markOverdueTransactionsUseCase: MarkOverdueTransactionsUseCase = koinInject()
         val getOverdueTransactionsUseCase: GetOverdueTransactionsUseCase = koinInject()
         val calculateMonthProjectionUseCase: CalculateMonthProjectionUseCase = koinInject()
@@ -78,6 +82,7 @@ fun App() {
         val getUserSettingsUseCase: GetUserSettingsUseCase = koinInject()
         val generateNotificationsUseCase: GenerateNotificationsUseCase = koinInject()
         val formState by transactionFormViewModel.uiState.collectAsStateWithLifecycle()
+        val unreadCount by notificationCenterViewModel.unreadCount.collectAsStateWithLifecycle(initialValue = 0)
         val lifecycleOwner = LocalLifecycleOwner.current
         val coroutineScope = rememberCoroutineScope()
 
@@ -149,6 +154,8 @@ fun App() {
             when (selectedTab) {
                 AppTab.HOME -> HomeScreen(
                     modifier = Modifier.padding(innerPadding),
+                    unreadCount = unreadCount,
+                    onBellClick = { showNotificationCenter = true },
                 )
 
                 AppTab.CALENDAR -> CalendarScreen(
@@ -189,6 +196,12 @@ fun App() {
                 showAddForm = false
             },
             onDelete = null,
+        )
+
+        NotificationCenterSheet(
+            isVisible = showNotificationCenter,
+            viewModel = notificationCenterViewModel,
+            onDismiss = { showNotificationCenter = false },
         )
     }
 }

@@ -43,8 +43,6 @@ import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarThe
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.budget.presentation.BudgetViewModel
-import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationCenterSheet
-import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationCenterViewModel
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.AddSandboxTransactionSheet
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.ComparisonDeltaRow
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.HeroProjectedSpend
@@ -72,12 +70,13 @@ import kotlin.time.Instant
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
+    unreadCount: Int,
+    onBellClick: () -> Unit,
     homeViewModel: HomeViewModel = koinViewModel(),
     budgetViewModel: BudgetViewModel = koinViewModel(),
     transactionViewModel: TransactionViewModel = koinViewModel(),
     transactionFormViewModel: TransactionFormViewModel = koinViewModel(),
     sandboxViewModel: SandboxViewModel = koinViewModel(),
-    notificationCenterViewModel: NotificationCenterViewModel = koinViewModel(),
 ) {
     val colors = BudgetCalendarTheme.colors
     val spacing = BudgetCalendarTheme.spacing
@@ -88,7 +87,6 @@ fun HomeScreen(
     val transactionState by transactionViewModel.uiState.collectAsStateWithLifecycle()
     val formState by transactionFormViewModel.uiState.collectAsStateWithLifecycle()
     val sandboxState by sandboxViewModel.uiState.collectAsStateWithLifecycle()
-    val unreadCount by notificationCenterViewModel.unreadCount.collectAsStateWithLifecycle(initialValue = 0)
 
     val tz = TimeZone.currentSystemDefault()
     val today = Clock.System.now().toLocalDateTime(tz).date
@@ -109,7 +107,6 @@ fun HomeScreen(
 
     var selectedDate by remember { mutableStateOf(today) }
     var showAddForm by remember { mutableStateOf(false) }
-    var showNotificationCenter by remember { mutableStateOf(false) }
     var editingTransaction by remember { mutableStateOf<Transaction?>(null) }
     var currentDayMillis by remember { mutableLongStateOf(DateUtils.startOfDayMillis(DateUtils.nowMillis())) }
 
@@ -118,9 +115,6 @@ fun HomeScreen(
         editingTransaction = null
     }
 
-    fun closeNotificationCenter() {
-        showNotificationCenter = false
-    }
     LaunchedEffect(Unit) {
         while (true) {
             val delay = DateUtils.millisUntilNextDay()
@@ -168,7 +162,7 @@ fun HomeScreen(
                 actionContent = {
                     BcNotificationBell(
                         unreadCount = unreadCount,
-                        onClick = { showNotificationCenter = true },
+                        onClick = onBellClick,
                     )
                 },
             )
@@ -362,11 +356,6 @@ fun HomeScreen(
         },
     )
 
-    NotificationCenterSheet(
-        isVisible = showNotificationCenter,
-        viewModel = notificationCenterViewModel,
-        onDismiss = ::closeNotificationCenter,
-    )
 }
 
 @Composable
