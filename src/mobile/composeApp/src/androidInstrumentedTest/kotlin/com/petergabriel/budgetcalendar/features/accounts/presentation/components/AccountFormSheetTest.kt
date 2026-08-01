@@ -95,14 +95,14 @@ class AccountFormSheetTest {
         composeTestRule.onNodeWithText("Current balance owed").assertIsDisplayed()
         composeTestRule.onAllNodesWithTag(INCLUDE_IN_SPENDING_POOL_SWITCH_TAG).assertCountEquals(0)
 
-        composeTestRule.onNodeWithText("Save").performClick()
+        composeTestRule.onAllNodesWithText("Add Account")[1].performClick()
         composeTestRule.onNodeWithText("Credit limit is required").assertIsDisplayed()
 
         composeTestRule.onNodeWithTag(ACCOUNT_BALANCE_FIELD_TAG).performTextReplacement("123.45")
         composeTestRule.onNodeWithTag(ACCOUNT_CREDIT_LIMIT_FIELD_TAG).performTextReplacement("1000")
         composeTestRule.onNodeWithTag(ACCOUNT_CLOSING_DAY_FIELD_TAG).performTextReplacement("20")
         composeTestRule.onNodeWithTag(ACCOUNT_DUE_DAY_FIELD_TAG).performTextReplacement("5")
-        composeTestRule.onNodeWithText("Save").performClick()
+        composeTestRule.onAllNodesWithText("Add Account")[1].performClick()
         composeTestRule.onAllNodesWithText("Name is required").assertCountEquals(0)
         composeTestRule.onAllNodesWithText("Enter a valid amount").assertCountEquals(0)
         composeTestRule.onAllNodesWithText("Credit limit is required").assertCountEquals(0)
