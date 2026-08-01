@@ -93,6 +93,13 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: convert local day start -> UTC for DatePicker input, then UTC -> local day start on confirm.
 - Current guard: `DateUtils.toUtcDayStartMillis` and `toLocalDayStartMillis` bridge local day-start and DatePicker UTC millis: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/utils/DateUtils.kt:80-90`; transaction form and sandbox sheet use them: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:343-356`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/components/AddSandboxTransactionSheet.kt:331-343`.
 
+## Month-scoped calendar cache loses off-month selection rows
+
+- Symptom: day panel reports no transactions for selected day after displayed month changes.
+- Root cause: `GetMonthTransactionsUseCase` returns only requested month, so displayed month's `transactionsByDate[selectedDate]` lacks off-month rows: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/GetMonthTransactionsUseCase.kt:15-30`.
+- Resolution: keep selection independent of displayed month. Cancel old selected-day job on each load; when selection is off-month, collect selected month and resolve through `BuildCalendarMonthUseCase`.
+- Current guard: `CalendarViewModel` owns job cancellation and off-month resolution: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarViewModel.kt:43-100`, `:138-144`, `:164-196`; regression coverage includes liveness and cancelled exclusion: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarViewModelTest.kt:48-108`.
+
 ## Calendar day visual-state conflicts
 
 - Symptom: today with negative net rendered contradictory red border + green background (`bug-reports/calendar-view/2026-04-05_1300_today-cell-conflicting-visual-states.md:9-20`).
