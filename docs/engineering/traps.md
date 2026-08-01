@@ -2,6 +2,18 @@
 
 Current-code guards for bugs this project has already hit. `docs/engineering/` and code are authoritative.
 
+## Double window insets shift screen headers
+
+- Symptom: Calendar and Accounts headers sat roughly one status-bar height below Home and Settings.
+- Root cause: Calendar added `safeDrawingPadding()` after root `Scaffold` padding; Accounts' nested snackbar `Scaffold` consumed system bars again.
+- Resolution: root `App.kt` `Scaffold` owns system insets; Calendar only consumes passed padding, and Accounts sets nested `contentWindowInsets = WindowInsets(0, 0, 0, 0)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:129-179`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:103-108`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-72`.
+
+## Unweighted headers hide actions
+
+- Symptom: long header titles could push bell/action controls off-screen.
+- Root cause: title text had no width constraint inside header row.
+- Resolution: keep `BcHeader` title weighted, single-line, and ellipsized; retain explicit gap before action content: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcHeader.kt:35-56`.
+
 ## Mutable balance drift
 
 - Symptom: confirmed transactions existed but account balance stayed stale (`bug-reports/account-management/2026-04-02_1200_stored-balance-permanently-drifts-from-transaction-history.md:11-30`).

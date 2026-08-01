@@ -32,6 +32,11 @@ Must-not-break rules below are verified from current code only.
 - Pending becomes overdue only when `nowMillis > transaction.date + DateUtils.MILLIS_IN_DAY`, and the overdue-marking query excludes credit-card accounts so card charges stay out of the overdue lifecycle: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/transactions.sq:25-31`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:182-205`.
 - Overdue marking is invoked through `MarkOverdueTransactionsUseCase`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/usecase/MarkOverdueTransactionsUseCase.kt:6-11`.
 
+## Global window insets and notification centre
+
+- `App.kt` root `Scaffold` is sole system-window-inset owner. Screens receive its `innerPadding`; Calendar must not add `safeDrawingPadding()`, and Accounts' snackbar-only nested `Scaffold` uses zero `contentWindowInsets`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:129-179`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:103-108`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-72`.
+- `App.kt` owns exactly one `NotificationCenterViewModel`, unread-count collection, visible state, and `NotificationCenterSheet`; each tab receives the same count and open callback: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:72-85`, `:155-177`, `:207-211`.
+
 ## App lifecycle recompute sites
 
 - `App()` injects overdue, projection, STS, settings, and notification use cases: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:72-82`.
