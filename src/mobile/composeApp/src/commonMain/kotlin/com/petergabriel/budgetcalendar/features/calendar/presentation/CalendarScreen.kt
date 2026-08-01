@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
@@ -104,7 +103,6 @@ fun CalendarScreen(
             .fillMaxSize()
             .background(colors.bgPrimary)
             .then(swipeModifier)
-            .safeDrawingPadding()
             .padding(spacing.spacing4),
     ) {
         Column(
