@@ -3,7 +3,9 @@ package com.petergabriel.budgetcalendar.core.designsystem.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -13,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 
@@ -29,16 +32,25 @@ fun BcHeader(
     val typography = BudgetCalendarTheme.typography
     val radius = BudgetCalendarTheme.radius
 
+    val hasAction = actionContent != null || (actionIcon != null && onActionClick != null)
+
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = title,
+            modifier = Modifier.weight(1f),
             style = typography.headline,
             color = colors.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
+
+        if (hasAction) {
+            Spacer(modifier = Modifier.width(8.dp))
+        }
 
         if (actionContent != null) {
             Box { actionContent() }
