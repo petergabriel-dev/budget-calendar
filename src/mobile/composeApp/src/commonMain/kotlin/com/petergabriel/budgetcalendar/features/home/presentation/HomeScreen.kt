@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcBadge
-import com.petergabriel.budgetcalendar.core.designsystem.component.BcSearchBar
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSectionHeader
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSegmentedControl
 import com.petergabriel.budgetcalendar.core.designsystem.component.BadgeVariant
@@ -115,7 +114,6 @@ fun HomeScreen(
     }
 
     var selectedDate by remember { mutableStateOf(today) }
-    var searchQuery by remember { mutableStateOf("") }
     var showAddForm by remember { mutableStateOf(false) }
     var showNotificationCenter by remember { mutableStateOf(false) }
     var editingTransaction by remember { mutableStateOf<Transaction?>(null) }
@@ -179,15 +177,6 @@ fun HomeScreen(
                         onClick = { showNotificationCenter = true },
                     )
                 },
-            )
-        }
-
-        item {
-            BcSearchBar(
-                query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = "Search...",
             )
         }
 
