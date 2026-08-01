@@ -27,7 +27,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
-import com.petergabriel.budgetcalendar.features.calendar.domain.model.plusMonths
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.CalendarGrid
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.DayTransactionSectionHeader
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.DayTransactionList
@@ -115,8 +114,8 @@ fun CalendarScreen(
         ) {
             MonthNavigationHeader(
                 currentMonth = uiState.currentMonth,
-                onPreviousMonth = { viewModel.loadMonth(uiState.currentMonth.plusMonths(-1)) },
-                onNextMonth = { viewModel.loadMonth(uiState.currentMonth.plusMonths(1)) },
+                onPreviousMonth = { viewModel.navigateMonth(-1) },
+                onNextMonth = { viewModel.navigateMonth(1) },
             )
 
             Spacer(modifier = Modifier.height(spacing.spacing2))

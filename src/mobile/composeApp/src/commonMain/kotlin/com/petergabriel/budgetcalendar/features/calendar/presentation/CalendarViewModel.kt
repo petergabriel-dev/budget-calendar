@@ -4,8 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountsUseCase
 import com.petergabriel.budgetcalendar.features.calendar.domain.model.contains
-import com.petergabriel.budgetcalendar.features.calendar.domain.model.firstDay
-import com.petergabriel.budgetcalendar.features.calendar.domain.model.lengthInDays
 import com.petergabriel.budgetcalendar.features.calendar.domain.model.plusMonths
 import com.petergabriel.budgetcalendar.features.calendar.domain.model.toYearMonth
 import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.BuildCalendarMonthUseCase
@@ -21,8 +19,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.YearMonth
-import kotlinx.datetime.onDay
-import kotlin.math.min
 
 class CalendarViewModel(
     private val getMonthTransactionsUseCase: GetMonthTransactionsUseCase,
@@ -35,6 +31,7 @@ class CalendarViewModel(
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
 
     private var monthTransactionsJob: Job? = null
+    private var selectedDayTransactionsJob: Job? = null
     private var monthProjectionJob: Job? = null
     private var accountNamesJob: Job? = null
     private var cachedTransactions: List<Transaction> = emptyList()
@@ -46,7 +43,9 @@ class CalendarViewModel(
 
     fun loadMonth(yearMonth: YearMonth) {
         monthTransactionsJob?.cancel()
+        selectedDayTransactionsJob?.cancel()
         monthProjectionJob?.cancel()
+        val selectedDate = _uiState.value.selectedDate
         _uiState.update { state ->
             state.copy(
                 currentMonth = yearMonth,
@@ -68,13 +67,35 @@ class CalendarViewModel(
                 }
                 .collect { monthTransactions ->
                     cachedTransactions = monthTransactions
-                    val resolvedSelectedDate = resolveSelectedDate(yearMonth, _uiState.value.selectedDate)
                     publishMonthState(
                         yearMonth = yearMonth,
-                        selectedDate = resolvedSelectedDate,
+                        selectedDate = selectedDate,
                         monthTransactions = monthTransactions,
                     )
                 }
+        }
+
+        if (!yearMonth.contains(selectedDate)) {
+            selectedDayTransactionsJob = viewModelScope.launch {
+                getMonthTransactionsUseCase(selectedDate.toYearMonth())
+                    .catch { throwable ->
+                        _uiState.update { state -> state.copy(error = throwable.message) }
+                    }
+                    .collect { selectedDayTransactions ->
+                        val calendarMonth = buildCalendarMonthUseCase(
+                            yearMonth = selectedDate.toYearMonth(),
+                            transactions = selectedDayTransactions,
+                            selectedDate = selectedDate,
+                        )
+                        _uiState.update { state ->
+                            state.copy(
+                                selectedDayTransactions = calendarMonth
+                                    .transactionsByDate[selectedDate]
+                                    .orEmpty(),
+                            )
+                        }
+                    }
+            }
         }
 
         monthProjectionJob = viewModelScope.launch {
@@ -118,6 +139,7 @@ class CalendarViewModel(
 
     override fun onCleared() {
         monthTransactionsJob?.cancel()
+        selectedDayTransactionsJob?.cancel()
         monthProjectionJob?.cancel()
         accountNamesJob?.cancel()
         super.onCleared()
@@ -140,15 +162,6 @@ class CalendarViewModel(
         }
     }
 
-    private fun resolveSelectedDate(targetMonth: YearMonth, selectedDate: LocalDate): LocalDate {
-        if (targetMonth.contains(selectedDate)) {
-            return selectedDate
-        }
-
-        val day = min(selectedDate.day, targetMonth.lengthInDays())
-        return targetMonth.onDay(day)
-    }
-
     private fun publishMonthState(
         yearMonth: YearMonth,
         selectedDate: LocalDate,
@@ -165,10 +178,17 @@ class CalendarViewModel(
                 currentMonth = yearMonth,
                 selectedDate = selectedDate,
                 calendarMonth = calendarMonth,
-                selectedDayTransactions = calendarMonth.transactionsByDate[selectedDate].orEmpty(),
                 isLoading = false,
                 error = null,
-            )
+            ).let { updatedState ->
+                if (yearMonth.contains(selectedDate)) {
+                    updatedState.copy(
+                        selectedDayTransactions = calendarMonth.transactionsByDate[selectedDate].orEmpty(),
+                    )
+                } else {
+                    updatedState
+                }
+            }
         }
     }
 }
