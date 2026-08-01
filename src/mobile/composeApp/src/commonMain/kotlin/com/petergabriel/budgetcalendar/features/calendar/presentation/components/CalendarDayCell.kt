@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -73,8 +72,7 @@ fun CalendarDayCell(
             .background(background)
             .clickable(onClick = onTap)
             .alpha(if (day.isCurrentMonth) 1f else 0.4f)
-            .padding(BudgetCalendarTheme.spacing.spacing1)
-            .heightIn(min = 72.dp),
+            .padding(BudgetCalendarTheme.spacing.spacing1),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(

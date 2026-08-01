@@ -45,9 +45,7 @@ class BuildCalendarMonthUseCase(
             .minus(DatePeriod(days = 1))
             .day
 
-        val visibleGridCells = leadingDaysCount + totalDaysInMonth
-        val trailingDaysCount = (7 - (visibleGridCells % 7)) % 7
-        val totalCells = visibleGridCells + trailingDaysCount
+        val totalCells = 42
 
         val firstGridDate = firstDayOfMonth.minus(DatePeriod(days = leadingDaysCount))
         val today = Instant

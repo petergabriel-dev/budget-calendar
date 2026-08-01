@@ -108,7 +108,11 @@ fun CalendarScreen(
             .safeDrawingPadding()
             .padding(spacing.spacing4),
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+        ) {
             MonthNavigationHeader(
                 currentMonth = uiState.currentMonth,
                 onPreviousMonth = { viewModel.loadMonth(uiState.currentMonth.plusMonths(-1)) },
@@ -126,6 +130,7 @@ fun CalendarScreen(
             CalendarGrid(
                 days = uiState.calendarMonth?.days.orEmpty(),
                 onDateSelected = viewModel::selectDate,
+                modifier = Modifier.weight(1f),
             )
 
             DayTransactionSectionHeader(

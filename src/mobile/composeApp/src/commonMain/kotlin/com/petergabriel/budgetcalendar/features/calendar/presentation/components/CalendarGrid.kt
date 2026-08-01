@@ -4,11 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,10 +23,6 @@ fun CalendarGrid(
     onDateSelected: (kotlinx.datetime.LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val rowCount = (days.size / 7).coerceAtLeast(1)
-    val cellHeight = 66.dp
-    val gridHeight = (cellHeight * rowCount) + (2.dp * (rowCount - 1))
-
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -49,20 +42,22 @@ fun CalendarGrid(
             }
         }
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(7),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(gridHeight),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-            userScrollEnabled = false,
-        ) {
-            items(days, key = { day -> day.date.toString() }) { day ->
-                CalendarDayCell(
-                    day = day,
-                    onTap = { onDateSelected(day.date) },
-                )
+        days.chunked(7).forEach { week ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                week.forEach { day ->
+                    CalendarDayCell(
+                        day = day,
+                        onTap = { onDateSelected(day.date) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                    )
+                }
             }
         }
     }
