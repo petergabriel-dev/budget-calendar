@@ -32,6 +32,9 @@ cd src/mobile
 # Run Android unit tests only
 ./gradlew :composeApp:testDebugUnitTest
 
+# Run connected Android instrumented tests (task does not support --tests)
+./gradlew :composeApp:connectedDebugAndroidTest
+
 # Run one test class or method
 ./gradlew :composeApp:testDebugUnitTest --tests "com.petergabriel.budgetcalendar.SomeTest"
 ```
@@ -66,6 +69,7 @@ cd src/mobile
 - `androidMain`: Android entry/deps, Android SQLDelight driver, Koin Android: `src/mobile/composeApp/build.gradle.kts:29-35`.
 - `iosMain`: native SQLDelight driver: `src/mobile/composeApp/build.gradle.kts:54-56`.
 - Tests: `commonTest`, `androidUnitTest`, `androidInstrumentedTest`: `src/mobile/composeApp/build.gradle.kts:57-70`.
+- Test discovery must search all three test source sets; Compose UI tests can exist only in `androidInstrumentedTest`.
 
 ## Entry points
 
