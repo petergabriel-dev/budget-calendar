@@ -100,6 +100,13 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: today border always dark; backgrounds carry net tint; selected state wins. Fix plans: `docs/prompts/31_bugfix_calendar-day-today-cell-visual-state.md:9-17`, `docs/prompts/33_bugfix_calendar_non-today-cell-border-to-background.md:23-33`.
 - Current guard: background resolver orders selected, today-negative, today, non-today positive/negative; border resolver only colors today: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarDayCell.kt:106-132`.
 
+## Calendar grid height drift created hidden lazy-grid scroll
+
+- Symptom: August 2026 lost its last row on first paint; navigating Aug → Jul → Aug left the grid clipped under weekday labels.
+- Root cause: parent `CalendarGrid` duplicated a 66.dp day-cell height while `CalendarDayCell` rendered at least 80.dp including padding. Overflow gave its `LazyVerticalGrid` a scroll range; `userScrollEnabled = false` blocks gestures, not lazy-state restoration by item key.
+- Resolution: build 42 dates and render six weighted `Row`s in a plain `Column`; parent and grid divide leftover height instead of sharing a cell-height constant.
+- Current guard: `BuildCalendarMonthUseCase` fixes `totalCells = 42`, and `CalendarGrid` has weighted rows/cells with no lazy layout: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCase.kt:48-56`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarGrid.kt:45-60`. `CalendarScreen` weights both calendar region and grid: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:111-114`, `:130-133`.
+
 ## Overdue transactions must open edit mode, not create mode
 
 - Symptom: tapping overdue row opened blank new-transaction form, so user could not confirm/cancel overdue item (`bug-reports/safe-to-spend/2026-04-01_overdue-transaction-cannot-be-resolved.md:9-25`).

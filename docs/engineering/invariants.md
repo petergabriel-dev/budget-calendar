@@ -61,6 +61,12 @@ Must-not-break rules below are verified from current code only.
 - Calendar row gestures remain tap-only. Do not reintroduce `combinedClickable`, a long-press callback, or long-press deletion: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionListItem.kt:27-33`, `:65-73`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/DayTransactionList.kt:20-59`.
 - Calendar Edit and Delete are reachable only through details overflow. Edit opens the prefilled form; Delete must require confirmation, and Cancel performs no delete: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionDetailsSheet.kt:100-126`, `:180-211`.
 
+## Calendar grid is fixed and non-scrollable
+
+- Calendar month construction always emits 42 contiguous dates, beginning Sunday on or before month start. Exactly target-month days have `isCurrentMonth = true`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCase.kt:48-65`; regression coverage: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCaseTest.kt:18-57`.
+- Calendar UI renders six weighted rows with weighted, full-height cells; no calendar lazy layout or scroll state is allowed: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarGrid.kt:45-60`.
+- Parent layouts must allocate calendar from leftover space; do not hardcode day-cell height. `CalendarScreen` weights calendar region and grid: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:111-114`, `:130-133`.
+
 ## Transfers are paired rows
 
 - Creating a transfer writes a source row with `signedAmount = -amount`, a destination row with `signedAmount = amount`, then links both IDs: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/usecase/CreateTransactionUseCase.kt:59-82`.
