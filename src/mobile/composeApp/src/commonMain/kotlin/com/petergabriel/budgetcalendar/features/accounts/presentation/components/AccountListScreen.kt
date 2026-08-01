@@ -161,13 +161,17 @@ private fun SectionHeader(
 }
 
 @Composable
-private fun NetWorthHero(netWorth: Long) {
+private fun NetWorthHero(
+    netWorth: Long,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+) {
     val spacing = BudgetCalendarTheme.spacing
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
 
     Column(
         verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalAlignment = horizontalAlignment,
         modifier = Modifier.padding(top = spacing.spacing1),
     ) {
         Text(
@@ -195,11 +199,16 @@ private fun EmptyState(
     val spacing = BudgetCalendarTheme.spacing
 
     Column(
-        modifier = modifier.padding(horizontal = spacing.spacing6, vertical = spacing.spacing6),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = spacing.spacing6, vertical = spacing.spacing6),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacing.spacing2),
     ) {
-        NetWorthHero(netWorth = netWorth)
+        NetWorthHero(
+            netWorth = netWorth,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        )
 
         Text(
             text = "Add your first account",
