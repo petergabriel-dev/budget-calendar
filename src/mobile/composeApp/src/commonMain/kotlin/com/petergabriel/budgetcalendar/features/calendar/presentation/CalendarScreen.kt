@@ -25,12 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcNotificationBell
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.CalendarGrid
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.DayTransactionSectionHeader
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.DayTransactionList
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.EndOfMonthProjectionPill
-import com.petergabriel.budgetcalendar.features.calendar.presentation.components.MonthNavigationHeader
+import com.petergabriel.budgetcalendar.features.calendar.presentation.components.MonthNavigationRow
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.formatDayTransactionHeaderLabel
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormViewModel
@@ -112,12 +114,21 @@ fun CalendarScreen(
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            MonthNavigationHeader(
+            BcHeader(
+                title = "Calendar",
+                modifier = Modifier.fillMaxWidth(),
+                actionContent = {
+                    BcNotificationBell(
+                        unreadCount = unreadCount,
+                        onClick = onBellClick,
+                    )
+                },
+            )
+
+            MonthNavigationRow(
                 currentMonth = uiState.currentMonth,
-                unreadCount = unreadCount,
                 onPreviousMonth = { viewModel.navigateMonth(-1) },
                 onNextMonth = { viewModel.navigateMonth(1) },
-                onBellClick = onBellClick,
             )
 
             Spacer(modifier = Modifier.height(spacing.spacing2))

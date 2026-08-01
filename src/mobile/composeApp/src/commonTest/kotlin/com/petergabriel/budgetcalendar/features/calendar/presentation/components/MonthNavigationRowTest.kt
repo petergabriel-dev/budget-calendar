@@ -5,7 +5,7 @@ import kotlinx.datetime.YearMonth
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MonthNavigationHeaderTest {
+class MonthNavigationRowTest {
     @Test
     fun toDisplayLabel_abbreviatesAllMonths() {
         val expectedLabels = listOf(
