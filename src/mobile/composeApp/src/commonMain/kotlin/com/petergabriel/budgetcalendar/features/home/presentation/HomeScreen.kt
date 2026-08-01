@@ -18,12 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -40,10 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
-import com.petergabriel.budgetcalendar.core.designsystem.component.BcBadge
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcNotificationBell
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSectionHeader
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSegmentedControl
-import com.petergabriel.budgetcalendar.core.designsystem.component.BadgeVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.HeroSafeToSpend
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
@@ -172,7 +166,7 @@ fun HomeScreen(
                 title = if (sandboxState.isSandboxMode) "Sandbox" else "Budget",
                 modifier = Modifier.fillMaxWidth(),
                 actionContent = {
-                    NotificationBellAction(
+                    BcNotificationBell(
                         unreadCount = unreadCount,
                         onClick = { showNotificationCenter = true },
                     )
@@ -373,48 +367,6 @@ fun HomeScreen(
         viewModel = notificationCenterViewModel,
         onDismiss = ::closeNotificationCenter,
     )
-}
-
-@Composable
-private fun NotificationBellAction(
-    unreadCount: Int,
-    onClick: () -> Unit,
-) {
-    val colors = BudgetCalendarTheme.colors
-    val radius = BudgetCalendarTheme.radius
-    val spacing = BudgetCalendarTheme.spacing
-    val touchTarget = spacing.spacing12 - spacing.spacing1
-
-    Surface(
-        shape = RoundedCornerShape(radius.lg),
-        color = colors.bgSurface,
-    ) {
-        Box {
-            IconButton(
-                modifier = Modifier.size(touchTarget),
-                onClick = onClick,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notifications",
-                    tint = colors.textPrimary,
-                )
-            }
-
-            if (unreadCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = spacing.spacing1, end = spacing.spacing1),
-                ) {
-                    BcBadge(
-                        text = if (unreadCount > 9) "9+" else unreadCount.toString(),
-                        variant = BadgeVariant.Error,
-                    )
-                }
-            }
-        }
-    }
 }
 
 @Composable
