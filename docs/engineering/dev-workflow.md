@@ -6,12 +6,20 @@ Current mobile app lives under `src/mobile/`; Gradle root includes only `:compos
 
 - Use Pi modes in order: discuss to clarify, plan to produce Section 4 task queues, build to implement one confirmed task at a time.
 - Engineering docs live under `docs/engineering/`; ADRs live under `docs/engineering/decisions/`.
-- Design-token and component reference is `docs/engineering/design-system.html` plus Compose code under `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/`; never resolve `core/designsystem/...` from repo root.
+- Design-token and component reference is `docs/engineering/design-system.html` plus Compose code under `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/`; never resolve `core/designsystem/...` from repo root. If an expected source path fails, inspect the project tree before retrying.
 
 ## Code search
 
 - Prefer semantic search first: `ccc search "safe to spend calculation"` from repo root. Project skill docs own `ccc` indexing/search workflow: `.pi/skills/ccc/SKILL.md`.
 - Use exact grep only after you know symbol/file names.
+
+## Compose
+
+- Inside `Row` or `Column` scope, call `Modifier.weight(...)` without importing `androidx.compose.foundation.layout.weight`; that import resolves an internal parent-data accessor and fails compilation.
+
+## Engineering-doc references
+
+- Before adding source line references, search each target doc independently for the source filename. Do not infer a file's references from combined multi-file search output.
 
 ## Android / Gradle
 
