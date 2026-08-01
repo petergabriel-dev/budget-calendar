@@ -1,20 +1,12 @@
 package com.petergabriel.budgetcalendar.features.accounts.presentation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -27,11 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcNotificationBell
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAccountRequest
@@ -47,14 +38,14 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun AccountScreen(
     modifier: Modifier = Modifier,
+    unreadCount: Int,
+    onBellClick: () -> Unit,
     viewModel: AccountViewModel = koinViewModel(),
     creditCardViewModel: CreditCardViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val creditCardUiState by creditCardViewModel.uiState.collectAsStateWithLifecycle()
-    val colors = BudgetCalendarTheme.colors
     val spacing = BudgetCalendarTheme.spacing
-    val typography = BudgetCalendarTheme.typography
     val snackbarHostState = remember { SnackbarHostState() }
     var showCreditCardSettingsForm by remember { mutableStateOf(false) }
 
@@ -86,38 +77,16 @@ fun AccountScreen(
                     .padding(horizontal = spacing.spacing4, vertical = spacing.spacing4),
                 verticalArrangement = Arrangement.spacedBy(spacing.spacing4),
             ) {
-                Row(
+                BcHeader(
+                    title = "Accounts",
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    androidx.compose.material3.Text(
-                        text = "Accounts",
-                        style = typography.headline.copy(
-                            fontSize = 40.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-1).sp,
-                            lineHeight = 38.sp,
-                        ),
-                        color = colors.textPrimary,
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(colors.bgSurface)
-                            .clickable(onClick = viewModel::showCreateForm),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "Add account",
-                            tint = colors.textPrimary,
-                            modifier = Modifier.size(20.dp),
+                    actionContent = {
+                        BcNotificationBell(
+                            unreadCount = unreadCount,
+                            onClick = onBellClick,
                         )
-                    }
-                }
+                    },
+                )
 
                 AccountListScreen(
                     accounts = uiState.accounts.filter { account -> account.type != AccountType.CREDIT_CARD },
@@ -125,6 +94,7 @@ fun AccountScreen(
                     balances = uiState.balances,
                     netWorth = uiState.netWorth,
                     modifier = Modifier.weight(1f),
+                    onAddAccount = viewModel::showCreateForm,
                     onAccountTap = viewModel::showEditForm,
                     onCreditCardTap = { summary ->
                         showCreditCardSettingsForm = false

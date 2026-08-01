@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
+import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.HeroNetWorth
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
@@ -28,6 +30,7 @@ fun AccountListScreen(
     balances: Map<Long, Long>,
     netWorth: Long,
     modifier: Modifier = Modifier,
+    onAddAccount: () -> Unit,
     onAccountTap: (Account) -> Unit,
     onCreditCardTap: (CreditCardSummary) -> Unit,
 ) {
@@ -42,6 +45,7 @@ fun AccountListScreen(
     if (accounts.isEmpty() && creditCards.isEmpty()) {
         EmptyState(
             netWorth = netWorth,
+            onAddAccount = onAddAccount,
             modifier = modifier.padding(horizontal = spacing.spacing2),
         )
         return
@@ -110,6 +114,15 @@ fun AccountListScreen(
                 }
             }
         }
+
+        item {
+            BcButton(
+                text = "Add account",
+                onClick = onAddAccount,
+                modifier = Modifier.fillMaxWidth(),
+                variant = ButtonVariant.PrimaryIconLeading,
+            )
+        }
     }
 }
 
@@ -174,6 +187,7 @@ private fun NetWorthHero(netWorth: Long) {
 @Composable
 private fun EmptyState(
     netWorth: Long,
+    onAddAccount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = BudgetCalendarTheme.colors
@@ -198,6 +212,12 @@ private fun EmptyState(
             text = "Start by adding where your money lives.",
             style = typography.bodyMedium,
             color = colors.textSecondary,
+        )
+
+        BcButton(
+            text = "Add account",
+            onClick = onAddAccount,
+            variant = ButtonVariant.PrimaryIconLeading,
         )
     }
 }

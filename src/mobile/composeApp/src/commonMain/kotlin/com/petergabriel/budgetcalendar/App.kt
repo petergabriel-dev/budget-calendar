@@ -166,6 +166,8 @@ fun App() {
 
                 AppTab.ACCOUNTS -> AccountScreen(
                     modifier = Modifier.padding(innerPadding),
+                    unreadCount = unreadCount,
+                    onBellClick = { showNotificationCenter = true },
                 )
 
                 AppTab.ME -> NotificationSettingsScreen(
