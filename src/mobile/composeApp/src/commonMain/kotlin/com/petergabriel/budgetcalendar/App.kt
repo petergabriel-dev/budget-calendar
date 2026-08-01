@@ -160,6 +160,8 @@ fun App() {
 
                 AppTab.CALENDAR -> CalendarScreen(
                     modifier = Modifier.padding(innerPadding),
+                    unreadCount = unreadCount,
+                    onBellClick = { showNotificationCenter = true },
                 )
 
                 AppTab.ACCOUNTS -> AccountScreen(

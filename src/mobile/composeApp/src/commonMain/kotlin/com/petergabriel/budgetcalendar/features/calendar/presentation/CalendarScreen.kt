@@ -44,6 +44,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun CalendarScreen(
     modifier: Modifier = Modifier,
+    unreadCount: Int,
+    onBellClick: () -> Unit,
     viewModel: CalendarViewModel = koinViewModel(),
     transactionFormViewModel: TransactionFormViewModel = koinViewModel(),
 ) {
@@ -112,8 +114,10 @@ fun CalendarScreen(
         ) {
             MonthNavigationHeader(
                 currentMonth = uiState.currentMonth,
+                unreadCount = unreadCount,
                 onPreviousMonth = { viewModel.navigateMonth(-1) },
                 onNextMonth = { viewModel.navigateMonth(1) },
+                onBellClick = onBellClick,
             )
 
             Spacer(modifier = Modifier.height(spacing.spacing2))
