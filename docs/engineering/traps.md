@@ -119,7 +119,7 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Symptom: tapping overdue row opened blank new-transaction form, so user could not confirm/cancel overdue item (`bug-reports/safe-to-spend/2026-04-01_overdue-transaction-cannot-be-resolved.md:9-25`).
 - Root cause: Home screen did not track/pass selected transaction; `TransactionFormSheet` got `initialData = null` (`bug-reports/safe-to-spend/2026-04-01_overdue-transaction-cannot-be-resolved.md:31-80`).
 - Resolution: track `editingTransaction`, pass it into form, and route save/delete to replace/delete. Fix plan: `docs/prompts/17_bugfix_overdue-transaction-cannot-be-resolved.md:15-23`.
-- Current guard: Home stores editing state and row click sets it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:115-125`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:264-273`; form receives `initialData` and replace/delete callbacks: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:346-369`.
+- Current guard: Home stores editing state and row click sets it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:116-125`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:264-273`; form receives `initialData` and replace/delete callbacks: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:346-369`.
 
 ## Retired spec files are gone
 
