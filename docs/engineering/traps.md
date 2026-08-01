@@ -20,6 +20,13 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Root cause: a nested `Row` grouped 48dp month buttons with the 44dp bell but omitted `verticalAlignment`, which defaults to top alignment.
 - Resolution: pass `BcNotificationBell` directly to `BcHeader.actionContent`; render month controls in sibling `MonthNavigationRow`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:117-132`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/MonthNavigationRow.kt:25-63`.
 
+## Centered wrap-content Columns stay at start
+
+- Symptom: empty-state content drifts toward start despite `horizontalAlignment = Alignment.CenterHorizontally`.
+- Root cause: `Modifier.weight(1f)` from a `Column` parent constrains height only, so child Column wraps its widest element and has no horizontal space to center within.
+- Resolution: apply `fillMaxWidth()` before padding on centered child Column; pass centered alignment to nested layout that must align label with amount.
+- Current guard: Accounts parent still passes height-only weight: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:91-96`; `EmptyState` fills width and centers `NetWorthHero`, whose default remains start for populated list: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/components/AccountListScreen.kt:164-175`, `:201-211`.
+
 ## Mutable balance drift
 
 - Symptom: confirmed transactions existed but account balance stayed stale (`bug-reports/account-management/2026-04-02_1200_stored-balance-permanently-drifts-from-transaction-history.md:11-30`).
