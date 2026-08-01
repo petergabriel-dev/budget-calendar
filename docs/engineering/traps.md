@@ -6,13 +6,19 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 
 - Symptom: Calendar and Accounts headers sat roughly one status-bar height below Home and Settings.
 - Root cause: Calendar added `safeDrawingPadding()` after root `Scaffold` padding; Accounts' nested snackbar `Scaffold` consumed system bars again.
-- Resolution: root `App.kt` `Scaffold` owns system insets; Calendar only consumes passed padding, and Accounts sets nested `contentWindowInsets = WindowInsets(0, 0, 0, 0)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:129-179`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:103-108`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-72`.
+- Resolution: root `App.kt` `Scaffold` owns system insets; Calendar only consumes passed padding, and Accounts sets nested `contentWindowInsets = WindowInsets(0, 0, 0, 0)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:129-179`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:105-110`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-72`.
 
 ## Unweighted headers hide actions
 
 - Symptom: long header titles could push bell/action controls off-screen.
 - Root cause: title text had no width constraint inside header row.
 - Resolution: keep `BcHeader` title weighted, single-line, and ellipsized; retain explicit gap before action content: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcHeader.kt:35-56`.
+
+## Nested header controls raise the bell
+
+- Symptom: Calendar bell sat about 2dp high relative to bells on other tabs.
+- Root cause: a nested `Row` grouped 48dp month buttons with the 44dp bell but omitted `verticalAlignment`, which defaults to top alignment.
+- Resolution: pass `BcNotificationBell` directly to `BcHeader.actionContent`; render month controls in sibling `MonthNavigationRow`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:117-132`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/MonthNavigationRow.kt:25-63`.
 
 ## Mutable balance drift
 
@@ -124,7 +130,7 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Symptom: August 2026 lost its last row on first paint; navigating Aug → Jul → Aug left the grid clipped under weekday labels.
 - Root cause: parent `CalendarGrid` duplicated a 66.dp day-cell height while `CalendarDayCell` rendered at least 80.dp including padding. Overflow gave its `LazyVerticalGrid` a scroll range; `userScrollEnabled = false` blocks gestures, not lazy-state restoration by item key.
 - Resolution: build 42 dates and render six weighted `Row`s in a plain `Column`; parent and grid divide leftover height instead of sharing a cell-height constant.
-- Current guard: `BuildCalendarMonthUseCase` fixes `totalCells = 42`, and `CalendarGrid` has weighted rows/cells with no lazy layout: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCase.kt:48-56`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarGrid.kt:45-60`. `CalendarScreen` weights both calendar region and grid: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:111-114`, `:130-133`.
+- Current guard: `BuildCalendarMonthUseCase` fixes `totalCells = 42`, and `CalendarGrid` has weighted rows/cells with no lazy layout: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCase.kt:48-56`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarGrid.kt:45-60`. `CalendarScreen` weights both calendar region and grid: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:112-115`, `:142-145`.
 
 ## Overdue transactions must open edit mode, not create mode
 

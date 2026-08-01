@@ -42,6 +42,7 @@ Source of truth: current code under package `com.petergabriel.budgetcalendar`.
 - Feature UI must use `BudgetCalendarTheme.colors`/`BcColors`; raw `Color(0x...)`, `Color.Black`, and `Color.White` literals are forbidden. Token definitions and feature usage: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/theme/Color.kt:8-54`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/components/CreditCardTile.kt:35-132`.
 - Reusable components use `Bc*` names, e.g. `BcButton`, `BcBadge`, `BcHeader`, `BcTabBarPill`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcButton.kt:36-70`.
 - Top-level app screens use `BcHeader` at `typography.headline`; title text is weighted, single-line, and ellipsized before its action slot: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcHeader.kt:23-56`. Each top-level screen passes the shared `BcNotificationBell` as its notification action: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:155-177`.
+- `BcHeader.actionContent` carries `BcNotificationBell` alone; never wrap it with unrelated controls in a nested `Row`. Put Calendar month controls in a sibling row.
 
 ## State and errors
 
