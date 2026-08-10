@@ -1,8 +1,8 @@
 package com.petergabriel.budgetcalendar.features.accounts.presentation
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,20 +19,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcNotificationBell
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
+import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAccountRequest
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.UpdateAccountRequest
+import com.petergabriel.budgetcalendar.features.accounts.presentation.components.AccountDetailsSheet
 import com.petergabriel.budgetcalendar.features.accounts.presentation.components.AccountFormSheet
 import com.petergabriel.budgetcalendar.features.accounts.presentation.components.AccountListScreen
+import com.petergabriel.budgetcalendar.features.creditcard.presentation.CreditCardEffect
 import com.petergabriel.budgetcalendar.features.creditcard.presentation.CreditCardViewModel
 import com.petergabriel.budgetcalendar.features.creditcard.presentation.components.CreditCardDetailSheet
 import com.petergabriel.budgetcalendar.features.creditcard.presentation.components.CreditCardPaymentSheet
 import com.petergabriel.budgetcalendar.features.creditcard.presentation.components.CreditCardSettingsForm
+import kotlinx.coroutines.flow.collect
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -48,6 +51,7 @@ fun AccountScreen(
     val spacing = BudgetCalendarTheme.spacing
     val snackbarHostState = remember { SnackbarHostState() }
     var showCreditCardSettingsForm by remember { mutableStateOf(false) }
+    var selectedAccount by remember { mutableStateOf<Account?>(null) }
 
     LaunchedEffect(uiState.error) {
         val error = uiState.error ?: return@LaunchedEffect
@@ -59,6 +63,30 @@ fun AccountScreen(
         val error = creditCardUiState.error ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(error)
         creditCardViewModel.clearError()
+    }
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is AccountEffect.DeleteSucceeded -> {
+                    if (selectedAccount?.id == effect.accountId) {
+                        selectedAccount = null
+                    }
+                    if (creditCardViewModel.uiState.value.selectedCard?.accountId == effect.accountId) {
+                        showCreditCardSettingsForm = false
+                        creditCardViewModel.dismissSelectedCard()
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(creditCardViewModel) {
+        creditCardViewModel.effects.collect { effect ->
+            when (effect) {
+                CreditCardEffect.SettingsUpdated -> showCreditCardSettingsForm = false
+            }
+        }
     }
 
     Scaffold(
@@ -95,7 +123,7 @@ fun AccountScreen(
                     netWorth = uiState.netWorth,
                     modifier = Modifier.weight(1f),
                     onAddAccount = viewModel::showCreateForm,
-                    onAccountTap = viewModel::showEditForm,
+                    onAccountTap = { account -> selectedAccount = account },
                     onCreditCardTap = { summary ->
                         showCreditCardSettingsForm = false
                         creditCardViewModel.selectCard(summary.accountId)
@@ -108,14 +136,15 @@ fun AccountScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)
-                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                        .padding(horizontal = spacing.spacing4, vertical = spacing.spacing2),
                 )
             }
 
             AccountFormSheet(
                 isVisible = uiState.showForm,
                 initialData = uiState.editingAccount,
-                isSubmitting = uiState.isLoading,
+                isSubmitting = uiState.isSubmitting,
+                errorMessage = uiState.mutationError,
                 onSave = { name, type, balance, isInSpendingPool, description, creditLimit, statementClosingDay, paymentDueDay ->
                     val editing = uiState.editingAccount
                     if (editing == null) {
@@ -144,8 +173,22 @@ fun AccountScreen(
                     }
                 },
                 onCancel = viewModel::hideForm,
-                onDelete = { account -> viewModel.deleteAccount(account.id) },
             )
+
+            selectedAccount?.let { account ->
+                AccountDetailsSheet(
+                    isVisible = !uiState.showForm,
+                    account = account,
+                    isDeleting = uiState.isDeleting,
+                    errorMessage = uiState.mutationError,
+                    onEdit = {
+                        selectedAccount = null
+                        viewModel.showEditForm(account)
+                    },
+                    onDelete = { viewModel.deleteAccount(account.id) },
+                    onDismiss = { if (!uiState.isDeleting) selectedAccount = null },
+                )
+            }
 
             creditCardUiState.selectedCard?.let { selectedCard ->
                 CreditCardDetailSheet(
@@ -155,10 +198,7 @@ fun AccountScreen(
                     pendingTransactions = creditCardUiState.selectedCardTransactions,
                     onMakePayment = creditCardViewModel::openPaymentSheet,
                     onEditSettings = { showCreditCardSettingsForm = true },
-                    onDismiss = {
-                        showCreditCardSettingsForm = false
-                        creditCardViewModel.dismissSelectedCard()
-                    },
+                    onDismiss = creditCardViewModel::dismissSelectedCard,
                 )
 
                 CreditCardPaymentSheet(
@@ -166,6 +206,8 @@ fun AccountScreen(
                     ccSummary = selectedCard,
                     suggestedAmount = creditCardUiState.suggestedPaymentAmount,
                     spendingPoolAccounts = creditCardUiState.spendingPoolAccounts,
+                    isSubmitting = creditCardUiState.isPaymentSubmitting,
+                    errorMessage = creditCardUiState.paymentError,
                     onConfirmPayment = creditCardViewModel::makePayment,
                     onCancel = creditCardViewModel::closePaymentSheet,
                 )
@@ -173,16 +215,11 @@ fun AccountScreen(
                 CreditCardSettingsForm(
                     isVisible = showCreditCardSettingsForm,
                     initialSettings = creditCardUiState.selectedCardSettings,
-                    onSave = { request ->
-                        showCreditCardSettingsForm = false
-                        creditCardViewModel.updateSettings(request)
-                    },
-                    onCancel = { showCreditCardSettingsForm = false },
-                    onDelete = {
-                        showCreditCardSettingsForm = false
-                        creditCardViewModel.dismissSelectedCard()
-                        viewModel.deleteAccount(selectedCard.accountId)
-                    },
+                    isSubmitting = creditCardUiState.isSettingsSubmitting || uiState.isDeleting,
+                    errorMessage = creditCardUiState.settingsError ?: uiState.mutationError,
+                    onSave = creditCardViewModel::updateSettings,
+                    onCancel = { if (!creditCardUiState.isSettingsSubmitting && !uiState.isDeleting) showCreditCardSettingsForm = false },
+                    onDelete = { viewModel.deleteAccount(selectedCard.accountId) },
                 )
             }
         }

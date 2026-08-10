@@ -5,6 +5,10 @@ import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCa
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 
+sealed interface CreditCardEffect {
+    data object SettingsUpdated : CreditCardEffect
+}
+
 data class CreditCardUiState(
     val creditCards: List<CreditCardSummary> = emptyList(),
     val selectedCard: CreditCardSummary? = null,
@@ -12,7 +16,11 @@ data class CreditCardUiState(
     val selectedCardTransactions: List<Transaction> = emptyList(),
     val spendingPoolAccounts: List<Account> = emptyList(),
     val isLoading: Boolean = false,
+    val isPaymentSubmitting: Boolean = false,
+    val isSettingsSubmitting: Boolean = false,
     val isPaymentSheetVisible: Boolean = false,
     val suggestedPaymentAmount: Long = 0L,
     val error: String? = null,
+    val paymentError: String? = null,
+    val settingsError: String? = null,
 )

@@ -11,8 +11,11 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.DeleteAc
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountsUseCase
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.UpdateAccountUseCase
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
@@ -28,6 +31,9 @@ class AccountViewModel(
 
     private val _uiState = MutableStateFlow(AccountUiState(isLoading = true))
     val uiState: StateFlow<AccountUiState> = _uiState.asStateFlow()
+
+    private val _effects = MutableSharedFlow<AccountEffect>(extraBufferCapacity = 1)
+    val effects: SharedFlow<AccountEffect> = _effects.asSharedFlow()
 
     private var accountsJob: Job? = null
 
@@ -45,7 +51,7 @@ class AccountViewModel(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = throwable.message,
+                            error = throwable.message ?: "Unable to load accounts",
                         )
                     }
                 }
@@ -65,16 +71,18 @@ class AccountViewModel(
     }
 
     fun createAccount(request: CreateAccountRequest) {
+        if (_uiState.value.isSubmitting || _uiState.value.isDeleting) return
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isSubmitting = true, mutationError = null) }
 
             createAccountUseCase(request)
                 .onSuccess {
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
+                            isSubmitting = false,
                             showForm = false,
                             editingAccount = null,
+                            mutationError = null,
                         )
                     }
                     refreshNetWorth()
@@ -82,8 +90,8 @@ class AccountViewModel(
                 .onFailure { throwable ->
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            isSubmitting = false,
+                            mutationError = throwable.message ?: "Unable to save account",
                         )
                     }
                 }
@@ -91,16 +99,18 @@ class AccountViewModel(
     }
 
     fun updateAccount(id: Long, request: UpdateAccountRequest) {
+        if (_uiState.value.isSubmitting || _uiState.value.isDeleting) return
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isSubmitting = true, mutationError = null) }
 
             updateAccountUseCase(id, request)
                 .onSuccess {
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
+                            isSubmitting = false,
                             showForm = false,
                             editingAccount = null,
+                            mutationError = null,
                         )
                     }
                     refreshNetWorth()
@@ -108,8 +118,8 @@ class AccountViewModel(
                 .onFailure { throwable ->
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            isSubmitting = false,
+                            mutationError = throwable.message ?: "Unable to save account",
                         )
                     }
                 }
@@ -117,25 +127,28 @@ class AccountViewModel(
     }
 
     fun deleteAccount(id: Long) {
+        if (_uiState.value.isSubmitting || _uiState.value.isDeleting) return
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isDeleting = true, mutationError = null) }
 
             deleteAccountUseCase(id)
                 .onSuccess {
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
+                            isDeleting = false,
                             showForm = false,
                             editingAccount = null,
+                            mutationError = null,
                         )
                     }
+                    _effects.tryEmit(AccountEffect.DeleteSucceeded(id))
                     refreshNetWorth()
                 }
                 .onFailure { throwable ->
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            isDeleting = false,
+                            mutationError = throwable.message ?: "Unable to delete account",
                         )
                     }
                 }
@@ -147,6 +160,7 @@ class AccountViewModel(
             it.copy(
                 showForm = true,
                 editingAccount = null,
+                mutationError = null,
             )
         }
     }
@@ -156,6 +170,7 @@ class AccountViewModel(
             it.copy(
                 showForm = true,
                 editingAccount = account,
+                mutationError = null,
             )
         }
     }
@@ -165,12 +180,13 @@ class AccountViewModel(
             it.copy(
                 showForm = false,
                 editingAccount = null,
+                mutationError = null,
             )
         }
     }
 
     fun clearError() {
-        _uiState.update { it.copy(error = null) }
+        _uiState.update { it.copy(error = null, mutationError = null) }
     }
 
     private fun refreshNetWorth() {
@@ -180,7 +196,7 @@ class AccountViewModel(
                     _uiState.update { it.copy(netWorth = value) }
                 }
                 .onFailure { throwable ->
-                    _uiState.update { it.copy(error = throwable.message) }
+                    _uiState.update { it.copy(error = throwable.message ?: "Unable to load net worth") }
                 }
         }
     }

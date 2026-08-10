@@ -11,8 +11,11 @@ import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.MakeCr
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.UpdateCreditCardSettingsUseCase
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.GetPendingAndOverdueExpensesByAccountUseCase
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
@@ -31,6 +34,9 @@ class CreditCardViewModel(
     private val _uiState = MutableStateFlow(CreditCardUiState(isLoading = true))
     val uiState: StateFlow<CreditCardUiState> = _uiState.asStateFlow()
 
+    private val _effects = MutableSharedFlow<CreditCardEffect>(extraBufferCapacity = 1)
+    val effects: SharedFlow<CreditCardEffect> = _effects.asSharedFlow()
+
     private var summariesJob: Job? = null
     private var selectedCardTransactionsJob: Job? = null
     private var spendingPoolAccountsJob: Job? = null
@@ -46,6 +52,8 @@ class CreditCardViewModel(
                 state.copy(
                     isLoading = true,
                     error = null,
+                    paymentError = null,
+                    settingsError = null,
                     isPaymentSheetVisible = false,
                 )
             }
@@ -54,7 +62,7 @@ class CreditCardViewModel(
                 _uiState.update { state ->
                     state.copy(
                         isLoading = false,
-                        error = throwable.message,
+                        error = throwable.message ?: "Unable to load card",
                     )
                 }
                 return@launch
@@ -64,7 +72,7 @@ class CreditCardViewModel(
                 _uiState.update { state ->
                     state.copy(
                         isLoading = false,
-                        error = throwable.message,
+                        error = throwable.message ?: "Unable to load card settings",
                     )
                 }
                 return@launch
@@ -109,6 +117,8 @@ class CreditCardViewModel(
                 selectedCardTransactions = emptyList(),
                 isPaymentSheetVisible = false,
                 suggestedPaymentAmount = 0L,
+                paymentError = null,
+                settingsError = null,
                 error = null,
             )
         }
@@ -120,18 +130,23 @@ class CreditCardViewModel(
             state.copy(
                 isPaymentSheetVisible = true,
                 suggestedPaymentAmount = selectedCard.reservedAmount,
+                paymentError = null,
             )
         }
     }
 
     fun closePaymentSheet() {
-        _uiState.update { state -> state.copy(isPaymentSheetVisible = false) }
+        if (_uiState.value.isPaymentSubmitting) return
+        _uiState.update { state -> state.copy(isPaymentSheetVisible = false, paymentError = null) }
     }
 
     fun makePayment(sourceAccountId: Long, amount: Long) {
+        if (_uiState.value.isPaymentSubmitting || _uiState.value.isSettingsSubmitting) return
         val selectedCardId = _uiState.value.selectedCard?.accountId ?: return
         viewModelScope.launch {
-            _uiState.update { state -> state.copy(isLoading = true, error = null) }
+            _uiState.update { state ->
+                state.copy(isPaymentSubmitting = true, paymentError = null)
+            }
             makeCreditCardPaymentUseCase(
                 sourceAccountId = sourceAccountId,
                 ccAccountId = selectedCardId,
@@ -139,17 +154,17 @@ class CreditCardViewModel(
             ).onSuccess {
                 _uiState.update { state ->
                     state.copy(
-                        isLoading = false,
+                        isPaymentSubmitting = false,
                         isPaymentSheetVisible = false,
-                        error = null,
+                        paymentError = null,
                     )
                 }
                 refreshSelectedCard(selectedCardId)
             }.onFailure { throwable ->
                 _uiState.update { state ->
                     state.copy(
-                        isLoading = false,
-                        error = throwable.message,
+                        isPaymentSubmitting = false,
+                        paymentError = throwable.message ?: "Unable to make payment",
                     )
                 }
             }
@@ -157,9 +172,12 @@ class CreditCardViewModel(
     }
 
     fun updateSettings(request: UpdateCreditCardSettingsRequest) {
+        if (_uiState.value.isPaymentSubmitting || _uiState.value.isSettingsSubmitting) return
         val selectedCardId = _uiState.value.selectedCard?.accountId ?: return
         viewModelScope.launch {
-            _uiState.update { state -> state.copy(isLoading = true, error = null) }
+            _uiState.update { state ->
+                state.copy(isSettingsSubmitting = true, settingsError = null)
+            }
             updateCreditCardSettingsUseCase(
                 accountId = selectedCardId,
                 creditLimit = request.creditLimit,
@@ -171,16 +189,17 @@ class CreditCardViewModel(
                 _uiState.update { state ->
                     state.copy(
                         selectedCardSettings = updatedSettings,
-                        isLoading = false,
-                        error = null,
+                        isSettingsSubmitting = false,
+                        settingsError = null,
                     )
                 }
+                _effects.tryEmit(CreditCardEffect.SettingsUpdated)
                 refreshSelectedCard(selectedCardId)
             }.onFailure { throwable ->
                 _uiState.update { state ->
                     state.copy(
-                        isLoading = false,
-                        error = throwable.message,
+                        isSettingsSubmitting = false,
+                        settingsError = throwable.message ?: "Unable to save card settings",
                     )
                 }
             }
@@ -188,7 +207,13 @@ class CreditCardViewModel(
     }
 
     fun clearError() {
-        _uiState.update { state -> state.copy(error = null) }
+        _uiState.update {
+            it.copy(
+                error = null,
+                paymentError = null,
+                settingsError = null,
+            )
+        }
     }
 
     private fun observeCreditCardSummaries() {
@@ -199,7 +224,7 @@ class CreditCardViewModel(
                     _uiState.update { state ->
                         state.copy(
                             isLoading = false,
-                            error = throwable.message,
+                            error = throwable.message ?: "Unable to load credit cards",
                         )
                     }
                 }
