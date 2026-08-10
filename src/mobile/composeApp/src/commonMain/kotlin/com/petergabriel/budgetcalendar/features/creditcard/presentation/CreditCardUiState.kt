@@ -21,6 +21,7 @@ data class CreditCardUiState(
     val isPaymentSheetVisible: Boolean = false,
     val suggestedPaymentAmount: Long = 0L,
     val error: String? = null,
+    val creditCardsError: String? = null,
     val paymentError: String? = null,
     val settingsError: String? = null,
 )

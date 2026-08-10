@@ -7,17 +7,13 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
@@ -49,21 +45,8 @@ fun AccountScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val creditCardUiState by creditCardViewModel.uiState.collectAsStateWithLifecycle()
     val spacing = BudgetCalendarTheme.spacing
-    val snackbarHostState = remember { SnackbarHostState() }
     var showCreditCardSettingsForm by remember { mutableStateOf(false) }
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
-
-    LaunchedEffect(uiState.error) {
-        val error = uiState.error ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(error)
-        viewModel.clearError()
-    }
-
-    LaunchedEffect(creditCardUiState.error) {
-        val error = creditCardUiState.error ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(error)
-        creditCardViewModel.clearError()
-    }
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
@@ -92,7 +75,6 @@ fun AccountScreen(
     Scaffold(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -121,22 +103,21 @@ fun AccountScreen(
                     creditCards = creditCardUiState.creditCards,
                     balances = uiState.balances,
                     netWorth = uiState.netWorth,
+                    isNetWorthLoading = uiState.isNetWorthLoading,
+                    netWorthError = uiState.netWorthError,
+                    isLoading = uiState.isLoading,
+                    errorMessage = uiState.error,
+                    isCreditCardsLoading = creditCardUiState.isLoading,
+                    creditCardsError = creditCardUiState.creditCardsError,
                     modifier = Modifier.weight(1f),
+                    onRetryAccounts = viewModel::loadAccounts,
+                    onRetryCreditCards = creditCardViewModel::retryCreditCards,
                     onAddAccount = viewModel::showCreateForm,
                     onAccountTap = { account -> selectedAccount = account },
                     onCreditCardTap = { summary ->
                         showCreditCardSettingsForm = false
                         creditCardViewModel.selectCard(summary.accountId)
                     },
-                )
-            }
-
-            if (uiState.isLoading || creditCardUiState.isLoading) {
-                LinearProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter)
-                        .padding(horizontal = spacing.spacing4, vertical = spacing.spacing2),
                 )
             }
 

@@ -43,7 +43,14 @@ class AccountViewModel(
 
     fun loadAccounts() {
         accountsJob?.cancel()
-        _uiState.update { it.copy(isLoading = true, error = null) }
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                error = null,
+                isNetWorthLoading = true,
+                netWorthError = null,
+            )
+        }
 
         accountsJob = viewModelScope.launch {
             getAccountsUseCase()
@@ -51,6 +58,7 @@ class AccountViewModel(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
+                            isNetWorthLoading = false,
                             error = throwable.message ?: "Unable to load accounts",
                         )
                     }
@@ -190,13 +198,25 @@ class AccountViewModel(
     }
 
     private fun refreshNetWorth() {
+        _uiState.update { it.copy(isNetWorthLoading = true, netWorthError = null) }
         viewModelScope.launch {
             calculateNetWorthUseCase()
                 .onSuccess { value ->
-                    _uiState.update { it.copy(netWorth = value) }
+                    _uiState.update {
+                        it.copy(
+                            netWorth = value,
+                            isNetWorthLoading = false,
+                            netWorthError = null,
+                        )
+                    }
                 }
                 .onFailure { throwable ->
-                    _uiState.update { it.copy(error = throwable.message ?: "Unable to load net worth") }
+                    _uiState.update {
+                        it.copy(
+                            isNetWorthLoading = false,
+                            netWorthError = throwable.message ?: "Unable to load net worth",
+                        )
+                    }
                 }
         }
     }

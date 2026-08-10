@@ -9,7 +9,9 @@ sealed interface AccountEffect {
 data class AccountUiState(
     val accounts: List<Account> = emptyList(),
     val balances: Map<Long, Long> = emptyMap(),
-    val netWorth: Long = 0L,
+    val netWorth: Long? = null,
+    val isNetWorthLoading: Boolean = true,
+    val netWorthError: String? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSubmitting: Boolean = false,

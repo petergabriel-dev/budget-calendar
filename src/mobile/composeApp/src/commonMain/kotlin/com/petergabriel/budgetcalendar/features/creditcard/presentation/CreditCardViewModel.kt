@@ -206,10 +206,21 @@ class CreditCardViewModel(
         }
     }
 
+    fun retryCreditCards() {
+        _uiState.update { state ->
+            state.copy(
+                isLoading = true,
+                creditCardsError = null,
+            )
+        }
+        observeCreditCardSummaries()
+    }
+
     fun clearError() {
         _uiState.update {
             it.copy(
                 error = null,
+                creditCardsError = null,
                 paymentError = null,
                 settingsError = null,
             )
@@ -224,7 +235,7 @@ class CreditCardViewModel(
                     _uiState.update { state ->
                         state.copy(
                             isLoading = false,
-                            error = throwable.message ?: "Unable to load credit cards",
+                            creditCardsError = throwable.message ?: "Unable to load credit cards",
                         )
                     }
                 }
@@ -243,6 +254,7 @@ class CreditCardViewModel(
                             isPaymentSheetVisible = state.isPaymentSheetVisible && selectedStillExists,
                             isLoading = false,
                             error = null,
+                            creditCardsError = null,
                         )
                     }
                 }

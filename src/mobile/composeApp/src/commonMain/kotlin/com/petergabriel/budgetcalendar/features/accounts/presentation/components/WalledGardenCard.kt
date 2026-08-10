@@ -1,23 +1,26 @@
 package com.petergabriel.budgetcalendar.features.accounts.presentation.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
+import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
 
 @Composable
@@ -30,58 +33,62 @@ fun WalledGardenCard(
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
-
+    val spacing = BudgetCalendarTheme.spacing
+    val radius = BudgetCalendarTheme.radius
     val badgeModifier = if (isLiability) {
         Modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(radius.md))
             .background(colors.bgSurface)
-            .border(BorderStroke(1.5.dp, colors.borderStrong), RoundedCornerShape(16.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .border(spacing.spacing1 / 2, colors.borderStrong, RoundedCornerShape(radius.md))
+            .padding(horizontal = spacing.spacing3, vertical = spacing.spacing2)
     } else {
         Modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(radius.md))
             .background(colors.bgDark)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = spacing.spacing3, vertical = spacing.spacing2)
     }
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = spacing.spacing12)
+            .clip(RoundedCornerShape(radius.xl))
             .background(colors.bgSurface)
             .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .semantics {
+                role = Role.Button
+                contentDescription = "${account.name}, ${account.type.name}, ${CurrencyUtils.formatCents(balance)}, excluded from Safe to Spend"
+            }
+            .padding(spacing.spacing4),
+        verticalArrangement = Arrangement.spacedBy(spacing.spacing3),
     ) {
-        Box(modifier = badgeModifier) {
-            Text(
-                text = if (isLiability) "LIABILITY" else account.type.name,
-                style = typography.caption.copy(
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.sp,
-                ),
-                color = if (isLiability) colors.textSecondary else colors.textInverted,
-            )
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                text = balance.formatCurrency(),
-                style = typography.section.copy(
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    lineHeight = 26.4.sp,
-                    letterSpacing = 0.sp,
-                ),
-                color = colors.textPrimary,
-            )
-            Text(
-                text = account.description ?: account.name,
-                style = typography.bodySmall.copy(fontWeight = FontWeight.Normal),
-                color = colors.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        Text(
+            text = if (isLiability) "LIABILITY" else account.type.name.replace('_', ' '),
+            style = typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = if (isLiability) colors.textSecondary else colors.textInverted,
+            modifier = badgeModifier,
+        )
+        Text(
+            text = account.name,
+            style = typography.cardTitle,
+            fontWeight = FontWeight.SemiBold,
+            color = colors.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = CurrencyUtils.formatCents(balance),
+            style = typography.section,
+            fontWeight = FontWeight.ExtraBold,
+            color = colors.textPrimary,
+        )
+        Text(
+            text = account.description ?: account.name,
+            style = typography.bodySmall,
+            color = colors.textSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }

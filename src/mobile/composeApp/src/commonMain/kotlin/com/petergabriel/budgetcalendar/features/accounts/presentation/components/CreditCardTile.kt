@@ -1,13 +1,12 @@
 package com.petergabriel.budgetcalendar.features.accounts.presentation.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,11 +16,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
+import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
 import kotlin.math.abs
@@ -34,6 +36,8 @@ fun CreditCardTile(
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
+    val spacing = BudgetCalendarTheme.spacing
+    val radius = BudgetCalendarTheme.radius
     val owed = abs(summary.currentBalance)
     val availableCredit = summary.availableCredit
     val creditLimit = summary.creditLimit
@@ -43,68 +47,70 @@ fun CreditCardTile(
         null
     }
     val statementDue = summary.statementDueAmount?.let { amount ->
-        val dateText = summary.statementDueDate?.let { dueDate -> " due ${DateUtils.formatMonthDay(dueDate)}" }.orEmpty()
-        "${amount.formatCurrency()}$dateText"
+        val dateText = summary.statementDueDate
+            ?.let { dueDate -> " due ${DateUtils.formatMonthDay(dueDate)}" }
+            .orEmpty()
+        "${CurrencyUtils.formatCents(amount)}$dateText"
     }
     val secondary = buildString {
-        append("Owed ${owed.formatCurrency()}")
+        append("Owed ${CurrencyUtils.formatCents(owed)}")
         if (statementDue != null) append(" · $statementDue")
     }
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = spacing.spacing12)
+            .clip(RoundedCornerShape(radius.xl))
             .background(colors.bgSurface)
             .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .semantics {
+                role = Role.Button
+                contentDescription = buildString {
+                    append("${summary.accountName}, credit card, ")
+                    append(availableCredit?.let(CurrencyUtils::formatCents) ?: "Limit not set")
+                    append(", $secondary")
+                    utilization?.let { append(", utilization ${(it * 100).toInt()} percent") }
+                }
+            }
+            .padding(spacing.spacing4),
+        verticalArrangement = Arrangement.spacedBy(spacing.spacing3),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
+            Text(
+                text = "CREDIT CARD",
+                style = typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                color = colors.textSecondary,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(colors.bgSurface)
-                    .border(BorderStroke(1.5.dp, colors.borderStrong), RoundedCornerShape(16.dp))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            ) {
-                Text(
-                    text = "💳 CREDIT CARD",
-                    style = typography.caption.copy(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.sp,
-                    ),
-                    color = colors.textSecondary,
-                )
-            }
-
+                    .background(colors.bgSurface, RoundedCornerShape(radius.md))
+                    .border(spacing.spacing1 / 2, colors.borderStrong, RoundedCornerShape(radius.md))
+                    .padding(horizontal = spacing.spacing3, vertical = spacing.spacing2),
+            )
             Text(
                 text = summary.accountName,
-                style = typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                style = typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
                 color = colors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.spacing1)) {
             Text(
-                text = availableCredit?.formatCurrency() ?: "Limit not set",
-                style = typography.section.copy(
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    lineHeight = 26.4.sp,
-                    letterSpacing = 0.sp,
-                ),
+                text = availableCredit?.let(CurrencyUtils::formatCents) ?: "Limit not set",
+                style = typography.section,
+                fontWeight = FontWeight.ExtraBold,
                 color = colors.textPrimary,
             )
             Text(
-                text = if (creditLimit == null) secondary else "$secondary · of ${creditLimit.formatCurrency()}",
-                style = typography.bodySmall.copy(fontWeight = FontWeight.Normal),
+                text = if (creditLimit == null) secondary else "$secondary · of ${CurrencyUtils.formatCents(creditLimit)}",
+                style = typography.bodySmall,
                 color = colors.textSecondary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -112,18 +118,18 @@ fun CreditCardTile(
         }
 
         if (utilization != null) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(spacing.spacing1)) {
                 LinearProgressIndicator(
                     progress = { utilization },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(999.dp)),
+                        .clip(RoundedCornerShape(radius.full)),
                     color = colors.bgDark,
                     trackColor = colors.borderSubtle,
                 )
                 Text(
                     text = "Utilization ${(utilization * 100).toInt()}%",
-                    style = typography.caption,
+                    style = typography.bodySmall,
                     color = colors.textSecondary,
                 )
             }
