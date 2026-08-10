@@ -164,3 +164,41 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Root cause: the repo moved to `docs/engineering/` plus source code as the maintained truth.
 - Resolution: use `docs/engineering/`, ADRs, and current code; treat retired prompt/bug-report archives as archaeology only.
 - Current guard: actual package/entrypoints are Compose `App()` from Android and iOS: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:1`, `src/mobile/composeApp/src/androidMain/kotlin/com/petergabriel/budgetcalendar/MainActivity.kt:18-26`, `src/mobile/composeApp/src/iosMain/kotlin/com/petergabriel/budgetcalendar/MainViewController.kt:7-12`.
+
+## Preview CSS can be valid but invisible
+
+- Symptom: a design preview screenshot shows browser defaults even though its CSS has balanced braces and one style block.
+- Root cause: the preview was served or reloaded without applying its inline stylesheet.
+- Resolution: inspect serving/reload and stylesheet loading before changing tokens. Keep metadata outside the phone frame; frame actual app surfaces only. Use theme `bg-primary` for the stage, explicit full tokenized row borders, and tokenized section gaps. Declare every referenced primitive, including `--p-space-5` and `--p-blue-100`, and verify light info text mapping.
+- Current guard: six files under `docs/design/previews/` receive structural CSS/HTML checks before screenshot review.
+
+## Compose test assertions can mismatch rendered semantics
+
+- Symptom: a test cannot find an expected label or uses unavailable collection helpers.
+- Root cause: rendered text may be transformed (`BcBadge` renders `PROMOTED`), UI copy may be uppercase (`TOTAL NET WORTH`), and this Compose test dependency does not provide `onLast()`/`onAllNodes` in every context.
+- Resolution: assert canonical rendered text and use stable semantic nodes such as `onNodeWithText(...)`; inspect dependency APIs before adding collection helpers. Keep required extensions such as `performClick` imported.
+- Current guard: Sandbox and app-shell instrumented tests assert rendered labels and semantic content descriptions: `src/mobile/composeApp/src/androidInstrumentedTest/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/components/SandboxComponentsTest.kt`, `src/mobile/composeApp/src/androidInstrumentedTest/kotlin/com/petergabriel/budgetcalendar/AppShellIntegrationTest.kt`.
+
+## Compose refactors can fail at brace boundaries
+
+- Symptom: a sheet-shell refactor reports a syntax error near the body/footer boundary.
+- Root cause: one extra closing brace changed the composable nesting rather than the feature logic.
+- Resolution: inspect the exact surrounding lines, remove only the unmatched brace, then rerun the narrow compile before interpreting downstream failures.
+
+## Mutation exceptions can escape Result APIs
+
+- Symptom: a repository exception escapes a use-case call and the sheet never receives its scoped error.
+- Root cause: tests/fakes may throw directly even when production use cases return `Result`.
+- Resolution: UI mutation wrappers convert non-cancellation throwables to `Result.failure`; `CancellationException` is rethrown so coroutine cancellation remains correct. `TransactionFormViewModel.performMutation` is the reference pattern: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/TransactionFormViewModel.kt:220-231`.
+
+## Full-suite failures need baseline separation
+
+- Symptom: a targeted task check passes while `allTests` reports a race or unrelated existing failure.
+- Root cause: full-suite failures may predate the task and can be confused with newly changed code.
+- Resolution: run and record baseline before source edits, compare the exact failing tests, fix only attributable regressions, and do not commit or tick a blocked task until the gate is resolved or explicitly documented.
+
+## Missing presentation tests hide feature gaps
+
+- Symptom: domain tests pass while requested settings or notification UI coverage is absent.
+- Root cause: test discovery stopped after `commonTest` and missed presentation sources or `androidInstrumentedTest`.
+- Resolution: inventory feature presentation files and all three test source sets before claiming coverage; add the smallest semantic/component tests needed for the requested states.
