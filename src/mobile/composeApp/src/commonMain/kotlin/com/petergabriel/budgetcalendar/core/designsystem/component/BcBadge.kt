@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 
 enum class BadgeVariant {
@@ -30,6 +29,7 @@ fun BcBadge(
     val token = tokenForVariant(variant)
     val typography = BudgetCalendarTheme.typography
     val radius = BudgetCalendarTheme.radius
+    val spacing = BudgetCalendarTheme.spacing
 
     Surface(
         modifier = modifier,
@@ -44,7 +44,10 @@ fun BcBadge(
             color = token.contentColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            modifier = Modifier.padding(
+                horizontal = spacing.spacing3 - spacing.spacing1 / 2,
+                vertical = spacing.spacing1,
+            ),
         )
     }
 }
@@ -58,11 +61,12 @@ private data class BadgeToken(
 @Composable
 private fun tokenForVariant(variant: BadgeVariant): BadgeToken {
     val colors = BudgetCalendarTheme.colors
+    val spacing = BudgetCalendarTheme.spacing
     return when (variant) {
         BadgeVariant.Pending -> BadgeToken(
             containerColor = colors.bgSurface,
             contentColor = colors.textSecondary,
-            border = BorderStroke(width = 1.5.dp, color = colors.borderStrong),
+            border = BorderStroke(width = spacing.spacing1 / 4, color = colors.borderStrong),
         )
 
         BadgeVariant.Overdue -> BadgeToken(

@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 
 @Composable
@@ -31,6 +30,7 @@ fun BcHeader(
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
     val radius = BudgetCalendarTheme.radius
+    val spacing = BudgetCalendarTheme.spacing
 
     val hasAction = actionContent != null || (actionIcon != null && onActionClick != null)
 
@@ -49,7 +49,7 @@ fun BcHeader(
         )
 
         if (hasAction) {
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(spacing.spacing2))
         }
 
         if (actionContent != null) {
@@ -60,7 +60,7 @@ fun BcHeader(
                 color = colors.bgSurface,
             ) {
                 IconButton(
-                    modifier = Modifier.size(44.dp),
+                    modifier = Modifier.size(spacing.spacing12),
                     onClick = onActionClick,
                 ) {
                     Icon(

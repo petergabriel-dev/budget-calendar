@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -16,7 +17,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 
 @Composable
@@ -29,24 +29,26 @@ fun BcCheckboxRow(
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
     val radius = BudgetCalendarTheme.radius
+    val spacing = BudgetCalendarTheme.spacing
 
     Row(
         modifier = modifier
             .semantics { role = Role.Checkbox }
+            .defaultMinSize(minHeight = spacing.spacing12)
             .clickable { onCheckedChange(!checked) },
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing.spacing3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .size(24.dp)
+                .size(spacing.spacing3 * 2)
                 .clip(RoundedCornerShape(radius.md))
                 .then(
                     if (checked) {
                         Modifier.background(colors.bgDark)
                     } else {
                         Modifier.border(
-                            width = 2.dp,
+                            width = spacing.spacing1 / 2,
                             color = colors.borderStrong,
                             shape = RoundedCornerShape(radius.md),
                         )

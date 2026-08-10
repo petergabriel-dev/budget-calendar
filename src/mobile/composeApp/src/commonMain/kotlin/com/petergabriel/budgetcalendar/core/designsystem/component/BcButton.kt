@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
@@ -20,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.focus.onFocusChanged
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BcColors
 
@@ -46,25 +50,39 @@ fun BcButton(
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
     val radius = BudgetCalendarTheme.radius
+    val spacing = BudgetCalendarTheme.spacing
+    var isFocused by remember { mutableStateOf(false) }
 
-    val token = variantToken(variant = variant, colors = colors)
+    val token = variantToken(
+        variant = variant,
+        colors = colors,
+        borderWidth = spacing.spacing1 / 2,
+    )
     val shape: Shape = RoundedCornerShape(radius.full)
     val alpha = if (enabled) 1f else 0.6f
 
     Surface(
         modifier = modifier
-            .height(48.dp)
-            .defaultMinSize(minWidth = 96.dp),
+            .height(spacing.spacing12)
+            .defaultMinSize(minWidth = spacing.spacing12 * 2)
+            .onFocusChanged { isFocused = it.isFocused },
         shape = shape,
         color = token.containerColor.copy(alpha = alpha),
         contentColor = token.contentColor.copy(alpha = alpha),
-        border = token.border,
+        border = if (isFocused) {
+            BorderStroke(
+                width = spacing.spacing1 / 2,
+                color = colors.focusRing,
+            )
+        } else {
+            token.border
+        },
         onClick = onClick,
         enabled = enabled,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            modifier = Modifier.padding(horizontal = spacing.spacing6),
+            horizontalArrangement = Arrangement.spacedBy(spacing.spacing2, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val leading = leadingIcon ?: when (variant) {
@@ -111,6 +129,7 @@ private data class BcButtonToken(
 private fun variantToken(
     variant: ButtonVariant,
     colors: BcColors,
+    borderWidth: androidx.compose.ui.unit.Dp,
 ): BcButtonToken {
     return when (variant) {
         ButtonVariant.Primary,
@@ -126,7 +145,7 @@ private fun variantToken(
         -> BcButtonToken(
             containerColor = Color.Transparent,
             contentColor = colors.textPrimary,
-            border = BorderStroke(width = 2.dp, color = colors.borderStrong),
+            border = BorderStroke(width = borderWidth, color = colors.borderStrong),
         )
 
         ButtonVariant.Ghost -> BcButtonToken(

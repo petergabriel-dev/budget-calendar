@@ -13,10 +13,14 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.focus.onFocusChanged
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 
 @Composable
@@ -35,10 +39,12 @@ fun BcInputGroup(
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
     val radius = BudgetCalendarTheme.radius
+    val spacing = BudgetCalendarTheme.spacing
+    var isFocused by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing.spacing2),
     ) {
         Text(
             text = label,
@@ -51,23 +57,29 @@ fun BcInputGroup(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(radius.lg))
                 .border(
-                    width = 1.5.dp,
-                    color = if (isError) colors.colorError else colors.borderStrong,
+                    width = spacing.spacing1 / 2,
+                    color = when {
+                        isError -> colors.colorError
+                        isFocused -> colors.focusRing
+                        else -> colors.borderStrong
+                    },
                     shape = RoundedCornerShape(radius.lg),
                 )
-                .defaultMinSize(minHeight = 48.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .defaultMinSize(minHeight = spacing.spacing12)
+                .padding(horizontal = spacing.spacing4, vertical = spacing.spacing3),
             contentAlignment = Alignment.CenterStart,
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing.spacing2),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .onFocusChanged { isFocused = it.isFocused },
                     readOnly = readOnly,
                     enabled = !readOnly,
                     singleLine = true,
@@ -99,7 +111,7 @@ fun BcInputGroup(
                 text = errorText,
                 style = typography.bodySmall,
                 color = colors.colorErrorText,
-                modifier = Modifier.padding(start = 4.dp),
+                modifier = Modifier.padding(start = spacing.spacing1),
             )
         }
     }
