@@ -1,9 +1,14 @@
 package com.petergabriel.budgetcalendar.core.designsystem.component
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
@@ -67,6 +72,48 @@ class BcFoundationTest {
         composeTestRule.runOnIdle {
             assertEquals(true, dismissed)
         }
+    }
+
+    @Test
+    fun appTabBar_exposesSelectableTabsAndAddAction() {
+        composeTestRule.setContent {
+            var selectedTab by remember { mutableStateOf("Home") }
+            BudgetCalendarTheme {
+                BcTabBarPill(
+                    tabs = listOf("Home", "Calendar", "Accounts", "Me").map { label ->
+                        BcTabItem(
+                            label = label,
+                            selected = selectedTab == label,
+                            onClick = { selectedTab = label },
+                        )
+                    },
+                    onAddClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Home").assertIsSelected()
+        composeTestRule.onNodeWithText("Calendar").performClick()
+        composeTestRule.onNodeWithText("Calendar").assertIsSelected()
+        composeTestRule.onNodeWithContentDescription("Add").assertIsDisplayed()
+    }
+
+    @Test
+    fun segmentedControl_exposesSelectableMode() {
+        composeTestRule.setContent {
+            var selectedIndex by remember { mutableStateOf(0) }
+            BudgetCalendarTheme {
+                BcSegmentedControl(
+                    options = listOf("Live Budget", "Sandbox"),
+                    selectedIndex = selectedIndex,
+                    onSelectedIndexChange = { selectedIndex = it },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Live Budget").assertIsSelected()
+        composeTestRule.onNodeWithText("Sandbox").performClick()
+        composeTestRule.onNodeWithText("Sandbox").assertIsSelected()
     }
 
     @Test
