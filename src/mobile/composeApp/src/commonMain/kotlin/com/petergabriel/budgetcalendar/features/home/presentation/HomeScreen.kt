@@ -1,24 +1,13 @@
 package com.petergabriel.budgetcalendar.features.home.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -28,19 +17,17 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcMetricHero
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcMetricHeroHierarchy
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcWeekDay
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcNotificationBell
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSectionHeader
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSegmentedControl
 import com.petergabriel.budgetcalendar.core.designsystem.component.HeroSafeToSpend
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
-import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.budget.presentation.BudgetViewModel
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.AddSandboxTransactionSheet
@@ -50,30 +37,30 @@ import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.SandboxViewModel
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.SnapshotSelectorPill
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.SnapshotSelectorSheet
+import com.petergabriel.budgetcalendar.features.home.presentation.components.HomeWeeklyActivity
+import com.petergabriel.budgetcalendar.features.home.presentation.components.OverdueTransactionRow
+import com.petergabriel.budgetcalendar.features.home.presentation.components.SelectedDayTransactionPreviewState
+import com.petergabriel.budgetcalendar.features.home.presentation.components.WeeklySpendSummaryState
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
-import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormEffect
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormViewModel
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionViewModel
+import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionDetailsSheet
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionFormSheet
 import kotlinx.coroutines.flow.collect
-import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.minus
-import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     unreadCount: Int,
     onBellClick: () -> Unit,
+    onViewAllSelected: (LocalDate) -> Unit = {},
     homeViewModel: HomeViewModel = koinViewModel(),
     budgetViewModel: BudgetViewModel = koinViewModel(),
     transactionViewModel: TransactionViewModel = koinViewModel(),
@@ -82,7 +69,6 @@ fun HomeScreen(
 ) {
     val colors = BudgetCalendarTheme.colors
     val spacing = BudgetCalendarTheme.spacing
-    val typography = BudgetCalendarTheme.typography
 
     val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val budgetState by budgetViewModel.uiState.collectAsStateWithLifecycle()
@@ -94,27 +80,82 @@ fun HomeScreen(
     val today = Clock.System.now().toLocalDateTime(tz).date
     val daysRemainingInMonth = DateUtils.daysRemainingInMonth(today = today, tz = tz)
     val isLastDayOfMonth = daysRemainingInMonth == 1
-    val weekStart = remember(today) {
-        today - DatePeriod(days = today.dayOfWeek.ordinal)
-    }
-    val weekDays = remember(weekStart) {
-        (0..6).map { weekStart + DatePeriod(days = it) }
-    }
-    val weekStartMillis = remember(weekStart) {
-        weekStart.atStartOfDayIn(tz).toEpochMilliseconds()
-    }
-    val weekEndMillis = remember(weekStart) {
-        (weekStart + DatePeriod(days = 7)).atStartOfDayIn(tz).toEpochMilliseconds()
-    }
+    val weekDates = remember(today) { homeWeekDates(today) }
 
-    var selectedDate by remember { mutableStateOf(today) }
+    var selectedDate by remember(today) { mutableStateOf(today) }
     var showAddForm by remember { mutableStateOf(false) }
     var editingTransaction by remember { mutableStateOf<Transaction?>(null) }
+    var selectedTransaction by remember { mutableStateOf<Transaction?>(null) }
     var currentDayMillis by remember { mutableLongStateOf(DateUtils.startOfDayMillis(DateUtils.nowMillis())) }
+
+    val accountNames = remember(formState.availableAccounts) {
+        formState.availableAccounts.associate { account -> account.id to account.name }
+    }
+    val weekTransactions = remember(transactionState.transactions, weekDates, tz) {
+        transactionState.transactions.filter { transaction ->
+            transactionLocalDate(transaction, tz) in weekDates.first()..weekDates.last() &&
+                transaction.status != TransactionStatus.CANCELLED
+        }
+    }
+    val weekDays = remember(weekDates, selectedDate, weekTransactions) {
+        weekDates.map { date ->
+            val dayCount = weekTransactions.count { transaction -> transactionLocalDate(transaction, tz) == date }
+            val dateLabel = homeDateLabel(date)
+            BcWeekDay(
+                id = date.toString(),
+                weekdayLabel = date.dayOfWeek.name.take(3),
+                dayOfMonth = date.dayOfMonth,
+                accessibilityLabel = buildString {
+                    append(dateLabel)
+                    if (date == selectedDate) append(", selected")
+                    append(", $dayCount ${if (dayCount == 1) "transaction" else "transactions"}")
+                },
+                isSelected = date == selectedDate,
+                isToday = date == today,
+                hasTransactions = dayCount > 0,
+            )
+        }
+    }
+    val selectedTransactions = remember(transactionState.transactions, selectedDate, tz) {
+        selectedDayTransactions(transactionState.transactions, selectedDate, tz)
+    }
+    val overdueTransactions = remember(transactionState.transactions) {
+        orderedOverdueTransactions(transactionState.transactions)
+    }
+    val pendingCount = remember(transactionState.transactions) {
+        transactionState.transactions.count { it.status == TransactionStatus.PENDING }
+    }
+    val weeklySpent = remember(transactionState.transactions, weekDates, tz) {
+        weeklyExpenseTotal(transactionState.transactions, weekDates.first(), tz)
+    }
+    val selectedPreviewItems = remember(selectedTransactions, accountNames, selectedDate) {
+        selectedTransactions.take(3).map { transaction ->
+            previewItem(
+                transaction = transaction,
+                selectedDate = selectedDate,
+                accountNames = accountNames,
+            )
+        }
+    }
+    val selectedPreviewState = SelectedDayTransactionPreviewState(
+        dateLabel = homeDateLabel(selectedDate),
+        transactionCount = selectedTransactions.size,
+        items = selectedPreviewItems,
+        hasMore = selectedTransactions.size > selectedPreviewItems.size,
+        isLoading = transactionState.isLoading,
+        errorMessage = transactionState.error,
+    )
 
     fun closeTransactionForm() {
         showAddForm = false
         editingTransaction = null
+        selectedTransaction = null
+    }
+
+    fun openTransactionDetails(transaction: Transaction) {
+        showAddForm = false
+        editingTransaction = null
+        selectedTransaction = transaction
     }
 
     LaunchedEffect(transactionFormViewModel) {
@@ -125,28 +166,16 @@ fun HomeScreen(
         }
     }
 
+    LaunchedEffect(today) {
+        selectedDate = today
+    }
+
     LaunchedEffect(Unit) {
         while (true) {
             val delay = DateUtils.millisUntilNextDay()
             kotlinx.coroutines.delay(delay)
             currentDayMillis = DateUtils.startOfDayMillis(DateUtils.nowMillis())
         }
-    }
-
-    val overdueTransactions = remember(transactionState.transactions) {
-        transactionState.transactions.filter { it.status == TransactionStatus.OVERDUE }
-    }
-    val pendingCount = remember(transactionState.transactions) {
-        transactionState.transactions.count { it.status == TransactionStatus.PENDING }
-    }
-    val weeklySpent = remember(transactionState.transactions, weekStartMillis, weekEndMillis) {
-        transactionState.transactions
-            .filter { txn ->
-                txn.date in weekStartMillis until weekEndMillis &&
-                    txn.type == TransactionType.EXPENSE &&
-                    txn.status != TransactionStatus.CANCELLED
-            }
-            .sumOf { it.amount }
     }
 
     DisposableEffect(Unit) {
@@ -161,7 +190,7 @@ fun HomeScreen(
             start = spacing.spacing4,
             end = spacing.spacing4,
             top = spacing.spacing4,
-            bottom = 100.dp,
+            bottom = spacing.spacing12 * 2,
         ),
         verticalArrangement = Arrangement.spacedBy(spacing.spacing4),
     ) {
@@ -206,36 +235,36 @@ fun HomeScreen(
 
             homeState.availableCreditForSpending?.let { availableCredit ->
                 item {
-                    HeroSafeToSpend(
-                        amount = availableCredit,
+                    BcMetricHero(
                         label = "AVAILABLE CREDIT",
+                        amount = availableCredit,
+                        hierarchy = BcMetricHeroHierarchy.Secondary,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
 
             item {
-                BcSectionHeader(
-                    title = "This Week",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(spacing.spacing2))
-                WeekStrip(
+                HomeWeeklyActivity(
+                    weeklySpend = WeeklySpendSummaryState(
+                        amount = weeklySpent,
+                        isLoading = transactionState.isLoading,
+                        errorMessage = transactionState.error,
+                    ),
                     weekDays = weekDays,
-                    selectedDate = selectedDate,
-                    onDateSelected = { selectedDate = it },
+                    selectedDayPreview = selectedPreviewState,
+                    onDaySelected = { id ->
+                        weekDates.firstOrNull { it.toString() == id }?.let { selectedDate = it }
+                    },
+                    onTransactionClick = { id ->
+                        transactionState.transactions.firstOrNull { it.id == id }?.let(::openTransactionDetails)
+                    },
+                    onViewAllClick = { id ->
+                        weekDates.firstOrNull { it.toString() == id }?.let(onViewAllSelected)
+                    },
+                    onRetryWeeklySpend = transactionViewModel::retry,
+                    onRetryPreview = transactionViewModel::retry,
                     modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(spacing.spacing3))
-                Text(
-                    text = CurrencyUtils.formatCents(weeklySpent),
-                    style = typography.cardTitle.copy(fontWeight = FontWeight.ExtraBold),
-                    color = colors.textPrimary,
-                )
-                Text(
-                    text = "Spent This Week",
-                    style = typography.bodySmall,
-                    color = colors.textSecondary,
                 )
             }
 
@@ -260,17 +289,16 @@ fun HomeScreen(
                 }
             } else {
                 items(overdueTransactions, key = { it.id }) { transaction ->
-                    ScheduleTransactionRow(
+                    OverdueTransactionRow(
                         transaction = transaction,
-                        today = today,
-                        tz = tz,
-                        onClick = {
-                            editingTransaction = transaction
-                            transactionFormViewModel.setType(transaction.type)
-                            showAddForm = true
-                        },
+                        accountName = accountNames[transaction.accountId] ?: "Account #${transaction.accountId}",
+                        destinationAccountName = transaction.destinationAccountId?.let { id -> accountNames[id] },
+                        relativeDateLabel = relativeHomeDateLabel(
+                            transactionDate = transactionLocalDate(transaction, tz),
+                            today = today,
+                        ),
+                        onTap = { openTransactionDetails(transaction) },
                     )
-                    HorizontalDivider(color = colors.borderSubtle)
                 }
             }
         } else {
@@ -316,7 +344,7 @@ fun HomeScreen(
                     Text(
                         text = sandboxError,
                         style = BudgetCalendarTheme.typography.bodyMedium,
-                        color = colors.colorError,
+                        color = colors.colorErrorText,
                     )
                 }
             }
@@ -364,121 +392,23 @@ fun HomeScreen(
         },
     )
 
-}
-
-@Composable
-private fun WeekStrip(
-    weekDays: List<LocalDate>,
-    selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.SpaceAround,
-    ) {
-        weekDays.forEach { date ->
-            val letter = date.dayOfWeek.name.first().toString()
-            val isSelected = date == selectedDate
-            DayPill(
-                letter = letter,
-                isSelected = isSelected,
-                onClick = { onDateSelected(date) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun DayPill(
-    letter: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
-    val colors = BudgetCalendarTheme.colors
-    val typography = BudgetCalendarTheme.typography
-    val radius = BudgetCalendarTheme.radius
-
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(radius.lg))
-            .background(if (isSelected) colors.bgDark else androidx.compose.ui.graphics.Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = letter,
-            style = typography.calendarDay,
-            color = if (isSelected) colors.textInverted else colors.textSecondary,
-        )
-        Box(
-            modifier = Modifier
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(if (isSelected) colors.textInverted else colors.textSecondary),
+    selectedTransaction?.let { transaction ->
+        TransactionDetailsSheet(
+            isVisible = true,
+            transaction = transaction,
+            accountName = accountNames[transaction.accountId] ?: "Account #${transaction.accountId}",
+            destinationAccountName = transaction.destinationAccountId?.let { id -> accountNames[id] },
+            onDismiss = { selectedTransaction = null },
+            onEdit = { editable ->
+                selectedTransaction = null
+                editingTransaction = editable
+                transactionFormViewModel.setType(editable.type)
+                showAddForm = true
+            },
+            onDelete = { deletable ->
+                transactionFormViewModel.delete(deletable.id)
+            },
         )
     }
-}
 
-@Composable
-private fun ScheduleTransactionRow(
-    transaction: Transaction,
-    today: LocalDate,
-    tz: TimeZone,
-    onClick: () -> Unit,
-) {
-    val colors = BudgetCalendarTheme.colors
-    val typography = BudgetCalendarTheme.typography
-    val spacing = BudgetCalendarTheme.spacing
-
-    val txnDate = remember(transaction.date) {
-        Instant.fromEpochMilliseconds(transaction.date).toLocalDateTime(tz).date
-    }
-    val relativeLabel = remember(txnDate, today) {
-        when (val daysDiff = today.toEpochDays() - txnDate.toEpochDays()) {
-            0L -> "Today"
-            1L -> "Yesterday"
-            else -> "$daysDiff Days Ago"
-        }
-    }
-    val title = transaction.description?.takeIf { it.isNotBlank() }
-        ?: transaction.category?.takeIf { it.isNotBlank() }
-        ?: "Transaction"
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = spacing.spacing3),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(spacing.spacing3),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-                .border(1.5.dp, colors.borderStrong, CircleShape),
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = typography.bodyLarge,
-                color = colors.textPrimary,
-            )
-            Text(
-                text = "$relativeLabel · ${CurrencyUtils.formatCents(transaction.signedAmount)}",
-                style = typography.bodySmall,
-                color = colors.textSecondary,
-            )
-        }
-
-        Text(
-            text = CurrencyUtils.formatCents(transaction.signedAmount),
-            style = typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-            color = colors.textPrimary,
-        )
-    }
 }

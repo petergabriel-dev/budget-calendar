@@ -104,6 +104,11 @@ class TransactionViewModel(
         }
     }
 
+    fun retry() {
+        _uiState.update { it.copy(isLoading = true, error = null) }
+        observeTransactions(TransactionFilter())
+    }
+
     fun observePendingCount(onCountUpdated: (Int) -> Unit) {
         viewModelScope.launch {
             getPendingTransactionsUseCase().collect { transactions ->
