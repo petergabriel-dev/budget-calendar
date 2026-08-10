@@ -5,14 +5,26 @@ import com.petergabriel.budgetcalendar.features.notifications.domain.model.UserS
 import com.petergabriel.budgetcalendar.features.notifications.domain.repository.IUserSettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 
 class FakeUserSettingsRepository : IUserSettingsRepository {
     private val settingsFlow = MutableStateFlow<UserSettings?>(null)
     private var writeCount = 0
+    var failReads: Boolean = false
+    var failWrites: Boolean = false
 
-    override fun getUserSettings(): Flow<UserSettings?> = settingsFlow
+    override fun getUserSettings(): Flow<UserSettings?> {
+        return if (failReads) {
+            flow { throw IllegalStateException("settings load failed") }
+        } else {
+            settingsFlow
+        }
+    }
 
     override suspend fun upsert(thresholdPercent: Int) {
+        if (failWrites) {
+            throw IllegalStateException("settings save failed")
+        }
         val now = DateUtils.nowMillis()
         val current = settingsFlow.value
         settingsFlow.value = if (current == null) {

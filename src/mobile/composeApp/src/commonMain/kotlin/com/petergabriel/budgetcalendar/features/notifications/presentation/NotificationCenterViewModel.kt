@@ -6,6 +6,7 @@ import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.Dis
 import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.DismissNotificationUseCase
 import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GetActiveNotificationsUseCase
 import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GetUnreadNotificationCountUseCase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +23,7 @@ class NotificationCenterViewModel(
 
     private val _uiState = MutableStateFlow(NotificationCenterUiState())
     val uiState: StateFlow<NotificationCenterUiState> = _uiState.asStateFlow()
+    private var notificationsJob: Job? = null
 
     val unreadCount = getUnreadNotificationCountUseCase()
 
@@ -31,30 +33,73 @@ class NotificationCenterViewModel(
 
     fun toggleExpand(id: Long) {
         _uiState.update { state ->
-            state.copy(
-                expandedNotificationId = if (state.expandedNotificationId == id) {
-                    null
-                } else {
-                    id
-                },
-            )
+            val expanded = state.expandedNotificationIds.toMutableSet()
+            if (!expanded.add(id)) {
+                expanded.remove(id)
+            }
+            state.copy(expandedNotificationIds = expanded)
         }
     }
 
+    fun retry() {
+        _uiState.update { state -> state.copy(isLoading = true, loadError = null) }
+        observeNotifications()
+    }
+
     fun dismiss(id: Long) {
+        val state = _uiState.value
+        if (id in state.dismissingNotificationIds || state.isDismissingAll) {
+            return
+        }
+
+        _uiState.update { current ->
+            current.copy(
+                dismissingNotificationIds = current.dismissingNotificationIds + id,
+                error = null,
+            )
+        }
         viewModelScope.launch {
             runCatching { dismissNotificationUseCase(id) }
+                .onSuccess {
+                    _uiState.update { current ->
+                        current.copy(dismissingNotificationIds = current.dismissingNotificationIds - id)
+                    }
+                }
                 .onFailure { throwable ->
-                    _uiState.update { state -> state.copy(error = throwable.message) }
+                    _uiState.update { current ->
+                        current.copy(
+                            dismissingNotificationIds = current.dismissingNotificationIds - id,
+                            error = throwable.message ?: "Unable to dismiss notification",
+                        )
+                    }
                 }
         }
     }
 
     fun dismissAll() {
+        val state = _uiState.value
+        if (state.isDismissingAll || state.dismissingNotificationIds.isNotEmpty() || state.notifications.isEmpty()) {
+            return
+        }
+
+        _uiState.update { current ->
+            current.copy(
+                isDismissingAll = true,
+                error = null,
+            )
+        }
         viewModelScope.launch {
             runCatching { dismissAllNotificationsUseCase() }
+                .onSuccess {
+                    _uiState.update { current -> current.copy(isDismissingAll = false) }
+                }
                 .onFailure { throwable ->
-                    _uiState.update { state -> state.copy(error = throwable.message) }
+                    _uiState.update { current ->
+                        current.copy(
+                            isDismissingAll = false,
+                            error = throwable.message ?: "Unable to clear notifications",
+                        )
+                    }
                 }
         }
     }
@@ -64,26 +109,25 @@ class NotificationCenterViewModel(
     }
 
     private fun observeNotifications() {
-        viewModelScope.launch {
+        notificationsJob?.cancel()
+        notificationsJob = viewModelScope.launch {
             getActiveNotificationsUseCase()
                 .catch { throwable ->
                     _uiState.update { state ->
                         state.copy(
                             isLoading = false,
-                            error = throwable.message,
+                            loadError = throwable.message ?: "Unable to load notifications",
                         )
                     }
                 }
                 .collect { notifications ->
                     _uiState.update { state ->
-                        val expandedStillExists = notifications.any { notification ->
-                            notification.id == state.expandedNotificationId
-                        }
                         state.copy(
                             notifications = notifications,
                             isLoading = false,
-                            error = null,
-                            expandedNotificationId = if (expandedStillExists) state.expandedNotificationId else null,
+                            loadError = null,
+                            expandedNotificationIds = state.expandedNotificationIds
+                                .intersect(notifications.map { notification -> notification.id }.toSet()),
                         )
                     }
                 }

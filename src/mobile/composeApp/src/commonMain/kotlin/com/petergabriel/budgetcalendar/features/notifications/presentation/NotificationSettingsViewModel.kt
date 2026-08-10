@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.GetUserSettingsUseCase
 import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.UpdateUserSettingsUseCase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +19,7 @@ class NotificationSettingsViewModel(
 
     private val _uiState = MutableStateFlow(NotificationSettingsUiState())
     val uiState: StateFlow<NotificationSettingsUiState> = _uiState.asStateFlow()
+    private var settingsJob: Job? = null
 
     init {
         observeSettings()
@@ -32,29 +34,43 @@ class NotificationSettingsViewModel(
             state.copy(
                 thresholdInput = raw.take(3),
                 validationError = null,
+                saveError = null,
                 didSave = false,
             )
         }
     }
 
-    fun save() {
-        viewModelScope.launch {
-            val threshold = uiState.value.thresholdInput.toIntOrNull()
-            if (threshold == null) {
-                _uiState.update { state ->
-                    state.copy(
-                        validationError = "Please enter a threshold between 1 and 100",
-                        didSave = false,
-                    )
-                }
-                return@launch
-            }
+    fun retry() {
+        if (_uiState.value.isSaving) {
+            return
+        }
+        _uiState.update { state -> state.copy(isLoading = true, loadError = null) }
+        observeSettings()
+    }
 
+    fun save() {
+        if (_uiState.value.isSaving || _uiState.value.isLoading) {
+            return
+        }
+
+        val threshold = _uiState.value.thresholdInput.toIntOrNull()
+        if (threshold == null || threshold !in 1..100) {
+            _uiState.update { state ->
+                state.copy(
+                    validationError = "Please enter a threshold between 1 and 100",
+                    saveError = null,
+                    didSave = false,
+                )
+            }
+            return
+        }
+
+        viewModelScope.launch {
             _uiState.update { state ->
                 state.copy(
                     isSaving = true,
                     validationError = null,
-                    error = null,
+                    saveError = null,
                     didSave = false,
                 )
             }
@@ -64,9 +80,9 @@ class NotificationSettingsViewModel(
                     _uiState.update { state ->
                         state.copy(
                             isSaving = false,
+                            loadError = null,
+                            saveError = null,
                             didSave = true,
-                            error = null,
-                            validationError = null,
                         )
                     }
                 }
@@ -74,37 +90,32 @@ class NotificationSettingsViewModel(
                     _uiState.update { state ->
                         state.copy(
                             isSaving = false,
+                            saveError = throwable.message ?: "Unable to save threshold",
                             didSave = false,
-                            validationError = throwable.message,
                         )
                     }
                 }
         }
     }
 
-    fun clearSaveIndicator() {
-        _uiState.update { state -> state.copy(didSave = false) }
-    }
-
     private fun observeSettings() {
-        viewModelScope.launch {
+        settingsJob?.cancel()
+        settingsJob = viewModelScope.launch {
             getUserSettingsUseCase()
                 .catch { throwable ->
                     _uiState.update { state ->
                         state.copy(
                             isLoading = false,
-                            error = throwable.message,
+                            loadError = throwable.message ?: "Unable to load settings",
                         )
                     }
                 }
                 .collect { settings ->
-                    val threshold = settings?.stsLowThresholdPercent ?: 15
                     _uiState.update { state ->
                         state.copy(
-                            thresholdInput = threshold.toString(),
+                            thresholdInput = (settings?.stsLowThresholdPercent ?: 15).toString(),
                             isLoading = false,
-                            isSaving = false,
-                            error = null,
+                            loadError = null,
                             validationError = null,
                         )
                     }

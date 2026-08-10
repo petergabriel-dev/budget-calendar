@@ -5,14 +5,21 @@ import com.petergabriel.budgetcalendar.features.notifications.domain.model.Notif
 import com.petergabriel.budgetcalendar.features.notifications.domain.repository.INotificationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 class FakeNotificationRepository : INotificationRepository {
     private val notifications = mutableListOf<Notification>()
     private val notificationsFlow = MutableStateFlow<List<Notification>>(emptyList())
     private var nextId = 1L
+    var failReads: Boolean = false
+    var failDismiss: Boolean = false
+    var failDismissAll: Boolean = false
 
     override fun getActiveNotifications(): Flow<List<Notification>> {
+        if (failReads) {
+            return flow { throw IllegalStateException("notification load failed") }
+        }
         return notificationsFlow.map { all ->
             all.filterNot { notification -> notification.isDismissed }
                 .sortedByDescending { notification -> notification.createdAt }
@@ -72,6 +79,9 @@ class FakeNotificationRepository : INotificationRepository {
     }
 
     override suspend fun dismiss(id: Long) {
+        if (failDismiss) {
+            throw IllegalStateException("notification dismiss failed")
+        }
         val index = notifications.indexOfFirst { notification -> notification.id == id }
         if (index < 0) {
             return
@@ -84,6 +94,9 @@ class FakeNotificationRepository : INotificationRepository {
     }
 
     override suspend fun dismissAll() {
+        if (failDismissAll) {
+            throw IllegalStateException("notification clear failed")
+        }
         var changed = false
         for (index in notifications.indices) {
             if (!notifications[index].isDismissed) {

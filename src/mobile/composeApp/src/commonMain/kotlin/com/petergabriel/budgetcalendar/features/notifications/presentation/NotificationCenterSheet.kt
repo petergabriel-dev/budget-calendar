@@ -1,11 +1,12 @@
 package com.petergabriel.budgetcalendar.features.notifications.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,23 +15,27 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcBadge
-import com.petergabriel.budgetcalendar.core.designsystem.component.BadgeVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
+import com.petergabriel.budgetcalendar.core.designsystem.component.BadgeVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
@@ -42,7 +47,6 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transa
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.GetOverdueTransactionsUseCase
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationCenterSheet(
     isVisible: Boolean,
@@ -54,83 +58,152 @@ fun NotificationCenterSheet(
         return
     }
 
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val overdueTransactions by getOverdueTransactionsUseCase().collectAsStateWithLifecycle(emptyList())
+
+    NotificationCenterSheetContent(
+        uiState = uiState,
+        overdueTransactions = overdueTransactions,
+        onDismiss = onDismiss,
+        onRetry = viewModel::retry,
+        onToggleExpand = viewModel::toggleExpand,
+        onDismissNotification = viewModel::dismiss,
+        onDismissAll = viewModel::dismissAll,
+    )
+}
+
+@Composable
+fun NotificationCenterSheetContent(
+    uiState: NotificationCenterUiState,
+    overdueTransactions: List<Transaction>,
+    onDismiss: () -> Unit,
+    onRetry: () -> Unit,
+    onToggleExpand: (Long) -> Unit,
+    onDismissNotification: (Long) -> Unit,
+    onDismissAll: () -> Unit,
+) {
     val colors = BudgetCalendarTheme.colors
     val spacing = BudgetCalendarTheme.spacing
     val typography = BudgetCalendarTheme.typography
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val overdueTransactions by getOverdueTransactionsUseCase().collectAsStateWithLifecycle(emptyList())
-
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.spacing4, vertical = spacing.spacing3),
-            verticalArrangement = Arrangement.spacedBy(spacing.spacing3),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Notifications",
-                    style = typography.section,
-                    color = colors.textPrimary,
+    BcSheetShell(
+        title = "Notifications",
+        onDismissRequest = onDismiss,
+        bodyScrollable = false,
+        headerContent = {
+            if (uiState.notifications.isNotEmpty()) {
+                BcButton(
+                    text = if (uiState.isDismissingAll) "Clearing..." else "Clear all",
+                    onClick = onDismissAll,
+                    variant = ButtonVariant.Ghost,
+                    enabled = !uiState.isDismissingAll && uiState.dismissingNotificationIds.isEmpty(),
+                    contentDescription = "Clear all notifications",
                 )
-
-                if (uiState.notifications.isNotEmpty()) {
-                    Box(
-                        modifier = Modifier.semantics {
-                            contentDescription = "Clear all notifications"
-                        },
-                    ) {
-                        BcButton(
-                            text = "Clear all",
-                            onClick = viewModel::dismissAll,
-                            variant = ButtonVariant.Ghost,
-                        )
-                    }
-                }
             }
+        },
+        body = {
+            NotificationCenterBody(
+                uiState = uiState,
+                overdueTransactions = overdueTransactions,
+                onRetry = onRetry,
+                onToggleExpand = onToggleExpand,
+                onDismissNotification = onDismissNotification,
+                spacing = spacing,
+            )
+        },
+    )
+}
 
-            if (uiState.notifications.isEmpty()) {
+@Composable
+private fun ColumnScope.NotificationCenterBody(
+    uiState: NotificationCenterUiState,
+    overdueTransactions: List<Transaction>,
+    onRetry: () -> Unit,
+    onToggleExpand: (Long) -> Unit,
+    onDismissNotification: (Long) -> Unit,
+    spacing: com.petergabriel.budgetcalendar.core.designsystem.theme.BcSpacing,
+) {
+    val colors = BudgetCalendarTheme.colors
+    val typography = BudgetCalendarTheme.typography
+    val hasLoadError = !uiState.loadError.isNullOrBlank()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+        verticalArrangement = Arrangement.spacedBy(spacing.spacing3),
+    ) {
+        when {
+            uiState.isLoading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = spacing.spacing6),
+                        .weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Loading notifications...",
+                        style = typography.bodyMedium,
+                        color = colors.textSecondary,
+                    )
+                }
+            }
+
+            uiState.notifications.isEmpty() && !hasLoadError -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = "No new notifications",
                         style = typography.bodyMedium,
-                        color = colors.textTertiary,
+                        color = colors.textSecondary,
                     )
                 }
-            } else {
+            }
+
+            else -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(spacing.spacing2),
                 ) {
                     items(uiState.notifications, key = { notification -> notification.id }) { notification ->
                         NotificationAccordionItem(
                             notification = notification,
-                            isExpanded = uiState.expandedNotificationId == notification.id,
+                            isExpanded = notification.id in uiState.expandedNotificationIds,
+                            isBusy = notification.id in uiState.dismissingNotificationIds || uiState.isDismissingAll,
                             overdueTransactions = overdueTransactions,
-                            onToggleExpand = { viewModel.toggleExpand(notification.id) },
-                            onDismiss = { viewModel.dismiss(notification.id) },
+                            onToggleExpand = { onToggleExpand(notification.id) },
+                            onDismiss = { onDismissNotification(notification.id) },
                         )
                     }
                 }
             }
+        }
 
-            if (!uiState.error.isNullOrBlank()) {
-                Text(
-                    text = uiState.error.orEmpty(),
-                    style = typography.bodySmall,
-                    color = colors.colorError,
-                )
-            }
+        if (hasLoadError) {
+            FeedbackText(
+                text = uiState.loadError.orEmpty(),
+                color = colors.colorErrorText,
+            )
+            BcButton(
+                text = "Retry",
+                onClick = onRetry,
+                variant = ButtonVariant.Outline,
+                enabled = !uiState.isLoading,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        if (!uiState.error.isNullOrBlank()) {
+            FeedbackText(
+                text = uiState.error.orEmpty(),
+                color = colors.colorErrorText,
+            )
         }
     }
 }
@@ -139,6 +212,7 @@ fun NotificationCenterSheet(
 private fun NotificationAccordionItem(
     notification: Notification,
     isExpanded: Boolean,
+    isBusy: Boolean,
     overdueTransactions: List<Transaction>,
     onToggleExpand: () -> Unit,
     onDismiss: () -> Unit,
@@ -147,7 +221,7 @@ private fun NotificationAccordionItem(
     val spacing = BudgetCalendarTheme.spacing
     val typography = BudgetCalendarTheme.typography
     val radius = BudgetCalendarTheme.radius
-    val minTouchTarget = spacing.spacing12 - spacing.spacing1
+    val title = titleFor(notification)
 
     Column(
         modifier = Modifier
@@ -165,9 +239,7 @@ private fun NotificationAccordionItem(
             horizontalArrangement = Arrangement.spacedBy(spacing.spacing2),
         ) {
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(onClick = onToggleExpand),
+                modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(spacing.spacing1),
             ) {
                 Row(
@@ -176,17 +248,20 @@ private fun NotificationAccordionItem(
                     horizontalArrangement = Arrangement.spacedBy(spacing.spacing2),
                 ) {
                     Text(
-                        text = titleFor(notification),
+                        text = title,
                         style = typography.bodyLarge,
                         color = colors.textPrimary,
                         modifier = Modifier.weight(1f),
                     )
 
                     if (notification.type == NotificationType.OVERDUE_TRANSACTIONS) {
-                        val countText = (notification.overdueCount ?: 0).toString()
+                        val count = notification.overdueCount ?: 0
                         BcBadge(
-                            text = countText,
+                            text = count.toString(),
                             variant = BadgeVariant.Overdue,
+                            modifier = Modifier.semantics {
+                                contentDescription = "$count overdue transactions"
+                            },
                         )
                     }
                 }
@@ -199,16 +274,34 @@ private fun NotificationAccordionItem(
             }
 
             IconButton(
-                onClick = onDismiss,
+                onClick = onToggleExpand,
                 modifier = Modifier
-                    .size(minTouchTarget)
-                    .semantics { contentDescription = "Dismiss notification" },
+                    .size(spacing.spacing12)
+                    .semantics {
+                        contentDescription = if (isExpanded) "Collapse $title" else "Expand $title"
+                        stateDescription = if (isExpanded) "Expanded" else "Collapsed"
+                    },
+            ) {
+                Icon(
+                    imageVector = if (isExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                    tint = colors.textPrimary,
+                )
+            }
+
+            IconButton(
+                onClick = onDismiss,
+                enabled = !isBusy,
+                modifier = Modifier
+                    .size(spacing.spacing12)
+                    .semantics {
+                        contentDescription = "Dismiss $title"
+                    },
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Close,
                     contentDescription = null,
                     tint = colors.textSecondary,
-                    modifier = Modifier.size(spacing.spacing5),
                 )
             }
         }
@@ -261,16 +354,17 @@ private fun NotificationExpandedContent(
                             modifier = Modifier.weight(1f),
                         )
 
+                        val signedAmount = transaction.signedAmount
                         Text(
                             text = CurrencyUtils.formatCents(
-                                amountInCents = signedAmount(transaction),
-                                includePlusSign = signedAmount(transaction) > 0L,
+                                amountInCents = signedAmount,
+                                includePlusSign = signedAmount > 0L,
                             ),
                             style = typography.bodyMedium,
                             color = when (transaction.type) {
-                                TransactionType.INCOME -> colors.colorSuccess
-                                TransactionType.EXPENSE -> colors.colorError
-                                TransactionType.TRANSFER -> colors.colorInfo
+                                TransactionType.INCOME -> colors.colorSuccessText
+                                TransactionType.EXPENSE -> colors.colorErrorText
+                                TransactionType.TRANSFER -> colors.colorInfoText
                             },
                         )
                     }
@@ -302,7 +396,7 @@ private fun NotificationExpandedContent(
                 Text(
                     text = "${CurrencyUtils.formatCents(notification.currentSts ?: 0L)} remaining · ${lowPercent(notification)}% of pool",
                     style = typography.bodyMedium,
-                    color = colors.colorWarning,
+                    color = colors.colorWarningText,
                 )
             }
         }
@@ -320,12 +414,27 @@ private fun NotificationExpandedContent(
                 Text(
                     text = "${CurrencyUtils.formatCents(notification.currentSts ?: 0L)} below zero",
                     style = typography.bodyMedium,
-                    color = colors.colorError,
+                    color = colors.colorErrorText,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
         }
     }
+}
+
+@Composable
+private fun FeedbackText(
+    text: String,
+    color: androidx.compose.ui.graphics.Color,
+) {
+    val typography = BudgetCalendarTheme.typography
+
+    Text(
+        text = text,
+        style = typography.bodySmall,
+        color = color,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+    )
 }
 
 private fun titleFor(notification: Notification): String {
@@ -361,8 +470,4 @@ private fun lowPercent(notification: Notification): Int {
     }
 
     return ((current * 100L) / pool).toInt()
-}
-
-private fun signedAmount(transaction: Transaction): Long {
-    return transaction.signedAmount
 }
