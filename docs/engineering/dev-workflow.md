@@ -44,6 +44,10 @@ cd src/mobile
 # Run connected Android instrumented tests (task does not support --tests)
 ./gradlew :composeApp:connectedDebugAndroidTest
 
+# Full release gate from src/mobile/
+./gradlew :composeApp:allTests :composeApp:testDebugUnitTest :composeApp:assembleDebug
+./gradlew :composeApp:connectedDebugAndroidTest
+
 # Run one test class or method
 ./gradlew :composeApp:testDebugUnitTest --tests "com.petergabriel.budgetcalendar.SomeTest"
 ```
@@ -57,11 +61,12 @@ cd src/mobile
 ./gradlew :composeApp:testDebugUnitTest --tests "com.petergabriel.budgetcalendar.features.home.presentation.HomeViewModelTest"
 ```
 
-`HomeViewModelTest` uses fake account, credit-card, and transaction repositories with `StandardTestDispatcher`; it covers configured and unconfigured limits, per-card over-limit clamping, and transaction-triggered updates: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeViewModelTest.kt:1-120`.
+`HomeViewModelTest` uses fake account, credit-card, and transaction repositories with `StandardTestDispatcher`; it covers configured and unconfigured limits, per-card over-limit clamping, and transaction-triggered updates: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeViewModelTest.kt:1-117`.
 
 ## iOS
 
 - Open `src/mobile/iosApp/iosApp.xcodeproj` in Xcode and run the `iosApp` target. Xcode project exists at `src/mobile/iosApp/iosApp.xcodeproj/project.pbxproj`.
+- CLI simulator smoke: `xcodebuild -project src/mobile/iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug -destination 'platform=iOS Simulator,id=<device>' build CODE_SIGNING_ALLOWED=NO`; launch once in light and dark system appearance, then shut down temporary simulator after verification.
 - iOS host is thin SwiftUI wrapper around Compose `MainViewController()`: `src/mobile/iosApp/iosApp/ContentView.swift:1-18`.
 - Kotlin iOS entry initializes Koin if needed and calls shared `App()`: `src/mobile/composeApp/src/iosMain/kotlin/com/petergabriel/budgetcalendar/MainViewController.kt:7-12`.
 
@@ -89,5 +94,5 @@ cd src/mobile
 ## DI wiring
 
 - All shared Koin wiring is in `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt`.
-- Installed modules: `platformModule`, `databaseModule`, `repositoryModule`, `useCaseModule`, `viewModelModule`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:106-224`.
+- Installed modules: `platformModule`, `databaseModule`, `repositoryModule`, `useCaseModule`, `viewModelModule`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:106-220`.
 - Repositories are `single`, use cases are `factory`, ViewModels use `viewModel`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:120-211`.

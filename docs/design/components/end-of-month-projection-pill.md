@@ -1,6 +1,6 @@
 # End-of-Month Projection Pill
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Calendar page  
 **Layer:** Feature component
 

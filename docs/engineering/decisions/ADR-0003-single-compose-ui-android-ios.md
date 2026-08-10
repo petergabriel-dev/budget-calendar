@@ -32,7 +32,7 @@ Code:
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:66-193`
 - `src/mobile/composeApp/src/iosMain/kotlin/com/petergabriel/budgetcalendar/MainViewController.kt:1-12`
 - `src/mobile/iosApp/iosApp/ContentView.swift:1-18`
-- `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:213-224`
+- `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:213-220`
 
 ## Consequences
 

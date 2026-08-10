@@ -1,6 +1,6 @@
 # Calendar Page
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Main Calendar tab  
 **Layer:** Page composition
 
@@ -143,15 +143,15 @@ Calendar must not default back to today's date after a Home handoff. Selected da
 
 - Consume semantic color, typography, spacing, radius, and interaction tokens.
 - No local raw dp, px, or color values in component specs.
-- Light and dark values must be defined before implementation.
+- `BudgetCalendarTheme` supplies semantic light/dark values from system appearance; no user theme preference is stored.
 - `selected` uses `bgDark` + `textInverted`.
 - Projection negative uses `colorErrorText`; positive/negative day tint uses approved semantic accents.
 - Status dots must be paired with accessible text and not act as the only status signal.
 
-## Known implementation gaps
+## Shipped implementation notes
 
-- Current `CalendarScreen` renders a one-row inline list and expands through an icon-only header action; design keeps this density while requiring date-specific accessibility text.
-- Current day cell and projection components contain local size values; Build migration should replace them with design tokens.
-- Calendar state currently owns exact-date selection; App shell must pass Home's selected date during navigation.
+- `CalendarScreen` uses date-specific accessible rows and expands through the shared sheet shell; row taps open details before edit/delete actions.
+- Day cells, projection, month controls, and selected-day states use semantic tokens and scoped retry/error feedback.
+- `AppNavigationState` carries Home's exact selected date into Calendar; Calendar applies the containing month and consumes the handoff.
 
 BudgetScreen and RecurringScreen remain unused and outside this page composition.

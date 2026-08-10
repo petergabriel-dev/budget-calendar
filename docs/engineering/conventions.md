@@ -4,20 +4,20 @@ Source of truth: current code under package `com.petergabriel.budgetcalendar`.
 
 ## Money
 
-- Store/pass money as `Long` cents. Examples: `Account.balance`, `Transaction.amount`, `Transaction.signedAmount`, `BudgetSummary.*Amount` all use `Long`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/model/Account.kt:17-25`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/model/Transaction.kt:28-43`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/model/BudgetSummary.kt:3-12`.
+- Store/pass money as `Long` cents. Examples: `Account.balance`, `Transaction.amount`, `Transaction.signedAmount`, `BudgetSummary.*Amount` all use `Long`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/model/Account.kt:17-25`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/model/Transaction.kt:28-42`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/model/BudgetSummary.kt:3-12`.
 - Format display with `CurrencyUtils.formatCents(...)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/utils/CurrencyUtils.kt:5-19`.
 - DB monetary columns are `INTEGER`: `initial_balance`, `amount`, `signed_amount`, `rollover_amount`, notification monetary payloads: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:1-123`.
 
 ## Time
 
-- Store timestamps/dates as `Long` Unix epoch millis. Examples: `Transaction.date`, `createdAt`, `updatedAt`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/model/Transaction.kt:28-43`.
+- Store timestamps/dates as `Long` Unix epoch millis. Examples: `Transaction.date`, `createdAt`, `updatedAt`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/model/Transaction.kt:28-42`.
 - Use `DateUtils.nowMillis()`, `startOfDayMillis()`, month bounds, and UTC/local day conversion helpers instead of ad-hoc date math: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/utils/DateUtils.kt:14-90`.
 - Schema date/time fields are `INTEGER`: accounts/transactions/snapshots/notifications/settings use `created_at`/`updated_at` or date millis columns: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:1-123`.
 
 ## Transaction amounts
 
 - `amount` = unsigned magnitude. `signed_amount` = accounting direction. Schema keeps both: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:14-29`.
-- Default signs: income positive, expense negative, transfer source negative, transfer destination positive: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/model/CreateTransactionRequest.kt:3-29`.
+- Default signs: income positive, expense negative, transfer source negative, transfer destination positive: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/model/CreateTransactionRequest.kt:3-28`.
 - Balance/accounting reads should use `signed_amount`; reservation totals use magnitude `amount` where pending/overdue obligation size matters: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:62-78`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:16-33`.
 
 ## Transaction status
@@ -33,7 +33,7 @@ Source of truth: current code under package `com.petergabriel.budgetcalendar`.
 ## Koin DI
 
 - DI is centralized in `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt`.
-- Installed modules are `platformModule`, `databaseModule`, `repositoryModule`, `useCaseModule`, `viewModelModule`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:106-224`.
+- Installed modules are `platformModule`, `databaseModule`, `repositoryModule`, `useCaseModule`, `viewModelModule`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:106-220`.
 - Repositories are `single`, use cases are `factory`, ViewModels use `viewModel`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:120-211`.
 
 ## Design system
@@ -43,8 +43,12 @@ Source of truth: current code under package `com.petergabriel.budgetcalendar`.
 - Reusable components use `Bc*` names, e.g. `BcButton`, `BcBadge`, `BcHeader`, `BcTabBarPill`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcButton.kt:36-70`.
 - Top-level app screens use `BcHeader` at `typography.headline`; title text is weighted, single-line, and ellipsized before its action slot: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcHeader.kt:23-56`. Each top-level screen passes the shared `BcNotificationBell` as its notification action: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:155-177`.
 - `BcHeader.actionContent` carries `BcNotificationBell` alone; never wrap it with unrelated controls in a nested `Row`. Put Calendar month controls in a sibling row.
+- `BcTabBarPill` and `BcSegmentedControl` expose `selectableGroup`, `Role.Tab`, and selected semantics; visual selection is never the only state signal: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcTabBarPill.kt:44-113`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcSegmentedControl.kt:31-64`.
+- Interactive controls use `BudgetCalendarTheme.spacing.spacing12` (48dp) or larger. App-shell and migrated active-surface dimensions use spacing tokens; inactive Budget/Recurring screens remain outside this pass.
+- Sheets use `BcSheetShell` with named heading, explicit close, scrollable body, reachable footer, and feature-owned dirty/confirmation state. Mutating sheets close only after success; failures preserve values and remain local.
 
 ## State and errors
 
 - ViewModels expose read-only `StateFlow` and keep mutable state private: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountViewModel.kt:21-30`.
 - Fallible use-case commands return `Result<T>` and validate before repository writes: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:13-44`.
+- Split presentation failures by affected operation (month, projection, selected day, account/card list, settings, notification list, sandbox snapshot/projection/transactions/mutation). Preserve stale usable content instead of replacing unrelated sections with one broad error: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/SandboxHomeUiState.kt:3-29`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarUiState.kt:3-29`.

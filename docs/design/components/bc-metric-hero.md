@@ -1,6 +1,6 @@
 # BcMetricHero
 
-**Status:** Proposed
+**Status:** Implemented
 **Surface:** Home metrics
 **Layer:** Core design-system foundation
 

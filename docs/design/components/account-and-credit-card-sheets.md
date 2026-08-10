@@ -1,6 +1,6 @@
 # Account and Credit Card Sheets
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Accounts overlays  
 **Layer:** Feature overlays
 

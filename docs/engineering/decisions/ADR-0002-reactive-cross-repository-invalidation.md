@@ -15,7 +15,7 @@ date: 2026-07-06
 
 ## Why
 
-- Prior reactive model re-emitted cached SQLDelight results instead of re-querying dependent tables; prompt 24 records `combine` as stale for this use: `docs/prompts/24_bugfix_confirmed-transaction-not-updating-balance-and-sts.md:9-21`.
+- Prior reactive model re-emitted cached SQLDelight results instead of re-querying dependent tables; `combine(trigger)` was insufficient because dependent queries needed to execute again.
 - Flow-observation bug reports identify SQLDelight dependent-table writes not reliably refreshing budget/account consumers: `bug-reports/account-management/2026-04-01_1615_flow-observation-not-triggering.md:82-98`.
 - Current code emits explicit write signals: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:28-29`, `:146`, `:158`, `:173`, `:201-203`.
 

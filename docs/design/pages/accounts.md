@@ -1,6 +1,6 @@
 # Accounts Page
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Main Accounts tab  
 **Layer:** Page composition
 
@@ -162,9 +162,9 @@ Cards do not expose edit/delete directly. Details sheets own destructive-action 
 - No local raw dp, px, or color values in component specs.
 - Validate high-contrast spending cards, debt/error text, badges, borders, disabled states, and focus in light/dark themes.
 
-## Known implementation gaps
+## Shipped implementation notes
 
-- Current AccountListScreen uses fixed local spacing/type values and a wide-layout grid branch; Build should migrate to tokens and preserve one-column order.
-- Current account load failures surface through snackbar; persistent list failures need inline scoped feedback.
-- Current `AccountCard` supports long press but page composition uses tap; keep one clear action per card unless product explicitly restores long press.
-- Credit-card data has a separate ViewModel and sheet flow; page state must keep ordinary-account content independent.
+- Account and credit-card sections use tokenized stacked layouts at every width; no wide-layout grid branch remains.
+- Account, net-worth, and credit-card failures render in their affected sections with retry while usable sibling content remains visible.
+- Account cards use tap/details routing; destructive and edit actions live in details/confirmation flows rather than long press.
+- Credit-card data remains separately owned and excluded from ordinary-account balance/net-worth formulas.

@@ -15,3 +15,9 @@ run the docs tooling to refresh them.
 - **traps.md** — Known gotchas, pitfalls, and issues
 - **design-system.html** — Offline design-system token + component catalog
 - **decisions/** — Architectural decision records (ADRs)
+
+## Shipped Compose design handoff
+
+- `docs/design/` records implemented Home, Calendar, Accounts, Me/Settings, Sandbox, and shared-sheet compositions.
+- Runtime source is shared Compose in `commonMain`; `BudgetCalendarTheme` follows system light/dark appearance; App owns four tabs and global notification state.
+- Verify from `src/mobile/` with `:composeApp:allTests`, `:composeApp:testDebugUnitTest`, `:composeApp:assembleDebug`, and `:composeApp:connectedDebugAndroidTest`.

@@ -1,6 +1,6 @@
 # BcSheetShell
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Shared sheets and overlays  
 **Layer:** Core design-system foundation
 

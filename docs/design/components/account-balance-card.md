@@ -1,6 +1,6 @@
 # Account Balance Card
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Accounts page  
 **Layer:** Feature component
 

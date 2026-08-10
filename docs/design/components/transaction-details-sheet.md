@@ -1,6 +1,6 @@
 # Transaction Details Sheet
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Shared transaction inspection  
 **Layer:** Feature overlay
 

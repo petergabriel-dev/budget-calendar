@@ -1,6 +1,6 @@
 # Transaction Form Sheet
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Shared transaction creation/editing  
 **Layer:** Feature overlay
 

@@ -81,7 +81,7 @@
 
   <section>
     <h2>Color tokens</h2>
-    <p>Rendered from <code>Color.kt</code>. Retired design-capture vars are mapped where they existed.</p>
+    <p>Rendered from <code>Color.kt</code>. Runtime light/dark selection comes from system appearance in <code>BudgetCalendarTheme.kt</code>; no user theme preference is stored. Retired design-capture vars are mapped where they existed.</p>
     <div class="grid">
       <div class="card"><div class="swatch" style="background:#000000"></div><strong>bgDark / textPrimary</strong><br><span class="muted">#000000</span></div>
       <div class="card"><div class="swatch" style="background:#27272A"></div><strong>bgMuted</strong><br><span class="muted">#27272A</span></div>
@@ -111,6 +111,7 @@
 | textTertiary | #A1A1AA | Color.kt | --text-tertiary |
 | textInverted | #FFFFFF | Color.kt | --text-inverted |
 | textDisabled | #D4D4D8 | Color.kt | --text-disabled |
+| focusRing | #000000 / #FAFAFA | Color.kt | n/a |
 | borderStrong | #E4E4E7 | Color.kt | --border-strong |
 | borderSubtle | #F4F4F5 | Color.kt | --border-subtle |
 | colorSuccess | #22C55E | Color.kt | n/a |
@@ -120,8 +121,10 @@
 | colorErrorText | #C62828 | Color.kt | n/a |
 | colorErrorBg | #FEE2E2 | Color.kt | n/a |
 | colorWarning | #F59E0B | Color.kt | n/a |
+| colorWarningText | #92400E / #FDE68A | Color.kt | n/a |
 | colorWarningBg | #FEF3C7 | Color.kt | n/a |
 | colorInfo | #3B82F6 | Color.kt | n/a |
+| colorInfoText | #1D4ED8 / #BFDBFE | Color.kt | n/a |
 | colorInfoBg | #DBEAFE | Color.kt | n/a |
 | borderAccent | #000000 | retired design capture only | --border-accent maps to bgDark/border use |
 | textMuted | #E4E4E7 | retired design capture only | --text-muted maps nearest borderStrong/textDisabled |
@@ -203,12 +206,16 @@
         <tr><td>AccountType.toBadgeVariant</td><td>Maps account type to badge variant.</td><td><code>core/designsystem/component/AccountTypeBadgeVariant.kt</code></td><td><code>AccountType</code> receiver</td></tr>
         <tr><td>BcBadge</td><td>Status badge.</td><td><code>core/designsystem/component/BcBadge.kt</code></td><td><code>text</code>, <code>variant</code>, <code>modifier</code></td></tr>
         <tr><td>BcButton</td><td>Primary/outline/ghost/destructive button.</td><td><code>core/designsystem/component/BcButton.kt</code></td><td><code>text</code>, <code>onClick</code>, <code>variant</code>, <code>enabled</code>, <code>leadingIcon</code>, <code>trailingIcon</code></td></tr>
+        <tr><td>BcConfirmDialog</td><td>Safe-default destructive or discard confirmation.</td><td><code>core/designsystem/component/BcConfirmDialog.kt</code></td><td><code>title</code>, <code>message</code>, <code>onConfirm</code>, <code>isBusy</code></td></tr>
+        <tr><td>BcMetricHero</td><td>Visual-only metric hierarchy with loading, warning, and semantic amount states.</td><td><code>core/designsystem/component/BcMetricHero.kt</code></td><td><code>label</code>, <code>amount</code>, <code>isLoading</code>, <code>warningMessage</code></td></tr>
         <tr><td>BcHeader</td><td>Screen header; title ellipsizes before optional action.</td><td><code>core/designsystem/component/BcHeader.kt</code></td><td><code>title</code>, <code>modifier</code>, <code>actionIcon</code>, <code>actionContentDescription</code>, <code>onActionClick</code>, <code>actionContent</code></td></tr>
         <tr><td>BcNotificationBell</td><td>Notification action with unread error badge.</td><td><code>core/designsystem/component/BcNotificationBell.kt</code></td><td><code>unreadCount</code>, <code>onClick</code></td></tr>
         <tr><td>BcSearchBar</td><td>Search text field.</td><td><code>core/designsystem/component/BcSearchBar.kt</code></td><td><code>query</code>, <code>onQueryChange</code>, <code>placeholder</code></td></tr>
         <tr><td>BcSectionHeader</td><td>Section title with optional action text.</td><td><code>core/designsystem/component/BcSectionHeader.kt</code></td><td><code>title</code>, <code>actionText</code>, <code>onActionClick</code></td></tr>
         <tr><td>BcSegmentedControl</td><td>Pill segmented selector.</td><td><code>core/designsystem/component/BcSegmentedControl.kt</code></td><td><code>options</code>, <code>selectedIndex</code>, <code>onSelectedIndexChange</code></td></tr>
-        <tr><td>BcTabBarPill</td><td>Bottom/tab pill navigation with optional add action.</td><td><code>core/designsystem/component/BcTabBarPill.kt</code></td><td><code>tabs: List&lt;BcTabItem&gt;</code>, <code>onAddClick</code></td></tr>
+        <tr><td>BcTabBarPill</td><td>Bottom/tab pill navigation with optional add action and selectable semantics.</td><td><code>core/designsystem/component/BcTabBarPill.kt</code></td><td><code>tabs: List&lt;BcTabItem&gt;</code>, <code>onAddClick</code></td></tr>
+        <tr><td>BcWeekPicker</td><td>Seven-day selectable week control with activity semantics.</td><td><code>core/designsystem/component/BcWeekPicker.kt</code></td><td><code>days</code>, <code>selectedDate</code>, <code>onDateSelected</code></td></tr>
+        <tr><td>BcSheetShell</td><td>Shared modal shell with heading, close, scroll body, and sticky footer.</td><td><code>core/designsystem/component/BcSheetShell.kt</code></td><td><code>title</code>, <code>body</code>, <code>footer</code>, <code>onDismissRequest</code></td></tr>
         <tr><td>HeroNetWorth</td><td>Large formatted net-worth amount.</td><td><code>core/designsystem/component/HeroNetWorth.kt</code></td><td><code>amount</code></td></tr>
         <tr><td>HeroSafeToSpend</td><td>Large safe-to-spend amount with optional daily context.</td><td><code>core/designsystem/component/HeroSafeToSpend.kt</code></td><td><code>amount</code>, <code>dailyRate</code>, <code>daysRemaining</code>, <code>isLastDayOfMonth</code>, <code>label</code></td></tr>
         <tr><td>BcCheckboxRow</td><td>Label + checkbox row.</td><td><code>core/designsystem/component/form/BcCheckboxRow.kt</code></td><td><code>label</code>, <code>checked</code>, <code>onCheckedChange</code></td></tr>

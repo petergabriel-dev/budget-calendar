@@ -1,6 +1,6 @@
 # Compact TransactionListItem
 
-**Status:** Proposed
+**Status:** Implemented
 **Surface:** Home selected-day preview
 **Layer:** Feature component variant
 

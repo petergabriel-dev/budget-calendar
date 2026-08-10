@@ -1,6 +1,6 @@
 # Home Weekly Activity
 
-**Status:** Proposed
+**Status:** Implemented
 **Surface:** Home page, Live Budget mode
 **Layer:** Feature composition
 
@@ -120,11 +120,11 @@ Show zero currency amount with normal summary treatment. Preview remains availab
 
 ## Navigation handoff
 
-Current App shell switches tabs but does not pass selected date. Home integration requires a parent callback that selects Calendar and applies selected-day id/date before rendering.
+App shell receives the selected `LocalDate` from Home and carries it as a pending calendar handoff. Calendar applies the date to its containing month, then consumes the pending value once.
 
 ```text
 HomeWeeklyActivity
-    -> onViewAllClick(selectedDayId)
-    -> App selects Calendar
-    -> Calendar selects matching date
+    -> onViewAllClick(selectedDate)
+    -> AppNavigationState.openCalendarOn(date)
+    -> Calendar applies selected date and consumes pending handoff
 ```

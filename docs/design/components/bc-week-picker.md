@@ -1,6 +1,6 @@
 # BcWeekPicker
 
-**Status:** Proposed
+**Status:** Implemented
 **Surface:** Home page, Live Budget mode
 **Layer:** Foundation component
 

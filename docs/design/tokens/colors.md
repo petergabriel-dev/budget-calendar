@@ -1,6 +1,6 @@
 # Color Tokens
 
-**Status:** Proposed
+**Status:** Implemented
 **Scope:** Light and dark semantic palettes
 
 ## Token rule

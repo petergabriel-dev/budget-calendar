@@ -1,6 +1,6 @@
 # Cross-Page Design QA
 
-**Status:** Reviewed  
+**Status:** Verified
 **Scope:** Home, Calendar, Accounts, Me / Settings, Sandbox mode, shared sheets
 
 ## Shared passes
@@ -59,11 +59,16 @@
 - Overdue status uses full high-contrast badge treatment.
 - Shared sheet state preview receives outer token padding so labels/panels do not touch frame edges.
 
-## Remaining Build work
+## Shipped implementation handoff
 
-- Implement shared sheet shell and migrate feature sheets.
-- Implement exact Home-to-Calendar selected-date handoff.
-- Add dark semantic source palette/system theme selection.
-- Migrate badge/error/info tokens to canonical semantic values.
-- Replace local raw dimensions in existing Compose components with design tokens.
-- Preserve page/mode boundaries: Sandbox remains Home mode; BudgetScreen and RecurringScreen remain unused.
+- Shared `BcSheetShell`, header/footer, confirmation, metric, badge, field, and selectable-control foundations are in use across migrated surfaces.
+- Home-to-Calendar handoff carries exact selected date and consumes it after Calendar applies the containing month.
+- `BudgetCalendarTheme` selects semantic light/dark palettes from system appearance; no user theme preference exists.
+- Feature state keeps metric/list/sheet failures local, preserves entered values on mutation failure, and closes sheets only after success.
+- Sandbox remains Home mode; `BudgetScreen` and `RecurringScreen` remain unused.
+
+## Verification record
+
+- Android instrumented: `:composeApp:connectedDebugAndroidTest`, 35/35 passed on `Medium_Phone_API_36.1`.
+- Shared/build gates: `:composeApp:allTests`, `:composeApp:testDebugUnitTest`, and `:composeApp:assembleDebug` passed.
+- iOS simulator Debug build and light/dark launch smoke passed through `iosApp`.

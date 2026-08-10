@@ -1,6 +1,6 @@
 # Home Page
 
-**Status:** Proposed
+**Status:** Implemented
 **Surface:** Main Home tab
 **Layer:** Page composition
 
@@ -151,15 +151,15 @@ Do not wrap entire Home in a new card. Use surfaces only for existing cards, row
 
 - Use existing color, typography, spacing, radius, and shadow tokens.
 - No local raw dp or color values.
-- Define light and dark semantic values before preview/implementation.
+- `BudgetCalendarTheme` selects semantic light/dark values from system appearance; no user theme preference is stored.
 - Preserve existing Outfit display hierarchy and Inter body hierarchy.
 
 ## Navigation handoff
 
-Home must expose selected-day navigation to App shell:
+Home exposes selected-day navigation to App shell:
 
 ```text
-HomeWeeklyActivity.onViewAllClick(selectedDayId)
+HomeWeeklyActivity.onViewAllClick(selectedDate)
     -> App selects Calendar
     -> Calendar applies selected date
     -> Calendar renders full transaction list

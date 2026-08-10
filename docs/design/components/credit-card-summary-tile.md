@@ -1,6 +1,6 @@
 # Credit Card Summary Tile
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Accounts page  
 **Layer:** Feature component
 

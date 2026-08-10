@@ -31,13 +31,13 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 
 - Symptom: confirmed transactions existed but account balance stayed stale (`bug-reports/account-management/2026-04-02_1200_stored-balance-permanently-drifts-from-transaction-history.md:11-30`).
 - Root cause: old mutable `accounts.balance` depended on every write path calling `adjustBalance()`.
-- Resolution: migration 7 renamed balance to `initial_balance` and added/backfilled `signed_amount`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/7.sqm:1-23`; fix plan: `docs/prompts/25_bugfix_computed-account-balance-from-transaction-history.md:1-19`.
+- Resolution: migration 7 renamed balance to `initial_balance` and added/backfilled `signed_amount`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/7.sqm:1-23`.
 - Current guard: balance reads compute `initial_balance + SUM(signed_amount)` for confirmed rows; sandbox transactions live in `sandbox_transactions`, not main `transactions`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:60-75`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:71-86`.
 
 ## SQLDelight flows do not refresh dependent repos by magic
 
 - Symptom: STS/account UI did not update after transaction writes (`bug-reports/account-management/2026-04-01_1615_flow-observation-not-triggering.md:9-29`).
-- Root cause: dependent SQLDelight `.asFlow()` queries emitted once or replayed stale values; `combine(trigger)` did not force re-query (`docs/prompts/24_bugfix_confirmed-transaction-not-updating-balance-and-sts.md:9-21`).
+- Root cause: dependent SQLDelight `.asFlow()` queries emitted once or replayed stale values; `combine(trigger)` did not force re-query.
 - Resolution: `transactionChangedTrigger` + `flatMapLatest` around SQLDelight query chains.
 - Current guard: transaction writes emit trigger: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:127-206`; account/budget repos re-query via `flatMapLatest`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:31-62`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/data/repository/BudgetRepositoryImpl.kt:27-84`.
 
@@ -129,7 +129,7 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 
 - Symptom: today with negative net rendered contradictory red border + green background (`bug-reports/calendar-view/2026-04-05_1300_today-cell-conflicting-visual-states.md:9-20`).
 - Root cause: background and border were independent channels with no shared `isToday` x `netAmount` rule (`bug-reports/calendar-view/2026-04-05_1300_today-cell-conflicting-visual-states.md:44-68`).
-- Resolution: today border always dark; backgrounds carry net tint; selected state wins. Fix plans: `docs/prompts/31_bugfix_calendar-day-today-cell-visual-state.md:9-17`, `docs/prompts/33_bugfix_calendar_non-today-cell-border-to-background.md:23-33`.
+- Resolution: today border always dark; backgrounds carry net tint; selected state wins.
 - Current guard: background resolver orders selected, today-negative, today, non-today positive/negative; border resolver only colors today: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarDayCell.kt:106-132`.
 
 ## Calendar grid height drift created hidden lazy-grid scroll
@@ -143,12 +143,24 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 
 - Symptom: tapping overdue row opened blank new-transaction form, so user could not confirm/cancel overdue item (`bug-reports/safe-to-spend/2026-04-01_overdue-transaction-cannot-be-resolved.md:9-25`).
 - Root cause: Home screen did not track/pass selected transaction; `TransactionFormSheet` got `initialData = null` (`bug-reports/safe-to-spend/2026-04-01_overdue-transaction-cannot-be-resolved.md:31-80`).
-- Resolution: track `editingTransaction`, pass it into form, and route save/delete to replace/delete. Fix plan: `docs/prompts/17_bugfix_overdue-transaction-cannot-be-resolved.md:15-23`.
+- Resolution: track `editingTransaction`, pass it into form, and route save/delete to replace/delete.
 - Current guard: Home stores editing state and row click sets it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:116-125`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:264-273`; form receives `initialData` and replace/delete callbacks: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:346-369`.
+
+## Shared sheet mutation can close too early
+
+- Symptom: forms disappear immediately after submit, so failed writes lose entered values and context.
+- Root cause: callers treated async mutation invocation as success instead of observing completion.
+- Resolution: feature ViewModels own busy/error/success state; `BcSheetShell` owns layout only. Close on success effect/callback, preserve values on failure, and guard dirty dismissal with `BcConfirmDialog`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcSheetShell.kt:33-54`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/TransactionFormViewModel.kt:150-220`.
+
+## Broad Sandbox errors blank usable content
+
+- Symptom: one failed snapshot, projection, or transaction read hides unrelated Sandbox content.
+- Root cause: one broad loading/error field represented multiple independent operations.
+- Resolution: keep snapshot, projection, transaction, and mutation fields separate; preserve last usable metric/list and expose retry beside affected content: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/SandboxHomeUiState.kt:3-29`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/SandboxViewModel.kt:165-344`.
 
 ## Retired spec files are gone
 
 - Symptom: old references to removed spec files may appear in historical prompts or bug reports.
 - Root cause: the repo moved to `docs/engineering/` plus source code as the maintained truth.
-- Resolution: use `docs/engineering/`, ADRs, and current code; treat `docs/prompts/` and `bug-reports/` as archaeology only.
+- Resolution: use `docs/engineering/`, ADRs, and current code; treat retired prompt/bug-report archives as archaeology only.
 - Current guard: actual package/entrypoints are Compose `App()` from Android and iOS: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:1`, `src/mobile/composeApp/src/androidMain/kotlin/com/petergabriel/budgetcalendar/MainActivity.kt:18-26`, `src/mobile/composeApp/src/iosMain/kotlin/com/petergabriel/budgetcalendar/MainViewController.kt:7-12`.

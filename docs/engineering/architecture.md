@@ -8,6 +8,14 @@ Source of truth: current code. Package root: `com.petergabriel.budgetcalendar` (
 - iOS embeds the same Kotlin UI through `MainViewController()` -> `App()`: `src/mobile/composeApp/src/iosMain/kotlin/com/petergabriel/budgetcalendar/MainViewController.kt:7-12`; host wrapper: `src/mobile/iosApp/iosApp/ContentView.swift:5-17`.
 - `App()` owns tab shell and routes to Home, Calendar, Accounts, Me screens: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:66-193`.
 
+## UI shell and state ownership
+
+- `App()` owns exactly four tabs (`Home`, `Calendar`, `Accounts`, `Me`), the shared `BcTabBarPill`, one global `NotificationCenterViewModel`, and shared transaction/notification overlays: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:60-78`, `:128-224`.
+- Home Sandbox is a mode inside Home, not a route. `SandboxViewModel` owns snapshot, projection, transaction, mutation, retry, and mode-reset state: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/SandboxViewModel.kt:32-50`, `:52-79`.
+- Home-to-Calendar handoff stores an exact `LocalDate` string, applies it to the containing month, then consumes it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/AppNavigationState.kt:18-31`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:154-179`.
+- Shared visual/layout ownership lives in `core/designsystem`: `BcMetricHero`, `BcSheetShell`/header/footer, `BcConfirmDialog`, `BcBadge`, `BcButton`, `BcSegmentedControl`, `BcTabBarPill`, and form primitives. Feature ViewModels retain domain state and mutation lifecycle: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcSheetShell.kt:33-184`.
+- Root `Scaffold` owns system insets. Screens consume its `innerPadding`; nested Accounts snackbar `Scaffold` explicitly uses zero insets: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:128-169`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-78`.
+
 ## Layer flow
 
 ```text
@@ -58,7 +66,7 @@ features/<feature>/
 
 - Koin modules are centralized in `di/KoinModules.kt`.
 - Modules: `databaseModule`, `repositoryModule`, `useCaseModule`, `viewModelModule`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:108-211`.
-- `initKoin()` installs platform + shared modules: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:213-224`.
+- `initKoin()` installs platform + shared modules: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:213-220`.
 
 ## Platform boundary
 

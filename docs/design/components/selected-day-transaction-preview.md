@@ -1,6 +1,6 @@
 # SelectedDayTransactionPreview
 
-**Status:** Proposed
+**Status:** Implemented
 **Surface:** Home page, Live Budget mode
 **Layer:** Feature component
 

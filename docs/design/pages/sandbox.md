@@ -1,6 +1,6 @@
 # Sandbox Mode
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Home page, Sandbox mode  
 **Layer:** Feature composition
 
@@ -170,9 +170,9 @@ Local state precedence is `loading > error > empty/content`. A transaction failu
 - No raw local dp, px, or color values in component specs.
 - Validate selector, negative hero, destructive action, badges, disabled controls, and focus in both themes.
 
-## Known implementation gaps
+## Shipped implementation notes
 
-- Current Sandbox is already embedded in Home state, but Home preview/implementation must keep the segmented control as mode switch rather than creating a route.
-- Current rows place Promote/Remove actions inside each item; Build should preserve clear action grouping and confirmation semantics.
-- Current errors are surfaced through shared state; Design requires affected-content feedback rather than blanking all Sandbox content.
-- Current components contain local size values; Build migration should replace them with tokens and shared `BcMetricHero`/badge rules.
+- Sandbox remains Home mode; no route or bottom-navigation destination was added.
+- Promote, remove, snapshot delete, and mode exit use explicit confirmations or shared dismissal rules; promoted rows expose state instead of a misleading action.
+- Snapshot, projection, transaction, and mutation errors stay scoped; stale usable metrics/content remain visible where available.
+- Sandbox surfaces use shared `BcMetricHero`, `BcBadge`, `BcSheetShell`, semantic colors, and spacing tokens.

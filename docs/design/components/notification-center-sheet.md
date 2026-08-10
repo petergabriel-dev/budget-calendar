@@ -1,6 +1,6 @@
 # Notification Center Sheet
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Global notification overlay  
 **Layer:** Shared overlay
 

@@ -1,6 +1,6 @@
 # Sandbox Transaction Row
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Home page, Sandbox mode  
 **Layer:** Feature component
 

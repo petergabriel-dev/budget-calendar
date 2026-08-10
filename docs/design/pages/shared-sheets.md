@@ -1,6 +1,6 @@
 # Shared Sheets and Overlays
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Cross-page overlays  
 **Layer:** Shared interaction system
 
@@ -212,6 +212,6 @@ Add Expense / Add Income / Add Transfer
 - Borders, focus, disabled, warning, and success treatments use semantic tokens.
 - Validate all overlays in system light/dark themes. Do not add user theme preference in this pass.
 
-## Build handoff
+## Shipped implementation handoff
 
-Create shared `BcSheetShell`, `BcSheetHeader`, `BcSheetFooter`, `BcConfirmDialog`, and tokenized field/action treatments before refactoring feature sheets. Keep feature ViewModels responsible for domain state and callbacks; shared shell owns layout and interaction conventions.
+`BcSheetShell`, `BcSheetHeader`, `BcSheetFooter`, `BcConfirmDialog`, `BcMetricHero`, and tokenized field/action treatments are implemented under `core/designsystem/component`. Feature ViewModels retain domain state, validation, mutation lifecycle, and callbacks; shared primitives own layout and interaction conventions.

@@ -1,6 +1,6 @@
 # Calendar Selected-Day Transactions
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Calendar page  
 **Layer:** Feature composition
 

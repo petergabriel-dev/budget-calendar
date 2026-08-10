@@ -1,6 +1,6 @@
 # Calendar Month Grid
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Calendar page  
 **Layer:** Feature component
 

@@ -1,6 +1,6 @@
 # Notification Threshold Setting
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Me / Settings page  
 **Layer:** Feature component
 

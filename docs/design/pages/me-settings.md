@@ -1,6 +1,6 @@
 # Me / Settings Page
 
-**Status:** Proposed  
+**Status:** Implemented
 **Surface:** Me tab  
 **Layer:** Page composition
 
@@ -89,10 +89,10 @@ App shell bottom navigation remains outside page content.
 - Use `bgPrimary`, `bgSurface`, semantic text/error/success tokens, typography, spacing, radius, and focus tokens.
 - Success text must include `Threshold saved`, not color alone.
 - Input border/error treatment must remain clear in both themes.
-- No user theme preference in this pass; system-driven theme remains deferred to source implementation.
+- No user theme preference; `BudgetCalendarTheme` follows system light/dark appearance.
 
-## Known implementation gaps
+## Shipped implementation notes
 
-- Current screen uses a snackbar for load/save errors in surrounding flows; persistent settings failures should remain visible inside the card.
-- Current input label uses abbreviated `STS`; Build should decide whether to preserve exact copy or expand to `Safe to Spend` while maintaining product language.
-- Settings currently contains one preference only; keep page intentionally sparse until new requirements exist.
+- Load, validation, save, and retry failures remain adjacent to the threshold field; saved values stay editable after failure.
+- Rendered field label remains `STS Low Alert Threshold (%)`, matching product copy and accessibility semantics.
+- Settings intentionally contains one preference; notification list state remains owned by global `NotificationCenterSheet`.
