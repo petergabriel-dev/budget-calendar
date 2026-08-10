@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,13 +21,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
+import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.features.calendar.domain.model.CalendarDay
 
-internal const val CALENDAR_DAY_CELL_TINT_ALPHA = 0.2f
+internal const val CALENDAR_DAY_CELL_TINT_ALPHA = 0.35f
 
 @Composable
 fun CalendarDayCell(
@@ -36,12 +42,13 @@ fun CalendarDayCell(
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
+    val spacing = BudgetCalendarTheme.spacing
     val radius = BudgetCalendarTheme.radius
 
     val selectedBackground = colors.bgDark
-    val successTintBackground = colors.colorSuccess.copy(alpha = CALENDAR_DAY_CELL_TINT_ALPHA)
-    val errorTintBackground = colors.colorError.copy(alpha = CALENDAR_DAY_CELL_TINT_ALPHA)
-    val baseBackground = Color.Transparent
+    val successTintBackground = colors.colorSuccessBg.copy(alpha = CALENDAR_DAY_CELL_TINT_ALPHA)
+    val errorTintBackground = colors.colorErrorBg.copy(alpha = CALENDAR_DAY_CELL_TINT_ALPHA)
+    val baseBackground = colors.bgPrimary
     val cellShape = RoundedCornerShape(radius.lg)
 
     val background = resolveCalendarDayCellBackground(
@@ -54,25 +61,27 @@ fun CalendarDayCell(
         baseBackground = baseBackground,
     )
 
-    val contentColor = if (day.isSelected) {
-        colors.textInverted
-    } else {
-        colors.textSecondary
-    }
-
+    val contentColor = if (day.isSelected) colors.textInverted else colors.textPrimary
     val borderColor = resolveCalendarDayCellBorderColor(
         isToday = day.isToday,
-        todayBorder = colors.bgDark,
+        todayBorder = colors.focusRing,
     )
 
     Column(
         modifier = modifier
+            .fillMaxSize()
+            .defaultMinSize(minHeight = spacing.spacing12)
             .clip(cellShape)
-            .border(width = 1.5.dp, color = borderColor, shape = cellShape)
+            .border(width = spacing.spacing1 / 2, color = borderColor, shape = cellShape)
             .background(background)
             .clickable(onClick = onTap)
-            .alpha(if (day.isCurrentMonth) 1f else 0.4f)
-            .padding(BudgetCalendarTheme.spacing.spacing1),
+            .alpha(if (day.isCurrentMonth) 1f else 0.55f)
+            .semantics {
+                role = Role.Button
+                selected = day.isSelected
+                contentDescription = calendarDayContentDescription(day)
+            }
+            .padding(spacing.spacing1),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
@@ -87,18 +96,43 @@ fun CalendarDayCell(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 2.dp),
+                .padding(top = spacing.spacing1),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (day.dailySummary?.hasPending == true) {
-                StateDot(color = colors.colorWarning)
+                StateDot(color = colors.colorWarningText)
             }
             if (day.dailySummary?.hasOverdue == true) {
-                StateDot(color = colors.colorError)
+                StateDot(color = colors.colorErrorText)
             }
         }
     }
+}
+
+internal fun calendarDayContentDescription(day: CalendarDay): String = buildString {
+    append(day.date.toAccessibleCalendarDate())
+    if (day.isToday) append(", today")
+    if (day.isSelected) append(", selected")
+    day.dailySummary?.let { summary ->
+        append(", ${summary.transactionCount} ${if (summary.transactionCount == 1) "transaction" else "transactions"}")
+        when {
+            summary.netAmount > 0L -> append(", net income ${CurrencyUtils.formatCents(summary.netAmount)}")
+            summary.netAmount < 0L -> append(", net expense ${CurrencyUtils.formatCents(-summary.netAmount)}")
+        }
+        if (summary.hasPending) append(", pending")
+        if (summary.hasOverdue) append(", overdue")
+    }
+}
+
+private fun kotlinx.datetime.LocalDate.toAccessibleCalendarDate(): String {
+    val monthName = month.name
+        .lowercase()
+        .replaceFirstChar { character -> character.titlecase() }
+    val weekdayName = dayOfWeek.name
+        .lowercase()
+        .replaceFirstChar { character -> character.titlecase() }
+    return "$weekdayName, $monthName $day"
 }
 
 internal fun resolveCalendarDayCellBackground(
@@ -131,10 +165,11 @@ internal fun resolveCalendarDayCellBorderColor(
 
 @Composable
 private fun StateDot(color: Color) {
+    val spacing = BudgetCalendarTheme.spacing
     Box(
         modifier = Modifier
-            .padding(start = 2.dp)
-            .size(7.dp)
+            .padding(start = spacing.spacing1 / 2)
+            .size(spacing.spacing1 + spacing.spacing1 / 2)
             .clip(CircleShape)
             .background(color),
     )

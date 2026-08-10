@@ -3,40 +3,49 @@ package com.petergabriel.budgetcalendar.features.calendar.presentation.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.features.calendar.domain.model.CalendarDay
+import kotlinx.datetime.LocalDate
 
 private val WEEK_DAYS = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
 
 @Composable
 fun CalendarGrid(
     days: List<CalendarDay>,
-    onDateSelected: (kotlinx.datetime.LocalDate) -> Unit,
+    onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    val colors = BudgetCalendarTheme.colors
+    val typography = BudgetCalendarTheme.typography
+    val spacing = BudgetCalendarTheme.spacing
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            horizontalArrangement = Arrangement.spacedBy(spacing.spacing1),
         ) {
             WEEK_DAYS.forEach { dayLabel ->
                 Text(
                     text = dayLabel,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = typography.bodySmall,
+                    color = colors.textSecondary,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(vertical = 6.dp),
+                        .padding(vertical = spacing.spacing1),
                     textAlign = TextAlign.Center,
                 )
             }
@@ -47,7 +56,7 @@ fun CalendarGrid(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing.spacing1),
             ) {
                 week.forEach { day ->
                     CalendarDayCell(

@@ -47,6 +47,14 @@ class CalendarViewModelTest {
     }
 
     @Test
+    fun loadMonth_exposesStable42CellPlaceholderBeforeDataArrives() = runTest(dispatcher) {
+        val viewModel = calendarViewModel()
+
+        assertEquals(42, viewModel.uiState.value.calendarMonth?.days?.size)
+        assertTrue(viewModel.uiState.value.isMonthLoading)
+    }
+
+    @Test
     fun loadMonth_keepsSelectedDateOutsideDisplayedMonth() = runTest(dispatcher) {
         val viewModel = calendarViewModel()
         val selectedDate = LocalDate(2026, 8, 1)

@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
@@ -13,7 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -28,12 +28,13 @@ fun DayTransactionSectionHeader(
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
+    val spacing = BudgetCalendarTheme.spacing
     val label = formatDayTransactionHeaderLabel(selectedDate = selectedDate)
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 12.dp, bottom = 4.dp),
+            .padding(top = spacing.spacing3, bottom = spacing.spacing1),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -41,16 +42,17 @@ fun DayTransactionSectionHeader(
             text = label,
             style = typography.cardTitle,
             color = colors.textPrimary,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .semantics { heading() },
         )
 
         IconButton(
             onClick = onExpand,
-            modifier = Modifier.size(44.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = "View all transactions",
+                contentDescription = "View all transactions for ${formatFullDate(selectedDate)}",
                 tint = colors.textPrimary,
             )
         }
@@ -66,6 +68,16 @@ internal fun formatDayTransactionHeaderLabel(
     } else {
         "${selectedDate.toWeekdayLabel()} · ${selectedDate.toMonthDayLabel()}"
     }
+}
+
+private fun formatFullDate(date: LocalDate): String {
+    val month = date.month.name
+        .lowercase()
+        .replaceFirstChar { character -> character.titlecase() }
+    val weekday = date.dayOfWeek.name
+        .lowercase()
+        .replaceFirstChar { character -> character.titlecase() }
+    return "$weekday, $month ${date.day}"
 }
 
 private fun LocalDate.toMonthDayLabel(): String {

@@ -27,7 +27,7 @@ class CalendarViewModel(
     private val calculateMonthProjectionUseCase: CalculateMonthProjectionUseCase,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CalendarUiState(isLoading = true))
+    private val _uiState = MutableStateFlow(CalendarUiState())
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
 
     private var monthTransactionsJob: Job? = null
@@ -45,13 +45,25 @@ class CalendarViewModel(
         monthTransactionsJob?.cancel()
         selectedDayTransactionsJob?.cancel()
         monthProjectionJob?.cancel()
+        cachedTransactions = emptyList()
+
         val selectedDate = _uiState.value.selectedDate
+        val placeholderMonth = buildCalendarMonthUseCase(
+            yearMonth = yearMonth,
+            transactions = emptyList(),
+            selectedDate = selectedDate,
+        )
         _uiState.update { state ->
             state.copy(
                 currentMonth = yearMonth,
-                endOfMonthProjection = 0L,
-                isLoading = true,
-                error = null,
+                calendarMonth = placeholderMonth,
+                selectedDayTransactions = emptyList(),
+                isMonthLoading = true,
+                monthError = null,
+                isProjectionLoading = true,
+                projectionError = null,
+                isSelectedDayLoading = true,
+                selectedDayError = null,
             )
         }
 
@@ -60,8 +72,9 @@ class CalendarViewModel(
                 .catch { throwable ->
                     _uiState.update { state ->
                         state.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            isMonthLoading = false,
+                            monthError = throwable.message ?: "Unable to load month",
+                            isSelectedDayLoading = if (yearMonth.contains(state.selectedDate)) false else state.isSelectedDayLoading,
                         )
                     }
                 }
@@ -79,7 +92,12 @@ class CalendarViewModel(
             selectedDayTransactionsJob = viewModelScope.launch {
                 getMonthTransactionsUseCase(selectedDate.toYearMonth())
                     .catch { throwable ->
-                        _uiState.update { state -> state.copy(error = throwable.message) }
+                        _uiState.update { state ->
+                            state.copy(
+                                isSelectedDayLoading = false,
+                                selectedDayError = throwable.message ?: "Unable to load selected day",
+                            )
+                        }
                     }
                     .collect { selectedDayTransactions ->
                         val calendarMonth = buildCalendarMonthUseCase(
@@ -89,41 +107,46 @@ class CalendarViewModel(
                         )
                         _uiState.update { state ->
                             state.copy(
-                                selectedDayTransactions = calendarMonth
-                                    .transactionsByDate[selectedDate]
-                                    .orEmpty(),
+                                selectedDayTransactions = calendarMonth.transactionsByDate[selectedDate].orEmpty(),
+                                isSelectedDayLoading = false,
+                                selectedDayError = null,
                             )
                         }
                     }
             }
         }
 
-        monthProjectionJob = viewModelScope.launch {
-            calculateMonthProjectionUseCase(yearMonth)
-                .catch { throwable ->
-                    _uiState.update { state ->
-                        state.copy(error = throwable.message)
-                    }
-                }
-                .collect { projection ->
-                    _uiState.update { state ->
-                        state.copy(endOfMonthProjection = projection)
-                    }
-                }
+        observeProjection(yearMonth)
+    }
+
+    fun retryProjection() {
+        _uiState.update { state ->
+            state.copy(
+                isProjectionLoading = true,
+                projectionError = null,
+            )
         }
+        observeProjection(_uiState.value.currentMonth)
     }
 
     fun selectDate(date: LocalDate) {
         val currentMonth = _uiState.value.currentMonth
+        selectedDayTransactionsJob?.cancel()
+        selectedDayTransactionsJob = null
+        _uiState.update { state ->
+            state.copy(
+                selectedDate = date,
+                selectedDayTransactions = emptyList(),
+                isSelectedDayLoading = true,
+                selectedDayError = null,
+            )
+        }
+
         if (!currentMonth.contains(date)) {
-            _uiState.update { state -> state.copy(selectedDate = date) }
             loadMonth(date.toYearMonth())
             return
         }
 
-        selectedDayTransactionsJob?.cancel()
-        selectedDayTransactionsJob = null
-        _uiState.update { state -> state.copy(selectedDate = date) }
         publishMonthState(
             yearMonth = currentMonth,
             selectedDate = date,
@@ -152,13 +175,35 @@ class CalendarViewModel(
         accountNamesJob?.cancel()
         accountNamesJob = viewModelScope.launch {
             getAccountsUseCase()
-                .catch { throwable ->
-                    _uiState.update { state -> state.copy(error = throwable.message) }
-                }
+                .catch { }
                 .collect { accounts ->
                     _uiState.update { state ->
                         state.copy(
                             accountNamesById = accounts.associate { account -> account.id to account.name },
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun observeProjection(yearMonth: YearMonth) {
+        monthProjectionJob?.cancel()
+        monthProjectionJob = viewModelScope.launch {
+            calculateMonthProjectionUseCase(yearMonth)
+                .catch { throwable ->
+                    _uiState.update { state ->
+                        state.copy(
+                            isProjectionLoading = false,
+                            projectionError = throwable.message ?: "Unable to load projection",
+                        )
+                    }
+                }
+                .collect { projection ->
+                    _uiState.update { state ->
+                        state.copy(
+                            endOfMonthProjection = projection,
+                            isProjectionLoading = false,
+                            projectionError = null,
                         )
                     }
                 }
@@ -177,21 +222,21 @@ class CalendarViewModel(
         )
 
         _uiState.update { state ->
+            val selectedDateIsInMonth = yearMonth.contains(selectedDate)
             state.copy(
                 currentMonth = yearMonth,
                 selectedDate = selectedDate,
                 calendarMonth = calendarMonth,
-                isLoading = false,
-                error = null,
-            ).let { updatedState ->
-                if (yearMonth.contains(selectedDate)) {
-                    updatedState.copy(
-                        selectedDayTransactions = calendarMonth.transactionsByDate[selectedDate].orEmpty(),
-                    )
+                isMonthLoading = false,
+                monthError = null,
+                selectedDayTransactions = if (selectedDateIsInMonth) {
+                    calendarMonth.transactionsByDate[selectedDate].orEmpty()
                 } else {
-                    updatedState
-                }
-            }
+                    state.selectedDayTransactions
+                },
+                isSelectedDayLoading = if (selectedDateIsInMonth) false else state.isSelectedDayLoading,
+                selectedDayError = if (selectedDateIsInMonth) null else state.selectedDayError,
+            )
         }
     }
 }

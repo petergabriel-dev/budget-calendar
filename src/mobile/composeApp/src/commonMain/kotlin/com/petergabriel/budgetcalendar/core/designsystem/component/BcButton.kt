@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BcColors
 
@@ -42,6 +44,7 @@ fun BcButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    contentDescription: String? = null,
     variant: ButtonVariant = ButtonVariant.Primary,
     enabled: Boolean = true,
     leadingIcon: ImageVector? = null,
@@ -65,7 +68,12 @@ fun BcButton(
         modifier = modifier
             .height(spacing.spacing12)
             .defaultMinSize(minWidth = spacing.spacing12 * 2)
-            .onFocusChanged { isFocused = it.isFocused },
+            .onFocusChanged { isFocused = it.isFocused }
+            .then(
+                contentDescription?.let { description ->
+                    Modifier.semantics { this.contentDescription = description }
+                } ?: Modifier,
+            ),
         shape = shape,
         color = token.containerColor.copy(alpha = alpha),
         contentColor = token.contentColor.copy(alpha = alpha),

@@ -3,18 +3,12 @@ package com.petergabriel.budgetcalendar.features.calendar.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,11 +18,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcHeader
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcNotificationBell
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
+import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.CalendarGrid
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.DayTransactionSectionHeader
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.DayTransactionList
@@ -40,17 +39,20 @@ import com.petergabriel.budgetcalendar.features.transactions.presentation.Transa
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormViewModel
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionDetailsSheet
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionFormSheet
+import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionItemDensity
 import kotlinx.coroutines.flow.collect
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import org.koin.compose.viewmodel.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     modifier: Modifier = Modifier,
     unreadCount: Int,
     onBellClick: () -> Unit,
+    pendingSelectedDate: LocalDate? = null,
+    onPendingSelectedDateConsumed: () -> Unit = {},
     viewModel: CalendarViewModel = koinViewModel(),
     transactionFormViewModel: TransactionFormViewModel = koinViewModel(),
 ) {
@@ -67,6 +69,13 @@ fun CalendarScreen(
     var selectedTransaction by remember { mutableStateOf<Transaction?>(null) }
     var editingTransaction by remember { mutableStateOf<Transaction?>(null) }
 
+    LaunchedEffect(pendingSelectedDate) {
+        pendingSelectedDate?.let { date ->
+            viewModel.selectDate(date)
+            onPendingSelectedDateConsumed()
+        }
+    }
+
     LaunchedEffect(transactionFormViewModel) {
         transactionFormViewModel.effects.collect { effect ->
             if (effect == TransactionFormEffect.MutationSucceeded) {
@@ -78,7 +87,10 @@ fun CalendarScreen(
     }
 
     val selectedDateMillis = remember(uiState.selectedDate) {
-        uiState.selectedDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val localDayStart = uiState.selectedDate
+            .atStartOfDayIn(TimeZone.currentSystemDefault())
+            .toEpochMilliseconds()
+        DateUtils.toUtcDayStartMillis(localDayStart)
     }
 
     val openTransactionDetails: (Transaction) -> Unit = { transaction ->
@@ -144,19 +156,28 @@ fun CalendarScreen(
                 onNextMonth = { viewModel.navigateMonth(1) },
             )
 
-            Spacer(modifier = Modifier.height(spacing.spacing2))
-
             EndOfMonthProjectionPill(
                 projectionAmount = uiState.endOfMonthProjection,
+                isLoading = uiState.isProjectionLoading,
+                errorMessage = uiState.projectionError,
+                onRetry = viewModel::retryProjection,
+                modifier = Modifier.padding(top = spacing.spacing2),
             )
-
-            Spacer(modifier = Modifier.height(spacing.spacing2))
 
             CalendarGrid(
                 days = uiState.calendarMonth?.days.orEmpty(),
                 onDateSelected = viewModel::selectDate,
                 modifier = Modifier.weight(1f),
             )
+
+            uiState.monthError?.let { errorMessage ->
+                CalendarInlineError(
+                    message = errorMessage,
+                    retryContentDescription = "Retry loading ${uiState.currentMonth} calendar",
+                    onRetry = { viewModel.loadMonth(uiState.currentMonth) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             DayTransactionSectionHeader(
                 selectedDate = uiState.selectedDate,
@@ -173,65 +194,39 @@ fun CalendarScreen(
             transactions = uiState.selectedDayTransactions,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 96.dp, max = 112.dp),
+                .defaultMinSize(minHeight = spacing.spacing12),
             accountNameProvider = { accountId ->
                 uiState.accountNamesById[accountId] ?: "Account #$accountId"
             },
             maxItems = 1,
+            density = TransactionItemDensity.Compact,
+            isLoading = uiState.isSelectedDayLoading,
+            errorMessage = uiState.selectedDayError,
+            onRetry = { viewModel.selectDate(uiState.selectedDate) },
             onTransactionTap = openTransactionDetails,
         )
-
-        if (uiState.isLoading) {
-            LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = spacing.spacing3),
-            )
-        }
-
-        if (uiState.error != null) {
-            Text(
-                text = uiState.error ?: "Unknown error",
-                style = typography.bodySmall,
-                color = colors.colorError,
-                modifier = Modifier.padding(top = spacing.spacing3),
-            )
-        }
     }
 
     if (showExpandSheet) {
-        val expandSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
+        BcSheetShell(
+            title = formatDayTransactionHeaderLabel(selectedDate = uiState.selectedDate),
             onDismissRequest = { showExpandSheet = false },
-            sheetState = expandSheetState,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-                    .padding(horizontal = spacing.spacing4, vertical = spacing.spacing2),
-            ) {
-                Text(
-                    text = formatDayTransactionHeaderLabel(selectedDate = uiState.selectedDate),
-                    style = typography.cardTitle,
-                    color = colors.textPrimary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = spacing.spacing2),
-                )
-
+            bodyScrollable = false,
+            body = {
                 DayTransactionList(
-                    transactions = uiState.selectedDayTransactions,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    accountNameProvider = { accountId ->
-                        uiState.accountNamesById[accountId] ?: "Account #$accountId"
-                    },
+                transactions = uiState.selectedDayTransactions,
+                modifier = Modifier.weight(1f),
+                accountNameProvider = { accountId ->
+                    uiState.accountNamesById[accountId] ?: "Account #$accountId"
+                },
+                density = TransactionItemDensity.Compact,
+                isLoading = uiState.isSelectedDayLoading,
+                errorMessage = uiState.selectedDayError,
+                onRetry = { viewModel.selectDate(uiState.selectedDate) },
                     onTransactionTap = openTransactionDetails,
                 )
-            }
-        }
+            },
+        )
     }
 
     TransactionFormSheet(
@@ -268,6 +263,35 @@ fun CalendarScreen(
             onDelete = { transactionToDelete ->
                 transactionFormViewModel.delete(transactionToDelete.id)
             },
+        )
+    }
+}
+
+@Composable
+private fun CalendarInlineError(
+    message: String,
+    retryContentDescription: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = BudgetCalendarTheme.colors
+    val spacing = BudgetCalendarTheme.spacing
+    val typography = BudgetCalendarTheme.typography
+
+    Column(
+        modifier = modifier.padding(top = spacing.spacing2),
+    ) {
+        Text(
+            text = message,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            style = typography.bodySmall,
+            color = colors.colorErrorText,
+        )
+        BcButton(
+            text = "Retry",
+            onClick = onRetry,
+            contentDescription = retryContentDescription,
+            variant = com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant.Outline,
         )
     }
 }

@@ -1,6 +1,9 @@
 package com.petergabriel.budgetcalendar.features.calendar.presentation.components
 
 import androidx.compose.ui.graphics.Color
+import com.petergabriel.budgetcalendar.features.calendar.domain.model.CalendarDay
+import com.petergabriel.budgetcalendar.features.calendar.domain.model.DaySummary
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -11,6 +14,34 @@ class CalendarDayCellTest {
     private val errorTint = Color(0x33EF4444)
     private val todayBorder = Color(0xFF000000)
     private val transparent = Color.Transparent
+
+    @Test
+    fun contentDescription_includesDateSelectionSummaryAndStatuses() {
+        val description = calendarDayContentDescription(
+            CalendarDay(
+                date = LocalDate(2026, 8, 18),
+                isCurrentMonth = true,
+                isToday = true,
+                isSelected = true,
+                dailySummary = DaySummary(
+                    totalIncome = 10_000L,
+                    totalExpenses = 2_000L,
+                    netAmount = 8_000L,
+                    transactionCount = 2,
+                    hasPending = true,
+                    hasOverdue = true,
+                    hasConfirmed = true,
+                ),
+            ),
+        )
+
+        kotlin.test.assertTrue(description.contains("Tuesday, August 18"))
+        kotlin.test.assertTrue(description.contains("today"))
+        kotlin.test.assertTrue(description.contains("selected"))
+        kotlin.test.assertTrue(description.contains("2 transactions"))
+        kotlin.test.assertTrue(description.contains("pending"))
+        kotlin.test.assertTrue(description.contains("overdue"))
+    }
 
     @Test
     fun resolveColors_nonTodayPositiveNet_usesSuccessTintBackgroundAndTransparentBorder() {

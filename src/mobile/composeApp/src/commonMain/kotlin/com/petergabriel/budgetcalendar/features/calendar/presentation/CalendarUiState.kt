@@ -16,8 +16,12 @@ data class CalendarUiState(
     val selectedDayTransactions: List<Transaction> = emptyList(),
     val endOfMonthProjection: Long = 0L,
     val accountNamesById: Map<Long, String> = emptyMap(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
+    val isMonthLoading: Boolean = false,
+    val monthError: String? = null,
+    val isProjectionLoading: Boolean = false,
+    val projectionError: String? = null,
+    val isSelectedDayLoading: Boolean = false,
+    val selectedDayError: String? = null,
 )
 
 private fun nowLocalDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate {
