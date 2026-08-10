@@ -44,9 +44,11 @@ import com.petergabriel.budgetcalendar.features.notifications.presentation.Notif
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.GetOverdueTransactionsUseCase
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.MarkOverdueTransactionsUseCase
+import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormEffect
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormViewModel
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionFormSheet
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -85,6 +87,14 @@ fun App() {
         val unreadCount by notificationCenterViewModel.unreadCount.collectAsStateWithLifecycle(initialValue = 0)
         val lifecycleOwner = LocalLifecycleOwner.current
         val coroutineScope = rememberCoroutineScope()
+
+        LaunchedEffect(transactionFormViewModel) {
+            transactionFormViewModel.effects.collect { effect ->
+                if (effect == TransactionFormEffect.MutationSucceeded) {
+                    showAddForm = false
+                }
+            }
+        }
 
         LaunchedEffect(Unit) {
             withContext(Dispatchers.Default) {
@@ -195,7 +205,6 @@ fun App() {
             onSetType = transactionFormViewModel::setType,
             onSave = { request ->
                 transactionFormViewModel.submit(request)
-                showAddForm = false
             },
             onCancel = {
                 transactionFormViewModel.clearError()

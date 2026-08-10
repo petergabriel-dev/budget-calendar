@@ -17,6 +17,8 @@ class FakeTransactionRepository : ITransactionRepository {
     private val transactions = mutableListOf<Transaction>()
     private val transactionsFlow = MutableStateFlow<List<Transaction>>(emptyList())
     private var nextId = 1L
+    var createFailure: Throwable? = null
+    var deleteFailure: Throwable? = null
     private val _transactionChangedTrigger = MutableSharedFlow<Unit>(replay = 1)
     override val transactionChangedTrigger: SharedFlow<Unit> = _transactionChangedTrigger.asSharedFlow()
 
@@ -108,6 +110,7 @@ class FakeTransactionRepository : ITransactionRepository {
     }
 
     override suspend fun createTransaction(request: CreateTransactionRequest): Transaction {
+        createFailure?.let { failure -> throw failure }
         val now = DateUtils.nowMillis()
         val transaction = Transaction(
             id = nextId++,
@@ -163,6 +166,7 @@ class FakeTransactionRepository : ITransactionRepository {
     }
 
     override suspend fun deleteTransaction(id: Long) {
+        deleteFailure?.let { failure -> throw failure }
         transactions.removeAll { transaction -> transaction.id == id }
         emitTransactions()
         _transactionChangedTrigger.emit(Unit)

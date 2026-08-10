@@ -35,6 +35,8 @@ fun BcSheetShell(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     closeContentDescription: String = "Close",
+    bodyScrollable: Boolean = true,
+    headerContent: (@Composable RowScope.() -> Unit)? = null,
     body: @Composable ColumnScope.() -> Unit,
     footer: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
@@ -43,6 +45,8 @@ fun BcSheetShell(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         closeContentDescription = closeContentDescription,
+        bodyScrollable = bodyScrollable,
+        headerContent = headerContent,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         body = body,
         footer = footer,
@@ -56,6 +60,8 @@ private fun BcSheetShellContent(
     onDismissRequest: () -> Unit,
     modifier: Modifier,
     closeContentDescription: String,
+    bodyScrollable: Boolean,
+    headerContent: (@Composable RowScope.() -> Unit)?,
     sheetState: SheetState,
     body: @Composable ColumnScope.() -> Unit,
     footer: (@Composable ColumnScope.() -> Unit)?,
@@ -84,13 +90,20 @@ private fun BcSheetShellContent(
                 title = title,
                 onDismiss = onDismissRequest,
                 closeContentDescription = closeContentDescription,
+                actionContent = headerContent,
             )
 
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
                     .fillMaxWidth()
+                    .then(
+                        if (bodyScrollable) {
+                            Modifier.verticalScroll(rememberScrollState())
+                        } else {
+                            Modifier
+                        },
+                    )
                     .padding(horizontal = BudgetCalendarTheme.spacing.spacing6),
                 verticalArrangement = Arrangement.spacedBy(BudgetCalendarTheme.spacing.spacing4),
                 content = body,
@@ -117,6 +130,7 @@ fun BcSheetHeader(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     closeContentDescription: String = "Close",
+    actionContent: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
@@ -141,6 +155,7 @@ fun BcSheetHeader(
             style = typography.section,
             color = colors.textPrimary,
         )
+        actionContent?.invoke(this)
         IconButton(
             modifier = Modifier.size(spacing.spacing12),
             onClick = onDismiss,

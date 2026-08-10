@@ -4,26 +4,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,10 +24,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.petergabriel.budgetcalendar.core.designsystem.component.AccountPickerModal
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcConfirmDialog
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSegmentedControl
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcCheckboxRow
@@ -80,6 +70,7 @@ fun TransactionFormSheet(
 
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
+    val spacing = BudgetCalendarTheme.spacing
     val isEditMode = initialData != null
     val stateKey = initialData?.id ?: "new"
     val initialType = when (initialData?.type ?: uiState.selectedType) {
@@ -105,6 +96,7 @@ fun TransactionFormSheet(
     var destinationAccountId by remember(stateKey) { mutableStateOf(initialData?.destinationAccountId) }
     var showDestinationPicker by remember(stateKey) { mutableStateOf(false) }
     var showDiscardDialog by remember(stateKey) { mutableStateOf(false) }
+    var showDeleteConfirmation by remember(stateKey) { mutableStateOf(false) }
 
     LaunchedEffect(stateKey) {
         onSetType(initialType)
@@ -188,57 +180,21 @@ fun TransactionFormSheet(
         selectedAccount != null &&
         parsedAmount > selectedAccount.balance
     val ctaLabel = if (initialData == null) "Add ${if (isSelectedAccountCreditCard) "Charge" else effectiveSelectedType.displayName}" else "Save"
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(
+    BcSheetShell(
+        title = titleOverride ?: if (initialData == null) "New Transaction" else "Edit Transaction",
         onDismissRequest = {
-            if (!disableDismissRequest) {
+            if (!disableDismissRequest && !uiState.isSubmitting) {
                 handleClose()
             }
         },
-        sheetState = sheetState,
-        dragHandle = {},
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(),
-        ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = titleOverride ?: if (initialData == null) "New Transaction" else "Edit Transaction",
-                        style = typography.section,
-                        color = colors.textPrimary,
-                    )
+        closeContentDescription = "Close transaction form",
+        body = {
+            if (!uiState.error.isNullOrBlank()) {
+                InlineError(uiState.error)
+            }
 
-                    IconButton(
-                        onClick = { handleClose() },
-                        enabled = !uiState.isSubmitting,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = "Close",
-                            tint = colors.textPrimary,
-                        )
-                    }
-                }
-
-                if (!uiState.error.isNullOrBlank()) {
-                    InlineError(uiState.error)
-                }
-
-                if (!isSelectedAccountCreditCard) {
+            if (!isSelectedAccountCreditCard) {
                     BcSegmentedControl(
                         options = listOf("Expense", "Income", "Transfer"),
                         selectedIndex = when (selectedType) {
@@ -288,7 +244,7 @@ fun TransactionFormSheet(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.spacing4),
                     verticalAlignment = Alignment.Top,
                 ) {
                     BcInputGroup(
@@ -344,7 +300,7 @@ fun TransactionFormSheet(
                     val filteredAccounts = uiState.availableAccounts.filter { it.id != selectedAccountId }
                     val destinationAccount = filteredAccounts.find { it.id == destinationAccountId }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(spacing.spacing2))
 
                     BcInputGroup(
                         label = "Destination Account",
@@ -408,11 +364,11 @@ fun TransactionFormSheet(
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(spacing.spacing4),
                 ) {
                     Text(
                         text = "STATUS",
-                        style = typography.caption.copy(letterSpacing = 1.sp),
+                        style = typography.caption,
                         color = colors.textSecondary,
                     )
 
@@ -440,7 +396,7 @@ fun TransactionFormSheet(
                 if (showInsufficientFunds) {
                     Text(
                         text = "Insufficient funds warning: this expense exceeds the selected account balance.",
-                        color = colors.colorWarning,
+                        color = colors.colorWarningText,
                         style = typography.bodySmall,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -474,7 +430,7 @@ fun TransactionFormSheet(
 
                     Text(
                         text = "Reserves ${CurrencyUtils.formatCents(cardChargeImpact.reserveDelta)} from Safe to Spend.",
-                        color = colors.colorWarning,
+                        color = colors.colorWarningText,
                         style = typography.bodySmall,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -482,19 +438,18 @@ fun TransactionFormSheet(
                     if (exceedsCredit) {
                         Text(
                             text = overLimitMessage,
-                            color = colors.colorError,
+                            color = colors.colorErrorText,
                             style = typography.bodySmall,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
-            }
 
+        },
+        footer = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(spacing.spacing2),
             ) {
                 BcButton(
                     text = ctaLabel,
@@ -551,41 +506,42 @@ fun TransactionFormSheet(
                 )
 
                 if (initialData != null && onDelete != null) {
-                    TextButton(
-                        onClick = { onDelete(initialData) },
+                    BcButton(
+                        text = "Delete",
+                        onClick = { showDeleteConfirmation = true },
                         modifier = Modifier.fillMaxWidth(),
+                        variant = ButtonVariant.Destructive,
                         enabled = !uiState.isSubmitting,
-                    ) {
-                        Text(
-                            text = "Delete",
-                            color = colors.colorError,
-                        )
-                    }
+                    )
                 }
             }
-        }
-    }
+        },
+    )
 
     if (showDiscardDialog) {
-        AlertDialog(
+        BcConfirmDialog(
+            title = "Discard transaction?",
+            message = "Your changes will be lost.",
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text("Discard transaction?") },
-            text = { Text("Your changes will be lost.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDiscardDialog = false
-                        onCancel()
-                    },
-                ) {
-                    Text("Discard")
-                }
+            onConfirm = {
+                showDiscardDialog = false
+                onCancel()
             },
-            dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) {
-                    Text("Keep editing")
-                }
+            confirmLabel = "Discard",
+            dismissLabel = "Keep editing",
+        )
+    }
+
+    if (showDeleteConfirmation && initialData != null && onDelete != null) {
+        BcConfirmDialog(
+            title = "Delete transaction?",
+            message = "This action cannot be undone.",
+            onDismissRequest = { showDeleteConfirmation = false },
+            onConfirm = {
+                showDeleteConfirmation = false
+                onDelete(initialData)
             },
+            confirmLabel = "Delete",
         )
     }
 }
@@ -614,12 +570,13 @@ private fun InlineError(message: String?) {
 
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
+    val spacing = BudgetCalendarTheme.spacing
 
     Text(
         text = message,
-        color = colors.colorError,
+        color = colors.colorErrorText,
         style = typography.bodySmall,
-        modifier = Modifier.padding(start = 4.dp),
+        modifier = Modifier.padding(start = spacing.spacing1),
     )
 }
 

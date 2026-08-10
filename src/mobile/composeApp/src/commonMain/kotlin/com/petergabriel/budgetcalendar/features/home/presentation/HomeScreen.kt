@@ -53,9 +53,11 @@ import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
+import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormEffect
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormViewModel
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionViewModel
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionFormSheet
+import kotlinx.coroutines.flow.collect
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -113,6 +115,14 @@ fun HomeScreen(
     fun closeTransactionForm() {
         showAddForm = false
         editingTransaction = null
+    }
+
+    LaunchedEffect(transactionFormViewModel) {
+        transactionFormViewModel.effects.collect { effect ->
+            if (effect == TransactionFormEffect.MutationSucceeded) {
+                closeTransactionForm()
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -344,7 +354,6 @@ fun HomeScreen(
             } else {
                 transactionFormViewModel.replace(existingTransactionId = editing.id, request = request)
             }
-            closeTransactionForm()
         },
         onCancel = {
             transactionFormViewModel.clearError()
@@ -352,7 +361,6 @@ fun HomeScreen(
         },
         onDelete = { transaction ->
             transactionFormViewModel.delete(transaction.id)
-            closeTransactionForm()
         },
     )
 

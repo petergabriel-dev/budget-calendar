@@ -11,13 +11,21 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Update
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.CreateTransactionUseCase
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.DeleteTransactionUseCase
 import com.petergabriel.budgetcalendar.features.transactions.domain.usecase.UpdateTransactionStatusUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+sealed interface TransactionFormEffect {
+    object MutationSucceeded : TransactionFormEffect
+}
 
 class TransactionFormViewModel(
     private val createTransactionUseCase: CreateTransactionUseCase,
@@ -29,6 +37,9 @@ class TransactionFormViewModel(
 
     private val _uiState = MutableStateFlow(TransactionFormUiState(isLoading = true))
     val uiState: StateFlow<TransactionFormUiState> = _uiState.asStateFlow()
+
+    private val _effects = MutableSharedFlow<TransactionFormEffect>(extraBufferCapacity = 1)
+    val effects: SharedFlow<TransactionFormEffect> = _effects.asSharedFlow()
 
     private var accountsJob: Job? = null
     private var creditCardSummariesJob: Job? = null
@@ -48,6 +59,8 @@ class TransactionFormViewModel(
     }
 
     fun submit(request: CreateTransactionRequest) {
+        if (_uiState.value.isSubmitting) return
+
         val errors = validateRequest(request)
         if (errors.isNotEmpty()) {
             _uiState.update { it.copy(validationErrors = errors) }
@@ -63,9 +76,10 @@ class TransactionFormViewModel(
                 )
             }
 
-            createTransactionUseCase(request)
+            performMutation { createTransactionUseCase(request) }
                 .onSuccess {
                     _uiState.update { it.copy(isSubmitting = false, error = null, validationErrors = emptyMap()) }
+                    _effects.tryEmit(TransactionFormEffect.MutationSucceeded)
                 }
                 .onFailure { throwable ->
                     _uiState.update {
@@ -80,6 +94,8 @@ class TransactionFormViewModel(
     }
 
     fun replace(existingTransactionId: Long, request: CreateTransactionRequest) {
+        if (_uiState.value.isSubmitting) return
+
         val errors = validateRequest(request)
         if (errors.isNotEmpty()) {
             _uiState.update { it.copy(validationErrors = errors) }
@@ -95,9 +111,9 @@ class TransactionFormViewModel(
                 )
             }
 
-            createTransactionUseCase(request)
+            performMutation { createTransactionUseCase(request) }
                 .onSuccess {
-                    deleteTransactionUseCase(existingTransactionId)
+                    performMutation { deleteTransactionUseCase(existingTransactionId) }
                         .onSuccess {
                             _uiState.update {
                                 it.copy(
@@ -106,6 +122,7 @@ class TransactionFormViewModel(
                                     validationErrors = emptyMap(),
                                 )
                             }
+                            _effects.tryEmit(TransactionFormEffect.MutationSucceeded)
                         }
                         .onFailure { throwable ->
                             _uiState.update {
@@ -130,20 +147,29 @@ class TransactionFormViewModel(
 
     fun updateStatus(id: Long, status: TransactionStatus) {
         viewModelScope.launch {
-            updateTransactionStatusUseCase(
-                id = id,
-                request = UpdateTransactionStatusRequest(status = status),
-            ).onFailure { throwable ->
+            performMutation {
+                updateTransactionStatusUseCase(
+                    id = id,
+                    request = UpdateTransactionStatusRequest(status = status),
+                )
+            }.onFailure { throwable ->
                 _uiState.update { it.copy(error = throwable.message) }
             }
         }
     }
 
     fun delete(id: Long) {
+        if (_uiState.value.isSubmitting) return
+
         viewModelScope.launch {
-            deleteTransactionUseCase(id)
+            _uiState.update { it.copy(isSubmitting = true, error = null) }
+            performMutation { deleteTransactionUseCase(id) }
+                .onSuccess {
+                    _uiState.update { it.copy(isSubmitting = false, error = null) }
+                    _effects.tryEmit(TransactionFormEffect.MutationSucceeded)
+                }
                 .onFailure { throwable ->
-                    _uiState.update { it.copy(error = throwable.message) }
+                    _uiState.update { it.copy(isSubmitting = false, error = throwable.message) }
                 }
         }
     }
@@ -188,6 +214,17 @@ class TransactionFormViewModel(
                 .collect { summaries ->
                     _uiState.update { it.copy(creditCardSummaries = summaries) }
                 }
+        }
+    }
+
+    private suspend fun <T> performMutation(block: suspend () -> Result<T>): Result<T> {
+        return try {
+            block()
+        } catch (throwable: Throwable) {
+            if (throwable is CancellationException) {
+                throw throwable
+            }
+            Result.failure(throwable)
         }
     }
 

@@ -16,6 +16,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,9 +36,11 @@ import com.petergabriel.budgetcalendar.features.calendar.presentation.components
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.MonthNavigationRow
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.formatDayTransactionHeaderLabel
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
+import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormEffect
 import com.petergabriel.budgetcalendar.features.transactions.presentation.TransactionFormViewModel
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionDetailsSheet
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionFormSheet
+import kotlinx.coroutines.flow.collect
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import org.koin.compose.viewmodel.koinViewModel
@@ -63,6 +66,16 @@ fun CalendarScreen(
     var showExpandSheet by remember { mutableStateOf(false) }
     var selectedTransaction by remember { mutableStateOf<Transaction?>(null) }
     var editingTransaction by remember { mutableStateOf<Transaction?>(null) }
+
+    LaunchedEffect(transactionFormViewModel) {
+        transactionFormViewModel.effects.collect { effect ->
+            if (effect == TransactionFormEffect.MutationSucceeded) {
+                showTransactionForm = false
+                editingTransaction = null
+                selectedTransaction = null
+            }
+        }
+    }
 
     val selectedDateMillis = remember(uiState.selectedDate) {
         uiState.selectedDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
@@ -234,8 +247,6 @@ fun CalendarScreen(
             } else {
                 transactionFormViewModel.replace(existingTransactionId = editing.id, request = request)
             }
-            showTransactionForm = false
-            editingTransaction = null
         },
         onCancel = {
             transactionFormViewModel.clearError()
@@ -256,7 +267,6 @@ fun CalendarScreen(
             onEdit = openTransactionForm,
             onDelete = { transactionToDelete ->
                 transactionFormViewModel.delete(transactionToDelete.id)
-                selectedTransaction = null
             },
         )
     }

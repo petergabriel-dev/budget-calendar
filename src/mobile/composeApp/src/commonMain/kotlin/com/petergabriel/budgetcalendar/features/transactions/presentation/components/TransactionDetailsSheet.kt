@@ -1,35 +1,25 @@
 package com.petergabriel.budgetcalendar.features.transactions.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcConfirmDialog
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transaction
@@ -38,7 +28,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionDetailsSheet(
     isVisible: Boolean,
@@ -56,82 +45,54 @@ fun TransactionDetailsSheet(
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
     val spacing = BudgetCalendarTheme.spacing
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var actionsExpanded by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
-    ModalBottomSheet(
+    BcSheetShell(
+        title = "Transaction Details",
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        dragHandle = {},
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(),
-        ) {
+        closeContentDescription = "Close transaction details",
+        headerContent = {
+            Box {
+                IconButton(
+                    onClick = { actionsExpanded = true },
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.MoreVert,
+                        contentDescription = "Transaction actions",
+                        tint = colors.textPrimary,
+                    )
+                }
+                DropdownMenu(
+                    expanded = actionsExpanded,
+                    onDismissRequest = { actionsExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        onClick = {
+                            actionsExpanded = false
+                            onEdit(transaction)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete", color = colors.colorErrorText) },
+                        onClick = {
+                            actionsExpanded = false
+                            showDeleteConfirmation = true
+                        },
+                    )
+                }
+            }
+        },
+        body = {
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(spacing.spacing4),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "Transaction Details",
-                        style = typography.section,
-                        color = colors.textPrimary,
-                    )
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onDismiss) {
-                            Icon(
-                                imageVector = Icons.Outlined.Close,
-                                contentDescription = "Close transaction details",
-                                tint = colors.textPrimary,
-                            )
-                        }
-
-                        Column(horizontalAlignment = Alignment.End) {
-                            IconButton(onClick = { actionsExpanded = true }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.MoreVert,
-                                    contentDescription = "Transaction actions",
-                                    tint = colors.textPrimary,
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = actionsExpanded,
-                                onDismissRequest = { actionsExpanded = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Edit") },
-                                    onClick = {
-                                        actionsExpanded = false
-                                        onEdit(transaction)
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Delete", color = colors.colorError) },
-                                    onClick = {
-                                        actionsExpanded = false
-                                        showDeleteConfirmation = true
-                                    },
-                                )
-                            }
-                        }
-                    }
-                }
-
                 Column(verticalArrangement = Arrangement.spacedBy(spacing.spacing1)) {
                     Text(
                         text = "AMOUNT",
-                        style = typography.caption.copy(letterSpacing = 1.sp),
+                        style = typography.caption.copy(letterSpacing = typography.caption.letterSpacing),
                         color = colors.textSecondary,
                     )
                     Text(
@@ -174,32 +135,19 @@ fun TransactionDetailsSheet(
                     )
                 }
             }
-        }
-    }
+        },
+    )
 
     if (showDeleteConfirmation) {
-        AlertDialog(
+        BcConfirmDialog(
+            title = "Delete transaction?",
+            message = "This action cannot be undone.",
             onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Delete transaction?") },
-            text = { Text("This action cannot be undone.") },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text("Cancel")
-                }
+            onConfirm = {
+                showDeleteConfirmation = false
+                onDelete(transaction)
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteConfirmation = false
-                        onDelete(transaction)
-                    },
-                ) {
-                    Text(
-                        text = "Delete",
-                        color = colors.colorError,
-                    )
-                }
-            },
+            confirmLabel = "Delete",
         )
     }
 }
@@ -211,8 +159,9 @@ private fun TransactionDetailRow(
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
+    val spacing = BudgetCalendarTheme.spacing
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.spacing1)) {
         Text(
             text = label.uppercase(),
             style = typography.caption,
@@ -230,8 +179,9 @@ private fun TransactionDetailRow(
 private fun TransactionDetailStatusRow(transaction: Transaction) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
+    val spacing = BudgetCalendarTheme.spacing
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.spacing1)) {
         Text(
             text = "STATUS",
             style = typography.caption,
@@ -243,9 +193,9 @@ private fun TransactionDetailStatusRow(transaction: Transaction) {
 
 @Composable
 private fun Transaction.amountColor() = when (type) {
-    TransactionType.INCOME -> BudgetCalendarTheme.colors.colorSuccess
-    TransactionType.EXPENSE -> BudgetCalendarTheme.colors.colorError
-    TransactionType.TRANSFER -> BudgetCalendarTheme.colors.colorInfo
+    TransactionType.INCOME -> BudgetCalendarTheme.colors.colorSuccessText
+    TransactionType.EXPENSE -> BudgetCalendarTheme.colors.colorErrorText
+    TransactionType.TRANSFER -> BudgetCalendarTheme.colors.colorInfoText
 }
 
 private fun Transaction.detailsAmountText(): String {
