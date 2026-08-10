@@ -72,7 +72,7 @@ fun HeroSafeToSpend(
                 else -> "$resolvedDaysRemaining days left"
             }
             val rowColor = if (isLastDayOfMonth) {
-                colors.colorError
+                colors.colorErrorText
             } else {
                 colors.textSecondary
             }

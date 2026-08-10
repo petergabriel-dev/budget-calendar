@@ -98,7 +98,7 @@ fun BcInputGroup(
             Text(
                 text = errorText,
                 style = typography.bodySmall,
-                color = colors.colorError,
+                color = colors.colorErrorText,
                 modifier = Modifier.padding(start = 4.dp),
             )
         }

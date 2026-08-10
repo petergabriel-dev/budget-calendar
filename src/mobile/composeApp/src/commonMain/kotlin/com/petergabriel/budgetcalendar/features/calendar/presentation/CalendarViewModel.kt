@@ -69,7 +69,7 @@ class CalendarViewModel(
                     cachedTransactions = monthTransactions
                     publishMonthState(
                         yearMonth = yearMonth,
-                        selectedDate = selectedDate,
+                        selectedDate = _uiState.value.selectedDate,
                         monthTransactions = monthTransactions,
                     )
                 }
@@ -121,6 +121,9 @@ class CalendarViewModel(
             return
         }
 
+        selectedDayTransactionsJob?.cancel()
+        selectedDayTransactionsJob = null
+        _uiState.update { state -> state.copy(selectedDate = date) }
         publishMonthState(
             yearMonth = currentMonth,
             selectedDate = date,

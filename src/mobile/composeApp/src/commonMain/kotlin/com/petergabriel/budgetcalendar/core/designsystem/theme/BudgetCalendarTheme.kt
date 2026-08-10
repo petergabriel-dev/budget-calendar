@@ -1,8 +1,10 @@
 package com.petergabriel.budgetcalendar.core.designsystem.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -15,7 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 fun BudgetCalendarTheme(
     content: @Composable () -> Unit,
 ) {
-    val colors = remember { BcLightColors }
+    val isDark = isSystemInDarkTheme()
+    val colors = remember(isDark) { if (isDark) BcDarkColors else BcLightColors }
     val typography = rememberBcTypography()
     val spacing = remember { BcDefaultSpacing }
     val radius = remember { BcDefaultRadius }
@@ -29,44 +32,80 @@ fun BudgetCalendarTheme(
         LocalBcShadows provides shadows,
     ) {
         MaterialTheme(
-            colorScheme = colors.toMaterialColors(),
+            colorScheme = colors.toMaterialColors(isDark),
             typography = typography.toMaterialTypography(),
             content = content,
         )
     }
 }
 
-private fun BcColors.toMaterialColors(): ColorScheme = lightColorScheme(
-    primary = bgDark,
-    onPrimary = textInverted,
-    primaryContainer = bgSurface,
-    onPrimaryContainer = textPrimary,
-    inversePrimary = textInverted,
-    secondary = bgMuted,
-    onSecondary = textInverted,
-    secondaryContainer = colorSuccessBg,
-    onSecondaryContainer = colorSuccess,
-    tertiary = colorInfo,
-    onTertiary = textInverted,
-    tertiaryContainer = colorInfoBg,
-    onTertiaryContainer = colorInfo,
-    background = bgPrimary,
-    onBackground = textPrimary,
-    surface = bgPrimary,
-    onSurface = textPrimary,
-    surfaceVariant = bgSurface,
-    onSurfaceVariant = textSecondary,
-    surfaceTint = Color.Transparent,
-    inverseSurface = bgDark,
-    inverseOnSurface = textInverted,
-    error = colorError,
-    onError = textInverted,
-    errorContainer = colorErrorBg,
-    onErrorContainer = colorError,
-    outline = borderStrong,
-    outlineVariant = borderSubtle,
-    scrim = Color.Black.copy(alpha = 0.45f),
-)
+private fun BcColors.toMaterialColors(isDark: Boolean): ColorScheme {
+    return if (isDark) {
+        darkColorScheme(
+            primary = bgDark,
+            onPrimary = textInverted,
+            primaryContainer = bgSurface,
+            onPrimaryContainer = textPrimary,
+            inversePrimary = textInverted,
+            secondary = bgMuted,
+            onSecondary = textInverted,
+            secondaryContainer = colorSuccessBg,
+            onSecondaryContainer = colorSuccess,
+            tertiary = colorInfo,
+            onTertiary = textInverted,
+            tertiaryContainer = colorInfoBg,
+            onTertiaryContainer = colorInfo,
+            background = bgPrimary,
+            onBackground = textPrimary,
+            surface = bgPrimary,
+            onSurface = textPrimary,
+            surfaceVariant = bgSurface,
+            onSurfaceVariant = textSecondary,
+            surfaceTint = Color.Transparent,
+            inverseSurface = bgDark,
+            inverseOnSurface = textInverted,
+            error = colorError,
+            onError = textInverted,
+            errorContainer = colorErrorBg,
+            onErrorContainer = colorError,
+            outline = borderStrong,
+            outlineVariant = borderSubtle,
+            scrim = Color.Black.copy(alpha = 0.45f),
+        )
+    } else {
+        lightColorScheme(
+            primary = bgDark,
+            onPrimary = textInverted,
+            primaryContainer = bgSurface,
+            onPrimaryContainer = textPrimary,
+            inversePrimary = textInverted,
+            secondary = bgMuted,
+            onSecondary = textInverted,
+            secondaryContainer = colorSuccessBg,
+            onSecondaryContainer = colorSuccess,
+            tertiary = colorInfo,
+            onTertiary = textInverted,
+            tertiaryContainer = colorInfoBg,
+            onTertiaryContainer = colorInfo,
+            background = bgPrimary,
+            onBackground = textPrimary,
+            surface = bgPrimary,
+            onSurface = textPrimary,
+            surfaceVariant = bgSurface,
+            onSurfaceVariant = textSecondary,
+            surfaceTint = Color.Transparent,
+            inverseSurface = bgDark,
+            inverseOnSurface = textInverted,
+            error = colorError,
+            onError = textInverted,
+            errorContainer = colorErrorBg,
+            onErrorContainer = colorError,
+            outline = borderStrong,
+            outlineVariant = borderSubtle,
+            scrim = Color.Black.copy(alpha = 0.45f),
+        )
+    }
+}
 
 private fun BcTypography.toMaterialTypography(): Typography = Typography(
     displayLarge = displayLarge,

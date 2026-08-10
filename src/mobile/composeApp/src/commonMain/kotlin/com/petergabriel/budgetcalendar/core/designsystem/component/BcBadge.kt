@@ -72,22 +72,22 @@ private fun tokenForVariant(variant: BadgeVariant): BadgeToken {
 
         BadgeVariant.Success -> BadgeToken(
             containerColor = colors.colorSuccessBg,
-            contentColor = colors.colorSuccess,
+            contentColor = colors.colorSuccessText,
         )
 
         BadgeVariant.Warning -> BadgeToken(
             containerColor = colors.colorWarningBg,
-            contentColor = colors.colorWarning,
+            contentColor = colors.colorWarningText,
         )
 
         BadgeVariant.Error -> BadgeToken(
             containerColor = colors.colorErrorBg,
-            contentColor = colors.colorError,
+            contentColor = colors.colorErrorText,
         )
 
         BadgeVariant.Info -> BadgeToken(
             containerColor = colors.colorInfoBg,
-            contentColor = colors.colorInfo,
+            contentColor = colors.colorInfoText,
         )
     }
 }
