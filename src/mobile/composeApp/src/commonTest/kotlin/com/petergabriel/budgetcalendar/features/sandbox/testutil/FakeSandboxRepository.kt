@@ -8,6 +8,7 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transa
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 class FakeSandboxRepository : ISandboxRepository {
@@ -17,10 +18,21 @@ class FakeSandboxRepository : ISandboxRepository {
     private val transactionsFlow = MutableStateFlow<List<SandboxTransaction>>(emptyList())
     private var nextSnapshotId = 1L
     private var nextTransactionId = 1L
+    var failSnapshotReads: Boolean = false
+    var failTransactionReads: Boolean = false
 
-    override fun getAllSnapshots(): Flow<List<SandboxSnapshot>> = snapshotsFlow
+    override fun getAllSnapshots(): Flow<List<SandboxSnapshot>> {
+        return if (failSnapshotReads) {
+            flow { throw IllegalStateException("snapshot load failed") }
+        } else {
+            snapshotsFlow
+        }
+    }
 
     override suspend fun getSnapshotById(id: Long): SandboxSnapshot? {
+        if (failSnapshotReads) {
+            throw IllegalStateException("snapshot load failed")
+        }
         return snapshots.firstOrNull { item -> item.id == id }
     }
 
@@ -56,6 +68,9 @@ class FakeSandboxRepository : ISandboxRepository {
     }
 
     override fun getTransactionsBySnapshot(snapshotId: Long): Flow<List<SandboxTransaction>> {
+        if (failTransactionReads) {
+            return flow { throw IllegalStateException("transaction load failed") }
+        }
         return transactionsFlow.map { all ->
             all.filter { item -> item.snapshotId == snapshotId }
                 .sortedWith(compareBy<SandboxTransaction> { item -> item.date }

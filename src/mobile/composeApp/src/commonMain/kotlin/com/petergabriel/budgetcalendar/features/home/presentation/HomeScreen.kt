@@ -33,6 +33,8 @@ import com.petergabriel.budgetcalendar.features.budget.presentation.BudgetViewMo
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.AddSandboxTransactionSheet
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.ComparisonDeltaRow
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.HeroProjectedSpend
+import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.SandboxEmptySnapshotState
+import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.SandboxScopedError
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.SandboxTransactionList
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.SandboxViewModel
 import com.petergabriel.budgetcalendar.features.sandbox.presentation.components.SnapshotSelectorPill
@@ -306,43 +308,81 @@ fun HomeScreen(
                 SnapshotSelectorPill(
                     activeSnapshot = sandboxState.activeSnapshot,
                     onTap = sandboxViewModel::showSnapshotSheet,
+                    isLoading = sandboxState.isLoadingSnapshots,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
 
-            item {
-                HeroProjectedSpend(
-                    projectedSafeToSpend = sandboxState.projectedSafeToSpend,
-                    dailyRate = sandboxState.currentDailyRate,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            val comparison = sandboxState.comparison
-            if (comparison != null) {
+            val snapshotError = sandboxState.snapshotError
+            if (!snapshotError.isNullOrBlank()) {
                 item {
-                    ComparisonDeltaRow(
-                        comparison = comparison,
+                    SandboxScopedError(
+                        message = snapshotError,
+                        onRetry = { sandboxViewModel.loadAvailableSnapshots(autoSelect = true) },
+                    )
+                }
+            }
+
+            val activeSnapshot = sandboxState.activeSnapshot
+            if (activeSnapshot == null) {
+                if (!sandboxState.isLoadingSnapshots) {
+                    item {
+                        SandboxEmptySnapshotState(
+                            onSelectSnapshot = sandboxViewModel::showSnapshotSheet,
+                        )
+                    }
+                }
+            } else {
+                item {
+                    HeroProjectedSpend(
+                        projectedSafeToSpend = sandboxState.projectedSafeToSpend,
+                        dailyRate = sandboxState.currentDailyRate,
+                        isLoading = sandboxState.isLoadingProjection,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                val projectionError = sandboxState.projectionError
+                if (!projectionError.isNullOrBlank()) {
+                    item {
+                        SandboxScopedError(
+                            message = projectionError,
+                            onRetry = sandboxViewModel::retrySelectedSnapshot,
+                        )
+                    }
+                }
+
+                val comparison = sandboxState.comparison
+                if (comparison != null) {
+                    item {
+                        ComparisonDeltaRow(
+                            comparison = comparison,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+
+                item {
+                    SandboxTransactionList(
+                        transactions = sandboxState.sandboxTransactions,
+                        onAddTap = sandboxViewModel::showAddTransactionSheet,
+                        onPromote = sandboxViewModel::promoteTransaction,
+                        onRemove = sandboxViewModel::removeTransaction,
+                        isLoading = sandboxState.isLoadingTransactions,
+                        errorMessage = sandboxState.transactionError,
+                        onRetry = sandboxViewModel::retrySelectedSnapshot,
+                        removingTransactionIds = sandboxState.removingTransactionIds,
+                        promotingTransactionIds = sandboxState.promotingTransactionIds,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
 
-            item {
-                SandboxTransactionList(
-                    transactions = sandboxState.sandboxTransactions,
-                    onAddTap = sandboxViewModel::showAddTransactionSheet,
-                    onPromote = sandboxViewModel::promoteTransaction,
-                    onRemove = sandboxViewModel::removeTransaction,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            val sandboxError = sandboxState.error
-            if (!sandboxError.isNullOrBlank()) {
+            val sandboxMutationError = sandboxState.mutationError
+            if (!sandboxMutationError.isNullOrBlank()) {
                 item {
                     Text(
-                        text = sandboxError,
+                        text = sandboxMutationError,
                         style = BudgetCalendarTheme.typography.bodyMedium,
                         color = colors.colorErrorText,
                     )
@@ -359,6 +399,8 @@ fun HomeScreen(
         onDelete = sandboxViewModel::deleteSandbox,
         onCreateNew = sandboxViewModel::createSandbox,
         onDismiss = sandboxViewModel::hideSnapshotSheet,
+        isBusy = sandboxState.isSnapshotMutationBusy || sandboxState.isLoadingProjection,
+        errorMessage = sandboxState.snapshotError,
     )
 
     AddSandboxTransactionSheet(
@@ -367,6 +409,8 @@ fun HomeScreen(
         accounts = formState.availableAccounts,
         onAdd = sandboxViewModel::addTransaction,
         onDismiss = sandboxViewModel::hideAddTransactionSheet,
+        isSubmitting = sandboxState.isAddingTransaction,
+        errorMessage = sandboxState.mutationError,
     )
 
     TransactionFormSheet(

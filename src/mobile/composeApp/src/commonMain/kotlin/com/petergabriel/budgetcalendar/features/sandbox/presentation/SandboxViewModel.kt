@@ -5,8 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.budget.domain.usecase.CalculateSafeToSpendUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.model.AddSandboxTransactionRequest
-import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxSnapshot
-import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxTransaction
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.AddSimulationTransactionUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.CheckAndExpireSandboxesUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.CompareSandboxWithRealityUseCase
@@ -19,11 +17,11 @@ import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.GetSandbo
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.PromoteTransactionUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.RemoveSimulationTransactionUseCase
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.UpdateSnapshotLastAccessedUseCase
+import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -56,8 +54,9 @@ class SandboxViewModel(
             _uiState.update {
                 it.copy(
                     isSandboxMode = true,
-                    isLoading = true,
-                    error = null,
+                    isLoadingSnapshots = true,
+                    snapshotError = null,
+                    mutationError = null,
                 )
             }
             viewModelScope.launch {
@@ -65,8 +64,8 @@ class SandboxViewModel(
                     .onFailure { throwable ->
                         _uiState.update {
                             it.copy(
-                                isLoading = false,
-                                error = throwable.message,
+                                isLoadingSnapshots = false,
+                                snapshotError = throwable.message,
                             )
                         }
                         return@launch
@@ -76,77 +75,71 @@ class SandboxViewModel(
             return
         }
 
-        selectedSnapshotJob?.cancel()
-        selectedSnapshotJob = null
-        _uiState.update {
-            it.copy(
-                isSandboxMode = false,
-                isSnapshotSheetVisible = false,
-                isAddTransactionSheetVisible = false,
-                activeSnapshot = null,
-                sandboxTransactions = emptyList(),
-                projectedSafeToSpend = 0L,
-                currentDailyRate = 0L,
-                comparison = null,
-                isLoading = false,
-                error = null,
-            )
-        }
+        clearSandboxState()
     }
 
     fun loadAvailableSnapshots(autoSelect: Boolean = false) {
-        loadAvailableSnapshots(
-            autoSelect = autoSelect,
-            preferredSnapshotId = null,
-        )
+        loadAvailableSnapshots(autoSelect = autoSelect, preferredSnapshotId = null)
     }
 
     fun selectSnapshot(id: Long) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
-            val snapshot = runCatching {
-                getSandboxByIdUseCase(id)
-            }.getOrElse { throwable ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = throwable.message,
-                    )
-                }
-                return@launch
-            } ?: run {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = "Sandbox snapshot with id=$id was not found",
-                    )
-                }
-                return@launch
+            _uiState.update {
+                it.copy(
+                    isLoadingProjection = true,
+                    isLoadingTransactions = true,
+                    snapshotError = null,
+                    projectionError = null,
+                    transactionError = null,
+                    mutationError = null,
+                )
             }
 
-            updateSnapshotLastAccessedUseCase(id)
-                .onFailure { throwable ->
+            val snapshot = runCatching { getSandboxByIdUseCase(id) }
+                .getOrElse { throwable ->
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            isLoadingProjection = false,
+                            isLoadingTransactions = false,
+                            snapshotError = throwable.message,
+                        )
+                    }
+                    return@launch
+                }
+                ?: run {
+                    _uiState.update {
+                        it.copy(
+                            isLoadingProjection = false,
+                            isLoadingTransactions = false,
+                            snapshotError = "Sandbox snapshot with id=$id was not found",
                         )
                     }
                     return@launch
                 }
 
-            val snapshots = runCatching {
-                getSandboxesUseCase().first()
-            }.getOrElse { throwable ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = throwable.message,
-                    )
+            updateSnapshotLastAccessedUseCase(id)
+                .onFailure { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingProjection = false,
+                            isLoadingTransactions = false,
+                            snapshotError = throwable.message,
+                        )
+                    }
+                    return@launch
                 }
-                return@launch
-            }
+
+            val snapshots = runCatching { getSandboxesUseCase().first() }
+                .getOrElse { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingProjection = false,
+                            isLoadingTransactions = false,
+                            snapshotError = throwable.message,
+                        )
+                    }
+                    return@launch
+                }
 
             val resolved = snapshots.firstOrNull { item -> item.id == id } ?: snapshot
             _uiState.update {
@@ -155,10 +148,13 @@ class SandboxViewModel(
                     availableSnapshots = snapshots,
                     sandboxTransactions = emptyList(),
                     projectedSafeToSpend = resolved.initialSafeToSpend,
+                    currentDailyRate = dailyRate(resolved.initialSafeToSpend),
                     comparison = null,
                     isSnapshotSheetVisible = false,
-                    isLoading = false,
-                    error = null,
+                    snapshotError = null,
+                    projectionError = null,
+                    transactionError = null,
+                    mutationError = null,
                 )
             }
 
@@ -166,8 +162,12 @@ class SandboxViewModel(
         }
     }
 
+    fun retrySelectedSnapshot() {
+        uiState.value.activeSnapshot?.id?.let(::observeSelectedSnapshot)
+    }
+
     fun showSnapshotSheet() {
-        _uiState.update { it.copy(isSnapshotSheetVisible = true) }
+        _uiState.update { it.copy(isSnapshotSheetVisible = true, mutationError = null) }
     }
 
     fun hideSnapshotSheet() {
@@ -175,33 +175,47 @@ class SandboxViewModel(
     }
 
     fun showAddTransactionSheet() {
+        if (uiState.value.activeSnapshot == null) {
+            _uiState.update { it.copy(mutationError = "Please select a sandbox snapshot") }
+            return
+        }
         _uiState.update {
             it.copy(
                 isAddTransactionSheetVisible = true,
-                error = null,
+                mutationError = null,
             )
         }
     }
 
     fun hideAddTransactionSheet() {
-        _uiState.update { it.copy(isAddTransactionSheetVisible = false) }
+        if (!_uiState.value.isAddingTransaction) {
+            _uiState.update { it.copy(isAddTransactionSheetVisible = false) }
+        }
     }
 
     fun addTransaction(request: AddSandboxTransactionRequest) {
         val snapshot = uiState.value.activeSnapshot
             ?: run {
-                _uiState.update { it.copy(error = "Please select a sandbox snapshot") }
+                _uiState.update { it.copy(mutationError = "Please select a sandbox snapshot") }
                 return
             }
+        if (uiState.value.isAddingTransaction) {
+            return
+        }
 
         val normalizedCategory = request.category.trim()
-        if (request.type != com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType.TRANSFER && normalizedCategory.isBlank()) {
-            _uiState.update { it.copy(error = "Name is required") }
+        if (request.type != TransactionType.TRANSFER && normalizedCategory.isBlank()) {
+            _uiState.update { it.copy(mutationError = "Name is required") }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update {
+                it.copy(
+                    isAddingTransaction = true,
+                    mutationError = null,
+                )
+            }
 
             addSimulationTransactionUseCase(
                 request.copy(
@@ -212,16 +226,16 @@ class SandboxViewModel(
             ).onSuccess {
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
+                        isAddingTransaction = false,
                         isAddTransactionSheetVisible = false,
-                        error = null,
+                        mutationError = null,
                     )
                 }
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
-                        error = throwable.message,
+                        isAddingTransaction = false,
+                        mutationError = throwable.message,
                     )
                 }
             }
@@ -231,27 +245,32 @@ class SandboxViewModel(
     fun removeTransaction(transactionId: Long) {
         val snapshotId = uiState.value.activeSnapshot?.id
             ?: run {
-                _uiState.update { it.copy(error = "Please select a sandbox snapshot") }
+                _uiState.update { it.copy(mutationError = "Please select a sandbox snapshot") }
                 return
             }
+        if (transactionId in uiState.value.removingTransactionIds) {
+            return
+        }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update {
+                it.copy(
+                    removingTransactionIds = it.removingTransactionIds + transactionId,
+                    mutationError = null,
+                )
+            }
 
             removeSimulationTransactionUseCase(snapshotId, transactionId)
                 .onSuccess {
                     _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = null,
-                        )
+                        it.copy(removingTransactionIds = it.removingTransactionIds - transactionId)
                     }
                 }
                 .onFailure { throwable ->
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            removingTransactionIds = it.removingTransactionIds - transactionId,
+                            mutationError = throwable.message,
                         )
                     }
                 }
@@ -261,26 +280,31 @@ class SandboxViewModel(
     fun promoteTransaction(transactionId: Long) {
         val transaction = uiState.value.sandboxTransactions.firstOrNull { item -> item.id == transactionId }
             ?: run {
-                _uiState.update { it.copy(error = "Sandbox transaction with id=$transactionId was not found") }
+                _uiState.update { it.copy(mutationError = "Sandbox transaction with id=$transactionId was not found") }
                 return
             }
+        if (transactionId in uiState.value.promotingTransactionIds) {
+            return
+        }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update {
+                it.copy(
+                    promotingTransactionIds = it.promotingTransactionIds + transactionId,
+                    mutationError = null,
+                )
+            }
             promoteTransactionUseCase(transaction)
                 .onSuccess {
                     _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = null,
-                        )
+                        it.copy(promotingTransactionIds = it.promotingTransactionIds - transactionId)
                     }
                 }
                 .onFailure { throwable ->
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            promotingTransactionIds = it.promotingTransactionIds - transactionId,
+                            mutationError = throwable.message,
                         )
                     }
                 }
@@ -288,34 +312,48 @@ class SandboxViewModel(
     }
 
     fun createSandbox(name: String) {
+        val trimmedName = name.trim()
+        if (trimmedName.isBlank() || uiState.value.isCreatingSnapshot) {
+            if (trimmedName.isBlank()) {
+                _uiState.update { it.copy(mutationError = "Snapshot name is required") }
+            }
+            return
+        }
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update {
+                it.copy(
+                    isCreatingSnapshot = true,
+                    isSnapshotMutationBusy = true,
+                    mutationError = null,
+                )
+            }
 
             val currentSafeToSpend = fetchCurrentSafeToSpend()
                 .getOrElse { throwable ->
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            isCreatingSnapshot = false,
+                            isSnapshotMutationBusy = false,
+                            mutationError = throwable.message,
                         )
                     }
                     return@launch
                 }
 
             createSandboxUseCase(
-                name = name,
+                name = trimmedName,
                 description = null,
                 currentSafeToSpend = currentSafeToSpend,
             ).onSuccess { snapshot ->
-                loadAvailableSnapshots(
-                    autoSelect = true,
-                    preferredSnapshotId = snapshot.id,
-                )
+                _uiState.update { it.copy(isCreatingSnapshot = false, isSnapshotMutationBusy = false) }
+                loadAvailableSnapshots(autoSelect = true, preferredSnapshotId = snapshot.id)
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
-                        error = throwable.message,
+                        isCreatingSnapshot = false,
+                        isSnapshotMutationBusy = false,
+                        mutationError = throwable.message,
                     )
                 }
             }
@@ -323,18 +361,28 @@ class SandboxViewModel(
     }
 
     fun deleteSandbox(id: Long) {
+        if (uiState.value.isSnapshotMutationBusy) {
+            return
+        }
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update {
+                it.copy(
+                    isSnapshotMutationBusy = true,
+                    mutationError = null,
+                )
+            }
 
             deleteSandboxUseCase(id)
                 .onSuccess {
+                    _uiState.update { it.copy(isSnapshotMutationBusy = false) }
                     loadAvailableSnapshots(autoSelect = true)
                 }
                 .onFailure { throwable ->
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            isSnapshotMutationBusy = false,
+                            mutationError = throwable.message,
                         )
                     }
                 }
@@ -342,7 +390,7 @@ class SandboxViewModel(
     }
 
     fun clearError() {
-        _uiState.update { it.copy(error = null) }
+        _uiState.update { it.copy(mutationError = null) }
     }
 
     override fun onCleared() {
@@ -351,55 +399,98 @@ class SandboxViewModel(
         super.onCleared()
     }
 
+    private fun clearSandboxState() {
+        selectedSnapshotJob?.cancel()
+        selectedSnapshotJob = null
+        _uiState.update {
+            SandboxHomeUiState(isSandboxMode = false)
+        }
+    }
+
     private fun observeSelectedSnapshot(snapshotId: Long) {
         selectedSnapshotJob?.cancel()
+        _uiState.update {
+            it.copy(
+                isLoadingProjection = true,
+                isLoadingTransactions = true,
+                projectionError = null,
+                transactionError = null,
+            )
+        }
         selectedSnapshotJob = viewModelScope.launch {
-            combine(
-                getSandboxTransactionsUseCase(snapshotId),
-                getSandboxSafeToSpendUseCase(snapshotId),
-                compareSandboxWithRealityUseCase(snapshotId),
-            ) { transactions, projectedSafeToSpend, comparison ->
-                Triple(transactions, projectedSafeToSpend, comparison)
+            launch {
+                getSandboxTransactionsUseCase(snapshotId)
+                    .catch { throwable ->
+                        _uiState.update {
+                            it.copy(
+                                isLoadingTransactions = false,
+                                transactionError = throwable.message,
+                            )
+                        }
+                    }
+                    .collect { transactions ->
+                        if (isCurrentSnapshot(snapshotId)) {
+                            _uiState.update {
+                                it.copy(
+                                    sandboxTransactions = transactions,
+                                    isLoadingTransactions = false,
+                                    transactionError = null,
+                                )
+                            }
+                        }
+                    }
             }
-                .catch { throwable ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = throwable.message,
-                        )
+            launch {
+                getSandboxSafeToSpendUseCase(snapshotId)
+                    .catch { throwable ->
+                        _uiState.update {
+                            it.copy(
+                                isLoadingProjection = false,
+                                projectionError = throwable.message,
+                            )
+                        }
                     }
-                }
-                .collect { (transactions, projectedSafeToSpend, comparison) ->
-                    if (!uiState.value.isSandboxMode || uiState.value.activeSnapshot?.id != snapshotId) {
-                        return@collect
+                    .collect { projectedSafeToSpend ->
+                        if (isCurrentSnapshot(snapshotId)) {
+                            _uiState.update {
+                                it.copy(
+                                    projectedSafeToSpend = projectedSafeToSpend,
+                                    currentDailyRate = dailyRate(projectedSafeToSpend),
+                                    isLoadingProjection = false,
+                                    projectionError = null,
+                                )
+                            }
+                        }
                     }
-
-                    val dailyRate = projectedSafeToSpend / daysRemainingInMonth()
-                    _uiState.update {
-                        it.copy(
-                            sandboxTransactions = transactions,
-                            projectedSafeToSpend = projectedSafeToSpend,
-                            comparison = comparison,
-                            currentDailyRate = dailyRate,
-                            isLoading = false,
-                            error = null,
-                        )
+            }
+            launch {
+                compareSandboxWithRealityUseCase(snapshotId)
+                    .catch {
+                        if (isCurrentSnapshot(snapshotId)) {
+                            _uiState.update { state -> state.copy(comparison = null) }
+                        }
                     }
-                }
+                    .collect { comparison ->
+                        if (isCurrentSnapshot(snapshotId)) {
+                            _uiState.update { state -> state.copy(comparison = comparison) }
+                        }
+                    }
+            }
         }
     }
 
     private fun loadAvailableSnapshots(
         autoSelect: Boolean,
-        preferredSnapshotId: Long?,
+        preferredSnapshotId: Long? = null,
     ) {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingSnapshots = true, snapshotError = null) }
             val snapshots = runCatching { getSandboxesUseCase().first() }
                 .getOrElse { throwable ->
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = throwable.message,
+                            isLoadingSnapshots = false,
+                            snapshotError = throwable.message,
                         )
                     }
                     return@launch
@@ -411,15 +502,15 @@ class SandboxViewModel(
                 } ?: state.activeSnapshot?.id?.let { activeId ->
                     snapshots.firstOrNull { snapshot -> snapshot.id == activeId }
                 }
-
                 state.copy(
                     availableSnapshots = snapshots,
                     activeSnapshot = activeSnapshot,
                     sandboxTransactions = if (activeSnapshot == null) emptyList() else state.sandboxTransactions,
                     projectedSafeToSpend = activeSnapshot?.initialSafeToSpend ?: 0L,
+                    currentDailyRate = activeSnapshot?.let { dailyRate(it.initialSafeToSpend) } ?: 0L,
                     comparison = if (activeSnapshot == null) null else state.comparison,
-                    isLoading = false,
-                    error = null,
+                    isLoadingSnapshots = false,
+                    snapshotError = null,
                 )
             }
 
@@ -427,9 +518,7 @@ class SandboxViewModel(
                 return@launch
             }
 
-            val idToSelect = preferredSnapshotId
-                ?: snapshots.firstOrNull()?.id
-
+            val idToSelect = preferredSnapshotId ?: snapshots.firstOrNull()?.id
             if (idToSelect == null) {
                 selectedSnapshotJob?.cancel()
                 selectedSnapshotJob = null
@@ -451,8 +540,16 @@ class SandboxViewModel(
         }
     }
 
+    private fun isCurrentSnapshot(snapshotId: Long): Boolean {
+        return uiState.value.isSandboxMode && uiState.value.activeSnapshot?.id == snapshotId
+    }
+
     private suspend fun fetchCurrentSafeToSpend(): Result<Long> = runCatching {
         calculateSafeToSpendUseCase().first().availableToSpend
+    }
+
+    private fun dailyRate(projectedSafeToSpend: Long): Long {
+        return projectedSafeToSpend / daysRemainingInMonth().coerceAtLeast(1)
     }
 
     private fun daysRemainingInMonth(nowMillis: Long = DateUtils.nowMillis()): Int {

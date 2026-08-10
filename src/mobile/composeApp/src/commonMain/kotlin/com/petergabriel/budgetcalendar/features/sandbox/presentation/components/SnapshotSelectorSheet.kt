@@ -1,43 +1,48 @@
 package com.petergabriel.budgetcalendar.features.sandbox.presentation.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcBadge
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcConfirmDialog
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
+import com.petergabriel.budgetcalendar.core.designsystem.component.BadgeVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
+import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcInputGroup
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxSnapshot
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SnapshotSelectorSheet(
     isVisible: Boolean,
@@ -47,6 +52,8 @@ fun SnapshotSelectorSheet(
     onDelete: (Long) -> Unit,
     onCreateNew: (String) -> Unit,
     onDismiss: () -> Unit,
+    isBusy: Boolean = false,
+    errorMessage: String? = null,
 ) {
     if (!isVisible) {
         return
@@ -56,31 +63,21 @@ fun SnapshotSelectorSheet(
     val spacing = BudgetCalendarTheme.spacing
     val typography = BudgetCalendarTheme.typography
     val radius = BudgetCalendarTheme.radius
+    val orderedSnapshots = snapshots.sortedByDescending { snapshot -> snapshot.lastAccessedAt }
 
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
     var createName by rememberSaveable { mutableStateOf("") }
-    var deleteCandidateId by remember { mutableStateOf<Long?>(null) }
+    var deleteCandidateId by rememberSaveable { mutableStateOf<Long?>(null) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.spacing4, vertical = spacing.spacing2),
-            verticalArrangement = Arrangement.spacedBy(spacing.spacing3),
-        ) {
-            Text(
-                text = "Select Sandbox",
-                style = typography.section,
-                color = colors.textPrimary,
-            )
-
-            val orderedSnapshots = remember(snapshots) {
-                snapshots.sortedByDescending { snapshot -> snapshot.lastAccessedAt }
-            }
-
+    BcSheetShell(
+        title = "Select Sandbox",
+        onDismissRequest = { if (!isBusy) onDismiss() },
+        bodyScrollable = false,
+        body = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .fillMaxHeight()
                     .background(colors.bgSurface, RoundedCornerShape(radius.xl)),
             ) {
                 if (orderedSnapshots.isEmpty()) {
@@ -91,33 +88,46 @@ fun SnapshotSelectorSheet(
                         modifier = Modifier.padding(spacing.spacing4),
                     )
                 } else {
-                    LazyColumn {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    ) {
                         items(orderedSnapshots, key = { snapshot -> snapshot.id }) { snapshot ->
                             SnapshotRow(
                                 snapshot = snapshot,
                                 isActive = snapshot.id == activeSnapshotId,
-                                onSelect = {
-                                    onSelect(snapshot.id)
-                                    onDismiss()
-                                },
-                                onLongPress = { deleteCandidateId = snapshot.id },
+                                isBusy = isBusy,
+                                onSelect = { onSelect(snapshot.id) },
+                                onDelete = { deleteCandidateId = snapshot.id },
                             )
-                            if (snapshot.id != orderedSnapshots.last().id) {
+                            if (snapshot.id != orderedSnapshots.lastOrNull()?.id) {
                                 HorizontalDivider(color = colors.borderStrong)
                             }
                         }
                     }
                 }
-            }
 
+                if (!errorMessage.isNullOrBlank()) {
+                    Text(
+                        text = errorMessage,
+                        style = typography.bodySmall,
+                        color = colors.colorErrorText,
+                        modifier = Modifier.padding(spacing.spacing4),
+                    )
+                }
+            }
+        },
+        footer = {
             BcButton(
                 text = "Create New",
                 onClick = { showCreateDialog = true },
+                variant = ButtonVariant.Outline,
+                enabled = !isBusy,
                 modifier = Modifier.fillMaxWidth(),
-                variant = ButtonVariant.Ghost,
             )
-        }
-    }
+        },
+    )
 
     if (showCreateDialog) {
         AlertDialog(
@@ -127,79 +137,64 @@ fun SnapshotSelectorSheet(
             },
             title = { Text("Create Sandbox") },
             text = {
-                OutlinedTextField(
+                BcInputGroup(
+                    label = "Snapshot Name",
                     value = createName,
-                    onValueChange = { value ->
-                        createName = value.take(50)
-                    },
-                    singleLine = true,
-                    label = { Text("Snapshot Name") },
+                    onValueChange = { value -> createName = value.take(50) },
+                    placeholder = "e.g. Summer plan",
                     modifier = Modifier.fillMaxWidth(),
                 )
             },
             dismissButton = {
-                TextButton(
+                BcButton(
+                    text = "Cancel",
                     onClick = {
                         showCreateDialog = false
                         createName = ""
                     },
-                ) {
-                    Text("Cancel")
-                }
+                    variant = ButtonVariant.Ghost,
+                )
             },
             confirmButton = {
-                TextButton(
+                BcButton(
+                    text = "Create",
                     onClick = {
                         val trimmed = createName.trim()
-                        if (trimmed.isBlank()) {
-                            return@TextButton
-                        }
+                        if (trimmed.isBlank() || isBusy) return@BcButton
                         onCreateNew(trimmed)
                         showCreateDialog = false
                         createName = ""
-                        onDismiss()
                     },
-                ) {
-                    Text("Create")
-                }
+                    enabled = createName.trim().isNotBlank() && !isBusy,
+                )
             },
         )
     }
 
     deleteCandidateId?.let { snapshotId ->
-        AlertDialog(
-            onDismissRequest = { deleteCandidateId = null },
-            title = { Text("Delete sandbox?") },
-            text = { Text("This will remove the snapshot and its sandbox transactions.") },
-            dismissButton = {
-                TextButton(onClick = { deleteCandidateId = null }) {
-                    Text("Cancel")
-                }
+        val snapshotName = orderedSnapshots.firstOrNull { snapshot -> snapshot.id == snapshotId }?.name
+            ?: "this snapshot"
+        BcConfirmDialog(
+            title = "Delete sandbox?",
+            message = "Delete $snapshotName and its sandbox transactions? This action cannot be undone.",
+            onDismissRequest = { if (!isBusy) deleteCandidateId = null },
+            onConfirm = {
+                onDelete(snapshotId)
+                deleteCandidateId = null
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDelete(snapshotId)
-                        deleteCandidateId = null
-                    },
-                ) {
-                    Text(
-                        text = "Delete",
-                        color = colors.colorError,
-                    )
-                }
-            },
+            confirmLabel = "Delete",
+            isBusy = isBusy,
         )
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SnapshotRow(
     snapshot: SandboxSnapshot,
     isActive: Boolean,
+    isBusy: Boolean,
     onSelect: () -> Unit,
-    onLongPress: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val colors = BudgetCalendarTheme.colors
     val spacing = BudgetCalendarTheme.spacing
@@ -208,35 +203,58 @@ private fun SnapshotRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(
-                onClick = onSelect,
-                onLongClick = onLongPress,
-            )
-            .padding(horizontal = spacing.spacing4, vertical = spacing.spacing3),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .semantics {
+                contentDescription = "${snapshot.name}${if (isActive) ", Active snapshot" else ""}"
+            }
+            .padding(horizontal = spacing.spacing3, vertical = spacing.spacing2),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.spacing2),
     ) {
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clickable(enabled = !isBusy, onClick = onSelect)
+                .padding(vertical = spacing.spacing2),
             verticalArrangement = Arrangement.spacedBy(spacing.spacing1),
         ) {
             Text(
                 text = snapshot.name,
                 style = typography.bodyLarge,
                 color = colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = formatLastAccessed(snapshot.lastAccessedAt),
+                text = "Last accessed ${formatLastAccessed(snapshot.lastAccessedAt)}",
                 style = typography.bodySmall,
                 color = colors.textSecondary,
             )
         }
 
         if (isActive) {
+            BcBadge(
+                text = "Active",
+                variant = BadgeVariant.Info,
+            )
             Icon(
                 imageVector = Icons.Outlined.Check,
                 contentDescription = "Active snapshot",
                 tint = colors.textPrimary,
+                modifier = Modifier.size(spacing.spacing5),
+            )
+        }
+
+        IconButton(
+            onClick = onDelete,
+            enabled = !isBusy,
+            modifier = Modifier
+                .size(spacing.spacing12)
+                .semantics { contentDescription = "Delete ${snapshot.name}" },
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Delete,
+                contentDescription = null,
+                tint = colors.colorErrorText,
             )
         }
     }
@@ -246,7 +264,6 @@ private fun formatLastAccessed(millis: Long): String {
     val localDateTime = Instant
         .fromEpochMilliseconds(millis)
         .toLocalDateTime(TimeZone.currentSystemDefault())
-
     val hour = localDateTime.hour.toString().padStart(2, '0')
     val minute = localDateTime.minute.toString().padStart(2, '0')
     return "${localDateTime.date} $hour:$minute"

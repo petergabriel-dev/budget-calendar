@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxComparison
@@ -17,15 +19,27 @@ fun ComparisonDeltaRow(
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
-
     val deltaColor = when {
-        comparison.difference > 0L -> colors.colorSuccess
-        comparison.difference < 0L -> colors.colorError
+        comparison.difference > 0L -> colors.colorSuccessText
+        comparison.difference < 0L -> colors.colorErrorText
         else -> colors.textSecondary
+    }
+    val deltaText = CurrencyUtils.formatCents(
+        amountInCents = comparison.difference,
+        includePlusSign = true,
+    )
+    val deltaMeaning = when {
+        comparison.difference > 0L -> "higher than real"
+        comparison.difference < 0L -> "lower than real"
+        else -> "same as real"
     }
 
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = "Sandbox ${deltaText} compared with real, $deltaMeaning"
+            },
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
@@ -34,10 +48,7 @@ fun ComparisonDeltaRow(
             color = colors.textSecondary,
         )
         Text(
-            text = CurrencyUtils.formatCents(
-                amountInCents = comparison.difference,
-                includePlusSign = true,
-            ),
+            text = deltaText,
             style = typography.bodyMedium,
             color = deltaColor,
         )

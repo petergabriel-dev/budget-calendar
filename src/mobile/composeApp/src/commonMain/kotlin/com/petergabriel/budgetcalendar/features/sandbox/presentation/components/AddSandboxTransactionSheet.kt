@@ -5,25 +5,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,10 +27,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardType
 import com.petergabriel.budgetcalendar.core.designsystem.component.AccountPickerModal
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSegmentedControl
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcInputGroup
 import com.petergabriel.budgetcalendar.core.designsystem.component.form.LargeAmountInput
@@ -60,12 +56,16 @@ fun AddSandboxTransactionSheet(
     accounts: List<Account>,
     onAdd: (AddSandboxTransactionRequest) -> Unit,
     onDismiss: () -> Unit,
+    isSubmitting: Boolean = false,
+    errorMessage: String? = null,
 ) {
-    if (!isVisible) return
+    if (!isVisible) {
+        return
+    }
 
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val spacing = BudgetCalendarTheme.spacing
 
     var selectedType by rememberSaveable { mutableStateOf(TransactionType.EXPENSE) }
     var amountInput by rememberSaveable { mutableStateOf("") }
@@ -90,7 +90,9 @@ fun AddSandboxTransactionSheet(
     }
 
     LaunchedEffect(currentDayMillis) {
-        if (!userManuallyChangedDate) selectedDateMillis = currentDayMillis
+        if (!userManuallyChangedDate) {
+            selectedDateMillis = currentDayMillis
+        }
     }
 
     LaunchedEffect(accounts) {
@@ -114,47 +116,26 @@ fun AddSandboxTransactionSheet(
         else -> "Add Expense"
     }
 
-    fun closeFromX() {
-        if (isDirty) showDiscardDialog = true else onDismiss()
+    fun closeSheet() {
+        if (isSubmitting) return
+        if (isDirty) {
+            showDiscardDialog = true
+        } else {
+            onDismiss()
+        }
     }
 
-    ModalBottomSheet(
-        onDismissRequest = {},
-        sheetState = sheetState,
-        dragHandle = {},
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(),
-        ) {
+    BcSheetShell(
+        title = "New Sandbox Transaction",
+        onDismissRequest = ::closeSheet,
+        bodyScrollable = false,
+        body = {
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(spacing.spacing4),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "New Sandbox Transaction",
-                        style = typography.section,
-                        color = colors.textPrimary,
-                    )
-
-                    IconButton(onClick = { closeFromX() }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = "Close",
-                            tint = colors.textPrimary,
-                        )
-                    }
-                }
-
                 BcSegmentedControl(
                     options = listOf("Expense", "Income", "Transfer"),
                     selectedIndex = when (selectedType) {
@@ -168,7 +149,9 @@ fun AddSandboxTransactionSheet(
                             2 -> TransactionType.TRANSFER
                             else -> TransactionType.EXPENSE
                         }
-                        if (selectedType != TransactionType.TRANSFER) destinationAccountId = null
+                        if (selectedType != TransactionType.TRANSFER) {
+                            destinationAccountId = null
+                        }
                         localErrors.remove("destinationAccountId")
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -200,7 +183,7 @@ fun AddSandboxTransactionSheet(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.spacing3),
                     verticalAlignment = Alignment.Top,
                 ) {
                     BcInputGroup(
@@ -210,10 +193,9 @@ fun AddSandboxTransactionSheet(
                         placeholder = "Today",
                         modifier = Modifier
                             .weight(1f)
-                            .clickable { showDatePicker = true },
+                            .clickable(enabled = !isSubmitting) { showDatePicker = true },
                         readOnly = true,
                     )
-
                     BcInputGroup(
                         label = "Account",
                         value = selectedAccount?.name.orEmpty(),
@@ -221,7 +203,7 @@ fun AddSandboxTransactionSheet(
                         placeholder = if (accounts.isEmpty()) "No accounts" else "Select account",
                         modifier = Modifier
                             .weight(1f)
-                            .clickable(enabled = accounts.isNotEmpty()) { showAccountPicker = true },
+                            .clickable(enabled = accounts.isNotEmpty() && !isSubmitting) { showAccountPicker = true },
                         readOnly = true,
                         isError = localErrors.containsKey("accountId"),
                         errorText = localErrors["accountId"],
@@ -229,8 +211,7 @@ fun AddSandboxTransactionSheet(
                 }
 
                 if (selectedType == TransactionType.TRANSFER) {
-                    Spacer(modifier = Modifier.height(8.dp))
-
+                    Spacer(modifier = Modifier.height(spacing.spacing2))
                     BcInputGroup(
                         label = "Destination Account",
                         value = destinationAccount?.name.orEmpty(),
@@ -238,68 +219,71 @@ fun AddSandboxTransactionSheet(
                         placeholder = if (destinationAccounts.isEmpty()) "No other accounts" else "Select destination",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(enabled = destinationAccounts.isNotEmpty()) { showDestinationPicker = true },
+                            .clickable(enabled = destinationAccounts.isNotEmpty() && !isSubmitting) { showDestinationPicker = true },
                         readOnly = true,
                         isError = localErrors.containsKey("destinationAccountId"),
                         errorText = localErrors["destinationAccountId"],
                     )
                 }
+
+                if (!errorMessage.isNullOrBlank()) {
+                    Text(
+                        text = errorMessage,
+                        style = typography.bodySmall,
+                        color = colors.colorErrorText,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    )
+                }
             }
+        },
+        footer = {
+            BcButton(
+                text = if (isSubmitting) "Adding..." else ctaLabel,
+                onClick = {
+                    val errors = mutableMapOf<String, String>()
+                    if (snapshotId == null) errors["snapshotId"] = "Sandbox snapshot is required"
+                    if (selectedAccountId == null) errors["accountId"] = "Account is required"
+                    if (parsedAmount == null || parsedAmount <= 0L) errors["amount"] = "Enter a valid amount"
+                    if (selectedType == TransactionType.TRANSFER && destinationAccountId == null) {
+                        errors["destinationAccountId"] = "Destination account is required"
+                    }
+                    if (selectedType == TransactionType.TRANSFER && destinationAccountId == selectedAccountId) {
+                        errors["destinationAccountId"] = "Cannot transfer to the same account"
+                    }
+                    if (selectedType != TransactionType.TRANSFER && category.isBlank()) {
+                        errors["category"] = "Name is required"
+                    }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                BcButton(
-                    text = ctaLabel,
-                    onClick = {
-                        val resolvedSnapshotId = snapshotId
-                        val resolvedAccountId = selectedAccountId
-                        val resolvedAmount = parsedAmount
-                        val errors = mutableMapOf<String, String>()
+                    localErrors.clear()
+                    localErrors.putAll(errors)
+                    if (errors.isNotEmpty() || isSubmitting) return@BcButton
 
-                        if (resolvedSnapshotId == null) errors["snapshotId"] = "Sandbox snapshot is required"
-                        if (resolvedAccountId == null) errors["accountId"] = "Account is required"
-                        if (resolvedAmount == null || resolvedAmount <= 0L) errors["amount"] = "Enter a valid amount"
-                        if (selectedType == TransactionType.TRANSFER && destinationAccountId == null) {
-                            errors["destinationAccountId"] = "Destination account is required"
-                        }
-                        if (selectedType == TransactionType.TRANSFER && destinationAccountId == selectedAccountId) {
-                            errors["destinationAccountId"] = "Cannot transfer to the same account"
-                        }
-                        if (selectedType != TransactionType.TRANSFER && category.isBlank()) {
-                            errors["category"] = "Name is required"
-                        }
-
-                        localErrors.clear()
-                        localErrors.putAll(errors)
-                        if (errors.isNotEmpty()) return@BcButton
-
-                        onAdd(
-                            AddSandboxTransactionRequest(
-                                snapshotId = checkNotNull(resolvedSnapshotId),
-                                accountId = checkNotNull(resolvedAccountId),
-                                destinationAccountId = if (selectedType == TransactionType.TRANSFER) destinationAccountId else null,
-                                amount = checkNotNull(resolvedAmount),
-                                date = selectedDateMillis,
-                                type = selectedType,
-                                category = category.trim(),
-                                description = null,
-                            ),
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    variant = ButtonVariant.Primary,
-                )
-            }
-        }
-    }
+                    val resolvedSnapshotId = snapshotId ?: return@BcButton
+                    val resolvedAccountId = selectedAccountId ?: return@BcButton
+                    val resolvedAmount = parsedAmount ?: return@BcButton
+                    onAdd(
+                        AddSandboxTransactionRequest(
+                            snapshotId = resolvedSnapshotId,
+                            accountId = resolvedAccountId,
+                            destinationAccountId = if (selectedType == TransactionType.TRANSFER) destinationAccountId else null,
+                            amount = resolvedAmount,
+                            date = selectedDateMillis,
+                            type = selectedType,
+                            category = category.trim(),
+                            description = null,
+                        ),
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                variant = ButtonVariant.Primary,
+                enabled = !isSubmitting,
+            )
+        },
+    )
 
     if (showAccountPicker) {
         AccountPickerModal(
-            isVisible = showAccountPicker,
+            isVisible = true,
             accounts = accounts,
             selectedAccountId = selectedAccountId,
             title = "Select Account",
@@ -315,7 +299,7 @@ fun AddSandboxTransactionSheet(
 
     if (showDestinationPicker) {
         AccountPickerModal(
-            isVisible = showDestinationPicker,
+            isVisible = true,
             accounts = destinationAccounts,
             selectedAccountId = destinationAccountId,
             title = "Select Destination",
@@ -329,7 +313,9 @@ fun AddSandboxTransactionSheet(
     }
 
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = DateUtils.toUtcDayStartMillis(selectedDateMillis))
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = DateUtils.toUtcDayStartMillis(selectedDateMillis),
+        )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
@@ -350,21 +336,17 @@ fun AddSandboxTransactionSheet(
     }
 
     if (showDiscardDialog) {
-        AlertDialog(
+        com.petergabriel.budgetcalendar.core.designsystem.component.BcConfirmDialog(
+            title = "Discard transaction?",
+            message = "Your changes will be lost.",
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text("Discard transaction?") },
-            text = { Text("Your changes will be lost.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDiscardDialog = false
-                        onDismiss()
-                    },
-                ) { Text("Discard") }
+            onConfirm = {
+                showDiscardDialog = false
+                onDismiss()
             },
-            dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) { Text("Keep editing") }
-            },
+            confirmLabel = "Discard",
+            dismissLabel = "Keep editing",
+            confirmVariant = ButtonVariant.Destructive,
         )
     }
 }
@@ -372,12 +354,11 @@ fun AddSandboxTransactionSheet(
 @Composable
 private fun InlineError(message: String?) {
     if (message.isNullOrBlank()) return
-
     Text(
         text = message,
-        color = BudgetCalendarTheme.colors.colorError,
+        color = BudgetCalendarTheme.colors.colorErrorText,
         style = BudgetCalendarTheme.typography.bodySmall,
-        modifier = Modifier.padding(start = 4.dp),
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
 }
 

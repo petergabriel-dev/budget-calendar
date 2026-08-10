@@ -37,6 +37,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -137,6 +138,56 @@ class SandboxViewModelTest {
         assertEquals(10_000L, state.projectedSafeToSpend)
         assertEquals(emptyList(), state.sandboxTransactions)
         assertEquals(0L, state.comparison?.difference)
+    }
+
+    @Test
+    fun transactionFailure_keepsSnapshotAndProjectionUsable() = runTest(dispatcher) {
+        val snapshot = createSnapshot(initialSafeToSpend = 10_000L)
+        sandboxRepository.failTransactionReads = true
+
+        viewModel.setSandboxMode(true)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(snapshot.id, state.activeSnapshot?.id)
+        assertEquals(10_000L, state.projectedSafeToSpend)
+        assertNotNull(state.transactionError)
+        assertEquals(10_000L, state.projectedSafeToSpend)
+
+        sandboxRepository.failTransactionReads = false
+        viewModel.retrySelectedSnapshot()
+        advanceUntilIdle()
+        assertEquals(null, viewModel.uiState.value.transactionError)
+    }
+
+    @Test
+    fun noSnapshots_keepsSandboxModeWithoutLoadedZeroProjection() = runTest(dispatcher) {
+        viewModel.setSandboxMode(true)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isSandboxMode)
+        assertEquals(null, state.activeSnapshot)
+        assertEquals(emptyList(), state.sandboxTransactions)
+    }
+
+    @Test
+    fun leavingSandbox_clearsSheetLocalStateAndErrors() = runTest(dispatcher) {
+        val snapshot = createSnapshot(initialSafeToSpend = 10_000L)
+        viewModel.setSandboxMode(true)
+        advanceUntilIdle()
+        viewModel.showSnapshotSheet()
+        viewModel.showAddTransactionSheet()
+        assertTrue(viewModel.uiState.value.isSnapshotSheetVisible)
+        assertTrue(viewModel.uiState.value.isAddTransactionSheetVisible)
+
+        viewModel.setSandboxMode(false)
+        advanceUntilIdle()
+
+        assertTrue(!viewModel.uiState.value.isSandboxMode)
+        assertEquals(null, viewModel.uiState.value.activeSnapshot)
+        assertTrue(!viewModel.uiState.value.isSnapshotSheetVisible)
+        assertTrue(!viewModel.uiState.value.isAddTransactionSheetVisible)
     }
 
     @Test
