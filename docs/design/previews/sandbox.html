@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sandbox · Budget Calendar Design Preview</title>
+  <style>
+    /* @primitive */
+    :root {
+      --p-black: #000000;
+      --p-white: #FFFFFF;
+      --p-off-white: #FAFAFA;
+      --p-zinc-950: #09090B;
+      --p-zinc-900: #18181B;
+      --p-zinc-800: #27272A;
+      --p-zinc-700: #3F3F46;
+      --p-zinc-500: #71717A;
+      --p-zinc-400: #A1A1AA;
+      --p-zinc-300: #D4D4D8;
+      --p-zinc-200: #E4E4E7;
+      --p-zinc-100: #F4F4F5;
+      --p-green-900: #14532D;
+      --p-green-500: #22C55E;
+      --p-green-400: #4ADE80;
+      --p-green-300: #86EFAC;
+      --p-green-100: #DCFCE7;
+      --p-green-text: #2E7D32;
+      --p-red-900: #7F1D1D;
+      --p-red-500: #EF4444;
+      --p-red-400: #F87171;
+      --p-red-300: #FCA5A5;
+      --p-red-100: #FEE2E2;
+      --p-red-text: #C62828;
+      --p-amber-900: #78350F;
+      --p-amber-800: #92400E;
+      --p-amber-500: #F59E0B;
+      --p-amber-400: #FBBF24;
+      --p-amber-200: #FDE68A;
+      --p-amber-100: #FEF3C7;
+      --p-blue-900: #1E3A8A;
+      --p-blue-700: #1D4ED8;
+      --p-blue-500: #3B82F6;
+      --p-blue-400: #60A5FA;
+      --p-blue-200: #BFDBFE;
+      --p-blue-100: #DBEAFE;
+      --p-space-1: 0.25rem;
+      --p-space-2: 0.5rem;
+      --p-space-3: 0.75rem;
+      --p-space-4: 1rem;
+      --p-space-5: 1.25rem;
+      --p-space-6: 1.5rem;
+      --p-space-8: 2rem;
+      --p-space-12: 3rem;
+      --p-radius-md: 0.5rem;
+      --p-radius-lg: 0.75rem;
+      --p-radius-xl: 1rem;
+      --p-radius-device: 2rem;
+      --p-radius-full: 9999px;
+      --p-border-thin: 1px;
+      --p-border-focus: 2px;
+      --p-shadow-md: 0 4px 8px rgb(0 0 0 / 0.16);
+      --p-phone-max: 24rem;
+      --p-content-max: 48rem;
+      --p-touch-target: 3rem;
+      --p-font-display: Outfit, ui-sans-serif, system-ui, sans-serif;
+      --p-font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+      --p-weight-semibold: 600;
+      --p-weight-bold: 700;
+      --p-weight-extrabold: 800;
+      --p-weight-black: 900;
+      --p-type-display: clamp(2.5rem, 10vw, 3.5rem);
+      --p-type-headline: clamp(2rem, 8vw, 2.5rem);
+      --p-type-section: clamp(1.25rem, 5vw, 1.5rem);
+      --p-type-title: 1.25rem;
+      --p-type-body-large: 1rem;
+      --p-type-body-medium: 0.875rem;
+      --p-type-body-small: 0.75rem;
+      --p-line-tight: 1.1;
+      --p-line-body: 1.4;
+    }
+
+    /* @semantic */
+    :root,
+    [data-theme="light"] {
+      --bg-dark: var(--p-black);
+      --bg-primary: var(--p-white);
+      --bg-surface: var(--p-zinc-100);
+      --text-primary: var(--p-black);
+      --text-secondary: var(--p-zinc-500);
+      --text-tertiary: var(--p-zinc-400);
+      --text-inverted: var(--p-white);
+      --border-strong: var(--p-zinc-200);
+      --focus-ring: var(--p-black);
+      --color-success: var(--p-green-500);
+      --color-success-text: var(--p-green-text);
+      --color-success-bg: var(--p-green-100);
+      --color-error: var(--p-red-500);
+      --color-error-text: var(--p-red-text);
+      --color-error-bg: var(--p-red-100);
+      --color-warning: var(--p-amber-500);
+      --color-warning-text: var(--p-amber-800);
+      --color-warning-bg: var(--p-amber-100);
+      --color-info: var(--p-blue-500);
+      --color-info-text: var(--p-blue-700);
+      --color-info-bg: var(--p-blue-100);
+    }
+
+    [data-theme="dark"] {
+      --bg-dark: var(--p-off-white);
+      --bg-primary: var(--p-zinc-950);
+      --bg-surface: var(--p-zinc-900);
+      --text-primary: var(--p-off-white);
+      --text-secondary: var(--p-zinc-400);
+      --text-tertiary: var(--p-zinc-500);
+      --text-inverted: var(--p-zinc-950);
+      --border-strong: var(--p-zinc-700);
+      --focus-ring: var(--p-off-white);
+      --color-success: var(--p-green-400);
+      --color-success-text: var(--p-green-300);
+      --color-success-bg: var(--p-green-900);
+      --color-error: var(--p-red-400);
+      --color-error-text: var(--p-red-300);
+      --color-error-bg: var(--p-red-900);
+      --color-warning: var(--p-amber-400);
+      --color-warning-text: var(--p-amber-200);
+      --color-warning-bg: var(--p-amber-900);
+      --color-info: var(--p-blue-400);
+      --color-info-text: var(--p-blue-200);
+      --color-info-bg: var(--p-blue-900);
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    html,
+    body {
+      margin: 0;
+      min-width: 18rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--p-font-body);
+      line-height: var(--p-line-body);
+    }
+
+    button { font: inherit; }
+
+    button:focus-visible {
+      outline: var(--p-border-focus) solid var(--focus-ring);
+      outline-offset: var(--p-space-1);
+    }
+
+    .preview-toolbar,
+    .page {
+      width: min(calc(100% - (var(--p-space-4) * 2)), var(--p-content-max));
+      margin-inline: auto;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-4);
+      padding-block: var(--p-space-4);
+      border-bottom: var(--p-border-thin) solid var(--border-strong);
+    }
+
+    .toolbar-label,
+    .eyebrow,
+    .metric-label,
+    .state-label {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .theme-toggle,
+    .icon-button,
+    .text-button,
+    .snapshot-pill,
+    .segmented__button,
+    .row-action {
+      min-block-size: var(--p-touch-target);
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .theme-toggle,
+    .text-button,
+    .row-action {
+      border-radius: var(--p-radius-full);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      padding: var(--p-space-2) var(--p-space-3);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-8);
+      padding-block: var(--p-space-8) var(--p-space-12);
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin: 0; }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--p-font-display);
+      line-height: var(--p-line-tight);
+    }
+
+    h1 {
+      font-size: var(--p-type-headline);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      font-size: var(--p-type-section);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    h3 {
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .page-intro,
+    .preview-section,
+    .sandbox-screen,
+    .sandbox-section,
+    .state-stack,
+    .transaction-list,
+    .transaction-row__main {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-intro { gap: var(--p-space-2); }
+
+    .page-intro p,
+    .preview-heading p,
+    .state-note,
+    .transaction-meta,
+    .comparison-label,
+    .daily-rate {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .preview-section { gap: var(--p-space-3); }
+
+    .preview-heading {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .phone-stage {
+      display: flex;
+      justify-content: center;
+      padding: var(--p-space-6) var(--p-space-4);
+      background: var(--bg-primary);
+    }
+
+    .sandbox-screen {
+      width: min(100%, var(--p-phone-max));
+      gap: var(--p-space-6);
+      padding: var(--p-space-4);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-device);
+      background: var(--bg-primary);
+      box-shadow: var(--p-shadow-md);
+    }
+
+    .app-header,
+    .section-header,
+    .transaction-row__top,
+    .row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-3);
+    }
+
+    .app-header h2 { flex: 1; font-size: var(--p-type-headline); }
+
+    .icon-button {
+      display: inline-grid;
+      flex: none;
+      place-items: center;
+      inline-size: var(--p-touch-target);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-surface);
+      font-size: var(--p-type-title);
+    }
+
+    .segmented {
+      display: flex;
+      gap: var(--p-space-1);
+      padding: var(--p-space-1);
+      border-radius: var(--p-radius-full);
+      background: var(--bg-surface);
+    }
+
+    .segmented__button {
+      flex: 1;
+      border-radius: var(--p-radius-full);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .segmented__button[aria-selected="true"] {
+      background: var(--bg-dark);
+      color: var(--text-inverted);
+    }
+
+    .snapshot-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-3);
+      inline-size: 100%;
+      border-radius: var(--p-radius-full);
+      background: var(--bg-dark);
+      color: var(--text-inverted);
+      padding: var(--p-space-3) var(--p-space-4);
+      text-align: start;
+    }
+
+    .snapshot-pill__name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .metric__amount {
+      color: var(--text-primary);
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-display);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .metric__amount--negative { color: var(--color-error-text); }
+
+    .metric__warning {
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .comparison-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-3);
+    }
+
+    .comparison-delta {
+      color: var(--color-success-text);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .sandbox-section { gap: var(--p-space-3); }
+    .section-header { align-items: end; }
+    .section-header__action { flex: none; }
+
+    .transaction-list { gap: var(--p-space-3); }
+
+    .transaction-row {
+      gap: var(--p-space-3);
+      padding: var(--p-space-3);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-surface);
+    }
+
+    .transaction-row__main {
+      min-inline-size: 0;
+      flex: 1;
+      gap: var(--p-space-1);
+    }
+
+    .transaction-row__top { align-items: flex-start; }
+
+    .transaction-title {
+      overflow: hidden;
+      color: var(--text-primary);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
+      min-block-size: var(--p-space-6);
+      border-radius: var(--p-radius-lg);
+      padding-inline: var(--p-space-2);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      text-transform: uppercase;
+    }
+
+    .type-badge--expense { background: var(--color-error-bg); color: var(--color-error-text); }
+    .type-badge--income { background: var(--color-success-bg); color: var(--color-success-text); }
+    .type-badge--transfer { background: var(--p-blue-200); color: var(--color-info-text); }
+
+    .transaction-amount {
+      flex: none;
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-bold);
+      text-align: end;
+    }
+
+    .transaction-amount--expense { color: var(--color-error-text); }
+    .transaction-amount--income { color: var(--color-success-text); }
+
+    .row-actions {
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .row-action--destructive { background: var(--color-error-bg); color: var(--color-error-text); }
+
+    .empty-state,
+    .loading-state,
+    .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--p-space-2);
+      padding: var(--p-space-6);
+      text-align: center;
+    }
+
+    .empty-state__title { font-size: var(--p-type-title); font-weight: var(--p-weight-extrabold); }
+    .empty-state__body { color: var(--text-secondary); }
+
+    .skeleton {
+      inline-size: 100%;
+      block-size: var(--p-space-6);
+      border-radius: var(--p-radius-md);
+      background: var(--bg-surface);
+    }
+
+    .skeleton--hero { block-size: var(--p-space-12); }
+
+    .error-panel {
+      width: 100%;
+      padding: var(--p-space-3);
+      border-radius: var(--p-radius-lg);
+      background: var(--color-error-bg);
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-small);
+      text-align: start;
+    }
+
+    .state-stack { gap: var(--p-space-3); }
+    .state-note { margin-block-start: var(--p-space-2); }
+
+    @media (min-width: 40rem) {
+      .sandbox-screen { padding: var(--p-space-6); }
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-toolbar" aria-label="Preview controls">
+    <span class="toolbar-label">Design preview · Sandbox mode</span>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark theme</button>
+  </header>
+
+  <main class="page">
+    <header class="page-intro">
+      <span class="eyebrow">Budget Calendar · Home mode</span>
+      <h1>Sandbox</h1>
+      <p>Sandbox stays inside Home. Snapshot planning never mutates live budget data.</p>
+    </header>
+
+    <section class="preview-section" aria-labelledby="sandbox-default-title">
+      <header class="preview-heading">
+        <h2 id="sandbox-default-title">Sandbox · Default</h2>
+        <p>Projected planning with comparison and transaction actions.</p>
+      </header>
+
+      <div class="phone-stage">
+        <article class="sandbox-screen">
+          <header class="app-header">
+            <h2>Sandbox</h2>
+            <button class="icon-button" type="button" aria-label="Notifications, 3 unread">●</button>
+          </header>
+
+          <div class="segmented" role="tablist" aria-label="Home mode">
+            <button class="segmented__button" type="button" role="tab" aria-selected="false">Live Budget</button>
+            <button class="segmented__button" type="button" role="tab" aria-selected="true">Sandbox</button>
+          </div>
+
+          <button class="snapshot-pill" type="button" aria-label="Select sandbox snapshot, June planning snapshot">
+            <span class="snapshot-pill__name">June planning snapshot</span>
+            <span aria-hidden="true">⌄</span>
+          </button>
+
+          <section class="metric" aria-label="Projected spend, 9,800 pesos, 980 pesos per day">
+            <span class="metric-label">Projected spend</span>
+            <strong class="metric__amount">₱9,800.00</strong>
+            <span class="daily-rate">₱980.00 / day</span>
+          </section>
+
+          <div class="comparison-row" aria-label="Compared with 12,480 pesos real, 2,680 pesos higher">
+            <span class="comparison-label">vs ₱12,480.00 real</span>
+            <span class="comparison-delta">+₱2,680.00</span>
+          </div>
+
+          <section class="sandbox-section" aria-labelledby="sandbox-transactions-title">
+            <header class="section-header">
+              <h3 id="sandbox-transactions-title">Sandbox Transactions</h3>
+              <button class="text-button section-header__action" type="button">Add</button>
+            </header>
+            <div class="transaction-list">
+              <article class="transaction-row" aria-label="Weekend trip, expense, June 22, 2,500 pesos">
+                <div class="transaction-row__top">
+                  <div class="transaction-row__main">
+                    <span class="type-badge type-badge--expense">Expense</span>
+                    <span class="transaction-title">Weekend trip</span>
+                    <span class="transaction-meta">Jun 22 · planned expense</span>
+                  </div>
+                  <span class="transaction-amount transaction-amount--expense">−₱2,500.00</span>
+                </div>
+                <div class="row-actions">
+                  <button class="row-action" type="button">Promote</button>
+                  <button class="row-action row-action--destructive" type="button">Remove</button>
+                </div>
+              </article>
+              <article class="transaction-row" aria-label="Bonus, income, June 25, 3,000 pesos">
+                <div class="transaction-row__top">
+                  <div class="transaction-row__main">
+                    <span class="type-badge type-badge--income">Income</span>
+                    <span class="transaction-title">Bonus</span>
+                    <span class="transaction-meta">Jun 25 · planned income</span>
+                  </div>
+                  <span class="transaction-amount transaction-amount--income">+₱3,000.00</span>
+                </div>
+                <div class="row-actions">
+                  <button class="row-action" type="button">Promote</button>
+                  <button class="row-action row-action--destructive" type="button">Remove</button>
+                </div>
+              </article>
+            </div>
+          </section>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="sandbox-states-title">
+      <header class="preview-heading">
+        <h2 id="sandbox-states-title">Sandbox states</h2>
+        <p>Snapshot, projection, and transaction failures stay local.</p>
+      </header>
+
+      <div class="phone-stage">
+        <article class="sandbox-screen state-stack">
+          <span class="state-label">No snapshot selected</span>
+          <section class="empty-state" aria-label="No sandbox snapshot selected">
+            <strong class="empty-state__title">No Snapshot Selected</strong>
+            <p class="empty-state__body">Choose or create a sandbox snapshot to start planning.</p>
+            <button class="snapshot-pill" type="button">Select snapshot</button>
+          </section>
+
+          <span class="state-label">Loading</span>
+          <section class="loading-state" aria-busy="true" aria-label="Loading sandbox">
+            <span class="skeleton skeleton--hero"></span>
+            <span class="skeleton"></span>
+            <span class="skeleton"></span>
+          </section>
+
+          <span class="state-label">No transactions</span>
+          <section class="empty-state" aria-label="No sandbox transactions">
+            <p class="empty-state__body">No transactions yet. Tap Add to start planning.</p>
+            <button class="text-button" type="button">Add</button>
+          </section>
+
+          <span class="state-label">Negative projection</span>
+          <section class="metric" aria-label="Projected spend, negative 1,200 pesos, warning">
+            <span class="metric-label">Projected spend</span>
+            <strong class="metric__amount metric__amount--negative">−₱1,200.00</strong>
+            <span class="metric__warning">Warning: projected spend is negative.</span>
+          </section>
+
+          <span class="state-label">Scoped error</span>
+          <section class="error-state" aria-label="Could not load sandbox transactions">
+            <div class="error-panel">Could not load sandbox transactions.</div>
+            <button class="text-button" type="button">Try again</button>
+          </section>
+        </article>
+      </div>
+    </section>
+
+    <p class="state-note">Snapshot selection, Add, Promote, Remove, and confirmations are sheet/dialog-owned.</p>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      const isDark = theme === 'dark';
+      themeToggle.textContent = isDark ? 'Light theme' : 'Dark theme';
+      themeToggle.setAttribute('aria-pressed', String(isDark));
+    }
+
+    themeToggle.addEventListener('click', () => {
+      setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+  </script>
+</body>
+</html>

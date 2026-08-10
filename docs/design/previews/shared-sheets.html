@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shared Sheets · Budget Calendar Design Preview</title>
+  <style>
+    /* @primitive */
+    :root {
+      --p-black: #000000;
+      --p-white: #FFFFFF;
+      --p-off-white: #FAFAFA;
+      --p-zinc-950: #09090B;
+      --p-zinc-900: #18181B;
+      --p-zinc-800: #27272A;
+      --p-zinc-700: #3F3F46;
+      --p-zinc-500: #71717A;
+      --p-zinc-400: #A1A1AA;
+      --p-zinc-300: #D4D4D8;
+      --p-zinc-200: #E4E4E7;
+      --p-zinc-100: #F4F4F5;
+      --p-green-900: #14532D;
+      --p-green-500: #22C55E;
+      --p-green-300: #86EFAC;
+      --p-green-100: #DCFCE7;
+      --p-green-text: #2E7D32;
+      --p-red-900: #7F1D1D;
+      --p-red-500: #EF4444;
+      --p-red-300: #FCA5A5;
+      --p-red-100: #FEE2E2;
+      --p-red-text: #C62828;
+      --p-amber-900: #78350F;
+      --p-amber-800: #92400E;
+      --p-amber-500: #F59E0B;
+      --p-amber-200: #FDE68A;
+      --p-amber-100: #FEF3C7;
+      --p-blue-900: #1E3A8A;
+      --p-blue-700: #1D4ED8;
+      --p-blue-500: #3B82F6;
+      --p-blue-200: #BFDBFE;
+      --p-space-1: 0.25rem;
+      --p-space-2: 0.5rem;
+      --p-space-3: 0.75rem;
+      --p-space-4: 1rem;
+      --p-space-5: 1.25rem;
+      --p-space-6: 1.5rem;
+      --p-space-8: 2rem;
+      --p-space-12: 3rem;
+      --p-radius-md: 0.5rem;
+      --p-radius-lg: 0.75rem;
+      --p-radius-xl: 1rem;
+      --p-radius-device: 2rem;
+      --p-radius-full: 9999px;
+      --p-border-thin: 1px;
+      --p-border-focus: 2px;
+      --p-shadow-md: 0 4px 8px rgb(0 0 0 / 0.16);
+      --p-phone-max: 24rem;
+      --p-content-max: 48rem;
+      --p-touch-target: 3rem;
+      --p-font-display: Outfit, ui-sans-serif, system-ui, sans-serif;
+      --p-font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+      --p-weight-semibold: 600;
+      --p-weight-bold: 700;
+      --p-weight-extrabold: 800;
+      --p-weight-black: 900;
+      --p-type-headline: clamp(2rem, 8vw, 2.5rem);
+      --p-type-section: clamp(1.25rem, 5vw, 1.5rem);
+      --p-type-title: 1.25rem;
+      --p-type-body-large: 1rem;
+      --p-type-body-medium: 0.875rem;
+      --p-type-body-small: 0.75rem;
+      --p-line-tight: 1.1;
+      --p-line-body: 1.4;
+    }
+
+    /* @semantic */
+    :root,
+    [data-theme="light"] {
+      --bg-dark: var(--p-black);
+      --bg-primary: var(--p-white);
+      --bg-surface: var(--p-zinc-100);
+      --text-primary: var(--p-black);
+      --text-secondary: var(--p-zinc-500);
+      --text-tertiary: var(--p-zinc-400);
+      --text-inverted: var(--p-white);
+      --border-strong: var(--p-zinc-200);
+      --border-subtle: var(--p-zinc-100);
+      --focus-ring: var(--p-black);
+      --color-success-text: var(--p-green-text);
+      --color-success-bg: var(--p-green-100);
+      --color-error-text: var(--p-red-text);
+      --color-error-bg: var(--p-red-100);
+      --color-warning-text: var(--p-amber-800);
+      --color-warning-bg: var(--p-amber-100);
+      --color-info-text: var(--p-blue-700);
+      --color-info-bg: var(--p-blue-200);
+    }
+
+    [data-theme="dark"] {
+      --bg-dark: var(--p-off-white);
+      --bg-primary: var(--p-zinc-950);
+      --bg-surface: var(--p-zinc-900);
+      --text-primary: var(--p-off-white);
+      --text-secondary: var(--p-zinc-400);
+      --text-tertiary: var(--p-zinc-500);
+      --text-inverted: var(--p-zinc-950);
+      --border-strong: var(--p-zinc-700);
+      --border-subtle: var(--p-zinc-800);
+      --focus-ring: var(--p-off-white);
+      --color-success-text: var(--p-green-300);
+      --color-success-bg: var(--p-green-900);
+      --color-error-text: var(--p-red-300);
+      --color-error-bg: var(--p-red-900);
+      --color-warning-text: var(--p-amber-200);
+      --color-warning-bg: var(--p-amber-900);
+      --color-info-text: var(--p-blue-200);
+      --color-info-bg: var(--p-blue-900);
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    html,
+    body {
+      margin: 0;
+      min-width: 18rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--p-font-body);
+      line-height: var(--p-line-body);
+    }
+
+    button,
+    input { font: inherit; }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: var(--p-border-focus) solid var(--focus-ring);
+      outline-offset: var(--p-space-1);
+    }
+
+    .preview-toolbar,
+    .page {
+      width: min(calc(100% - (var(--p-space-4) * 2)), var(--p-content-max));
+      margin-inline: auto;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-4);
+      padding-block: var(--p-space-4);
+      border-bottom: var(--p-border-thin) solid var(--border-strong);
+    }
+
+    .toolbar-label,
+    .eyebrow,
+    .state-label,
+    .field-label,
+    .detail-label {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .theme-toggle,
+    .icon-button,
+    .button,
+    .segmented__button,
+    .picker-row,
+    .notification-row {
+      min-block-size: var(--p-touch-target);
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .theme-toggle,
+    .button {
+      border-radius: var(--p-radius-full);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      padding: var(--p-space-2) var(--p-space-3);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .button--primary {
+      background: var(--bg-dark);
+      color: var(--text-inverted);
+    }
+
+    .button--danger {
+      background: var(--color-error-bg);
+      color: var(--color-error-text);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-8);
+      padding-block: var(--p-space-8) var(--p-space-12);
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin: 0; }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--p-font-display);
+      line-height: var(--p-line-tight);
+    }
+
+    h1 {
+      font-size: var(--p-type-headline);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      font-size: var(--p-type-section);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    h3 {
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .page-intro,
+    .preview-section,
+    .sheet-screen,
+    .sheet-panel,
+    .sheet-body,
+    .field,
+    .notification-list,
+    .picker-list,
+    .state-stack {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-intro { gap: var(--p-space-2); }
+
+    .page-intro p,
+    .preview-heading p,
+    .state-note,
+    .field-help,
+    .detail-value,
+    .notification-meta,
+    .picker-meta {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .preview-section { gap: var(--p-space-3); }
+
+    .preview-heading {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .phone-stage {
+      display: flex;
+      justify-content: center;
+      padding: var(--p-space-6) var(--p-space-4);
+      background: var(--bg-primary);
+    }
+
+    .sheet-screen {
+      width: min(100%, var(--p-phone-max));
+      min-block-size: var(--p-space-12);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-device);
+      background: var(--bg-primary);
+      box-shadow: var(--p-shadow-md);
+      overflow: hidden;
+    }
+
+    .sheet-panel {
+      gap: var(--p-space-5);
+      padding: var(--p-space-4);
+      background: var(--bg-primary);
+    }
+
+    .sheet-header,
+    .sheet-header__actions,
+    .action-row,
+    .detail-row,
+    .notification-row,
+    .picker-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-3);
+    }
+
+    .sheet-header { align-items: flex-start; }
+    .sheet-header__actions { flex: none; }
+
+    .sheet-title {
+      flex: 1;
+      font-size: var(--p-type-section);
+    }
+
+    .icon-button {
+      display: inline-grid;
+      flex: none;
+      place-items: center;
+      inline-size: var(--p-touch-target);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-surface);
+      font-size: var(--p-type-title);
+    }
+
+    .sheet-body {
+      gap: var(--p-space-4);
+    }
+
+    .sheet-footer {
+      display: flex;
+      gap: var(--p-space-2);
+      padding-block-start: var(--p-space-2);
+    }
+
+    .sheet-footer .button { flex: 1; }
+
+    .segmented {
+      display: flex;
+      gap: var(--p-space-1);
+      padding: var(--p-space-1);
+      border-radius: var(--p-radius-full);
+      background: var(--bg-surface);
+    }
+
+    .segmented__button {
+      flex: 1;
+      border-radius: var(--p-radius-full);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .segmented__button[aria-selected="true"] {
+      background: var(--bg-dark);
+      color: var(--text-inverted);
+    }
+
+    .amount {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .amount__value {
+      color: var(--text-primary);
+      font-family: var(--p-font-display);
+      font-size: clamp(2.5rem, 10vw, 3.5rem);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .amount__value--error { color: var(--color-error-text); }
+
+    .field { gap: var(--p-space-2); }
+
+    .field-label { color: var(--text-primary); }
+
+    .input,
+    .picker-row {
+      inline-size: 100%;
+      min-block-size: var(--p-touch-target);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      padding: var(--p-space-3);
+      text-align: start;
+    }
+
+    .input--error { border-color: var(--color-error-text); }
+    .field-error { color: var(--color-error-text); font-size: var(--p-type-body-small); }
+
+    .detail-list,
+    .notification-list,
+    .picker-list,
+    .state-stack { gap: var(--p-space-3); }
+
+    .sheet-screen.state-stack {
+      padding: var(--p-space-4);
+    }
+
+    .detail-row {
+      align-items: flex-start;
+      padding-block: var(--p-space-2);
+      border-bottom: var(--p-border-thin) solid var(--border-subtle);
+    }
+
+    .detail-value {
+      color: var(--text-primary);
+      font-weight: var(--p-weight-semibold);
+      text-align: end;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--p-space-6);
+      border-radius: var(--p-radius-lg);
+      padding-inline: var(--p-space-2);
+      background: var(--color-warning-bg);
+      color: var(--color-warning-text);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      text-transform: uppercase;
+    }
+
+    .notification-row,
+    .picker-row {
+      align-items: flex-start;
+      padding: var(--p-space-3);
+      background: var(--bg-surface);
+      text-align: start;
+    }
+
+    .notification-main,
+    .picker-main {
+      display: flex;
+      min-inline-size: 0;
+      flex: 1;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .notification-title,
+    .picker-title {
+      color: var(--text-primary);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .notification-expanded {
+      padding: var(--p-space-3);
+      border-radius: var(--p-radius-lg);
+      background: var(--color-warning-bg);
+      color: var(--color-warning-text);
+      font-size: var(--p-type-body-small);
+    }
+
+    .success-message {
+      color: var(--color-success-text);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .error-panel {
+      padding: var(--p-space-3);
+      border-radius: var(--p-radius-lg);
+      background: var(--color-error-bg);
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-small);
+    }
+
+    .state-label { color: var(--text-primary); }
+    .state-note { margin-block-start: var(--p-space-2); }
+
+    @media (min-width: 40rem) {
+      .sheet-panel { padding: var(--p-space-6); }
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-toolbar" aria-label="Preview controls">
+    <span class="toolbar-label">Design preview · Shared sheets</span>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark theme</button>
+  </header>
+
+  <main class="page">
+    <header class="page-intro">
+      <span class="eyebrow">Budget Calendar · Shared overlays</span>
+      <h1>Sheets</h1>
+      <p>Common shell, forms, details, pickers, notifications, and confirmations.</p>
+    </header>
+
+    <section class="preview-section" aria-labelledby="transaction-form-title">
+      <header class="preview-heading">
+        <h2 id="transaction-form-title">Transaction Form</h2>
+        <p>Scrollable body with one primary footer action.</p>
+      </header>
+      <div class="phone-stage">
+        <article class="sheet-screen">
+          <div class="sheet-panel">
+            <header class="sheet-header">
+              <h3 class="sheet-title">New Transaction</h3>
+              <button class="icon-button" type="button" aria-label="Close New Transaction">×</button>
+            </header>
+            <div class="sheet-body">
+              <div class="segmented" role="tablist" aria-label="Transaction type">
+                <button class="segmented__button" type="button" role="tab" aria-selected="true">Expense</button>
+                <button class="segmented__button" type="button" role="tab" aria-selected="false">Income</button>
+                <button class="segmented__button" type="button" role="tab" aria-selected="false">Transfer</button>
+              </div>
+              <div class="amount"><span class="field-label">AMOUNT</span><strong class="amount__value">₱0.00</strong></div>
+              <div class="field"><label class="field-label" for="transaction-name">Name</label><input class="input" id="transaction-name" value="Groceries" aria-label="Transaction name"></div>
+              <div class="action-row"><button class="picker-row" type="button" aria-label="Select date, Today">Today <span aria-hidden="true">⌄</span></button><button class="picker-row" type="button" aria-label="Select account, Main wallet">Main wallet <span aria-hidden="true">⌄</span></button></div>
+              <div class="field"><span class="field-label">STATUS</span><span class="detail-value">Scheduled (Future)</span></div>
+            </div>
+            <footer class="sheet-footer"><button class="button button--primary" type="button">Add Expense</button></footer>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="details-title">
+      <header class="preview-heading">
+        <h2 id="details-title">Transaction Details</h2>
+        <p>Read-only detail hierarchy with explicit actions.</p>
+      </header>
+      <div class="phone-stage">
+        <article class="sheet-screen">
+          <div class="sheet-panel">
+            <header class="sheet-header">
+              <h3 class="sheet-title">Transaction Details</h3>
+              <div class="sheet-header__actions"><button class="icon-button" type="button" aria-label="Close transaction details">×</button><button class="icon-button" type="button" aria-label="Transaction actions">⋯</button></div>
+            </header>
+            <div class="amount"><span class="field-label">AMOUNT</span><strong class="amount__value">−₱850.00</strong></div>
+            <div class="detail-list">
+              <div class="detail-row"><span class="detail-label">Type</span><span class="detail-value">Expense</span></div>
+              <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">Groceries</span></div>
+              <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">June 18, 2024</span></div>
+              <div class="detail-row"><span class="detail-label">Status</span><span class="badge">Pending</span></div>
+              <div class="detail-row"><span class="detail-label">Source account</span><span class="detail-value">Main wallet</span></div>
+              <div class="detail-row"><span class="detail-label">Description</span><span class="detail-value">Weekly groceries</span></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="notification-title">
+      <header class="preview-heading">
+        <h2 id="notification-title">Notification Center</h2>
+        <p>Expandable rows, clear-all action, and scoped empty state.</p>
+      </header>
+      <div class="phone-stage">
+        <article class="sheet-screen">
+          <div class="sheet-panel">
+            <header class="sheet-header"><h3 class="sheet-title">Notifications</h3><button class="button" type="button">Clear all</button></header>
+            <div class="notification-list">
+              <article class="notification-row"><div class="notification-main"><span class="notification-title">Overdue transactions <span class="badge">2</span></span><span class="notification-meta">2h ago</span><div class="notification-expanded">Internet bill −₱1,200.00 · Grocery payment −₱850.00</div></div><button class="icon-button" type="button" aria-label="Dismiss overdue transactions notification">×</button></article>
+              <article class="notification-row"><div class="notification-main"><span class="notification-title">Safe to Spend is low</span><span class="notification-meta">Yesterday</span></div><button class="icon-button" type="button" aria-label="Dismiss Safe to Spend notification">×</button></article>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="picker-title">
+      <header class="preview-heading">
+        <h2 id="picker-title">Pickers and payment</h2>
+        <p>Shared account selection and card payment action pattern.</p>
+      </header>
+      <div class="phone-stage">
+        <article class="sheet-screen">
+          <div class="sheet-panel">
+            <header class="sheet-header"><h3 class="sheet-title">Select Account</h3><button class="icon-button" type="button" aria-label="Back">‹</button></header>
+            <div class="picker-list">
+              <button class="picker-row" type="button" aria-label="Main wallet, 42,300 pesos, Checking, selected"><span class="picker-main"><span class="picker-title">Main wallet</span><span class="picker-meta">₱42,300.00 · Checking</span></span><strong aria-label="Selected">✓</strong></button>
+              <button class="picker-row" type="button" aria-label="Bills account, 18,200 pesos, Savings"><span class="picker-main"><span class="picker-title">Bills account</span><span class="picker-meta">₱18,200.00 · Savings</span></span></button>
+            </div>
+            <div class="sheet-body"><h3>Pay Travel card</h3><p class="field-help">Suggested payment: ₱1,200.00</p><div class="field"><label class="field-label" for="payment-amount">Payment Amount</label><input class="input" id="payment-amount" value="1200.00" inputmode="decimal"></div></div>
+            <footer class="sheet-footer"><button class="button" type="button">Cancel</button><button class="button button--primary" type="button">Confirm</button></footer>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="sandbox-sheet-title">
+      <header class="preview-heading">
+        <h2 id="sandbox-sheet-title">Sandbox Sheets</h2>
+        <p>Snapshot management and Add transaction share shell rules.</p>
+      </header>
+      <div class="phone-stage">
+        <article class="sheet-screen">
+          <div class="sheet-panel">
+            <header class="sheet-header"><h3 class="sheet-title">Select Sandbox</h3><button class="icon-button" type="button" aria-label="Close Select Sandbox">×</button></header>
+            <div class="picker-list">
+              <button class="picker-row" type="button" aria-label="June planning snapshot, active"><span class="picker-main"><span class="picker-title">June planning snapshot</span><span class="picker-meta">Last accessed today</span></span><strong>✓</strong></button>
+              <button class="picker-row" type="button"><span class="picker-main"><span class="picker-title">Holiday planning</span><span class="picker-meta">Last accessed Jun 10</span></span></button>
+            </div>
+            <footer class="sheet-footer"><button class="button" type="button">Create New</button></footer>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="sheet-states-title">
+      <header class="preview-heading">
+        <h2 id="sheet-states-title">Shared sheet states</h2>
+        <p>Validation, save failure, and destructive confirmation.</p>
+      </header>
+      <div class="phone-stage">
+        <article class="sheet-screen state-stack">
+          <span class="state-label">Validation</span>
+          <section class="sheet-panel"><h3 class="sheet-title">New Transaction</h3><div class="field"><label class="field-label" for="invalid-amount">Amount</label><input class="input input--error" id="invalid-amount" value="0" aria-invalid="true" aria-describedby="amount-error"><span class="field-error" id="amount-error" role="alert">Enter a valid amount</span></div><button class="button button--primary" type="button">Add Expense</button></section>
+          <span class="state-label">Submit error</span>
+          <section class="sheet-panel"><div class="error-panel">Could not save transaction. Your values remain editable.</div><div class="sheet-footer"><button class="button" type="button">Cancel</button><button class="button button--primary" type="button">Try again</button></div></section>
+          <span class="state-label">Discard confirmation</span>
+          <section class="sheet-panel"><h3>Discard transaction?</h3><p class="field-help">Your changes will be lost.</p><div class="sheet-footer"><button class="button" type="button">Keep editing</button><button class="button button--danger" type="button">Discard</button></div></section>
+          <span class="state-label">Saved</span>
+          <section class="sheet-panel"><p class="success-message">Transaction saved</p></section>
+        </article>
+      </div>
+    </section>
+
+    <p class="state-note">Sheets use shared shell rules; domain state and mutations remain feature-owned.</p>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      const isDark = theme === 'dark';
+      themeToggle.textContent = isDark ? 'Light theme' : 'Dark theme';
+      themeToggle.setAttribute('aria-pressed', String(isDark));
+    }
+
+    themeToggle.addEventListener('click', () => {
+      setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+  </script>
+</body>
+</html>

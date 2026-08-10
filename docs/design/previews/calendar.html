@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calendar · Budget Calendar Design Preview</title>
+  <style>
+    /* @primitive */
+    :root {
+      --p-black: #000000;
+      --p-white: #FFFFFF;
+      --p-off-white: #FAFAFA;
+      --p-zinc-950: #09090B;
+      --p-zinc-900: #18181B;
+      --p-zinc-800: #27272A;
+      --p-zinc-700: #3F3F46;
+      --p-zinc-600: #52525B;
+      --p-zinc-500: #71717A;
+      --p-zinc-400: #A1A1AA;
+      --p-zinc-300: #D4D4D8;
+      --p-zinc-200: #E4E4E7;
+      --p-zinc-100: #F4F4F5;
+      --p-green-900: #14532D;
+      --p-green-500: #22C55E;
+      --p-green-400: #4ADE80;
+      --p-green-300: #86EFAC;
+      --p-green-100: #DCFCE7;
+      --p-green-text: #2E7D32;
+      --p-red-900: #7F1D1D;
+      --p-red-500: #EF4444;
+      --p-red-400: #F87171;
+      --p-red-300: #FCA5A5;
+      --p-red-100: #FEE2E2;
+      --p-red-text: #C62828;
+      --p-amber-900: #78350F;
+      --p-amber-800: #92400E;
+      --p-amber-500: #F59E0B;
+      --p-amber-400: #FBBF24;
+      --p-amber-200: #FDE68A;
+      --p-amber-100: #FEF3C7;
+      --p-blue-700: #1D4ED8;
+      --p-blue-500: #3B82F6;
+      --p-blue-400: #60A5FA;
+      --p-blue-200: #BFDBFE;
+      --p-space-1: 0.25rem;
+      --p-space-2: 0.5rem;
+      --p-space-3: 0.75rem;
+      --p-space-4: 1rem;
+      --p-space-5: 1.25rem;
+      --p-space-6: 1.5rem;
+      --p-space-8: 2rem;
+      --p-space-12: 3rem;
+      --p-radius-md: 0.5rem;
+      --p-radius-lg: 0.75rem;
+      --p-radius-xl: 1rem;
+      --p-radius-device: 2rem;
+      --p-radius-full: 9999px;
+      --p-border-thin: 1px;
+      --p-border-focus: 2px;
+      --p-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.16);
+      --p-shadow-md: 0 4px 8px rgb(0 0 0 / 0.16);
+      --p-phone-max: 24rem;
+      --p-content-max: 48rem;
+      --p-touch-target: 3rem;
+      --p-font-display: Outfit, ui-sans-serif, system-ui, sans-serif;
+      --p-font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+      --p-weight-medium: 500;
+      --p-weight-semibold: 600;
+      --p-weight-bold: 700;
+      --p-weight-extrabold: 800;
+      --p-weight-black: 900;
+      --p-type-display: clamp(2rem, 8vw, 3rem);
+      --p-type-headline: clamp(2rem, 8vw, 2.5rem);
+      --p-type-section: clamp(1.25rem, 5vw, 1.5rem);
+      --p-type-title: 1.25rem;
+      --p-type-body-large: 1rem;
+      --p-type-body-medium: 0.875rem;
+      --p-type-body-small: 0.75rem;
+      --p-line-tight: 1.1;
+      --p-line-body: 1.4;
+    }
+
+    /* @semantic */
+    :root,
+    [data-theme="light"] {
+      --bg-dark: var(--p-black);
+      --bg-primary: var(--p-white);
+      --bg-surface: var(--p-zinc-100);
+      --text-primary: var(--p-black);
+      --text-secondary: var(--p-zinc-500);
+      --text-tertiary: var(--p-zinc-400);
+      --text-inverted: var(--p-white);
+      --border-strong: var(--p-zinc-200);
+      --focus-ring: var(--p-black);
+      --color-success: var(--p-green-500);
+      --color-success-text: var(--p-green-text);
+      --color-success-bg: var(--p-green-100);
+      --color-error: var(--p-red-500);
+      --color-error-text: var(--p-red-text);
+      --color-error-bg: var(--p-red-100);
+      --color-warning: var(--p-amber-500);
+      --color-warning-text: var(--p-amber-800);
+      --color-warning-bg: var(--p-amber-100);
+      --color-info: var(--p-blue-500);
+      --color-info-text: var(--p-blue-700);
+    }
+
+    [data-theme="dark"] {
+      --bg-dark: var(--p-off-white);
+      --bg-primary: var(--p-zinc-950);
+      --bg-surface: var(--p-zinc-900);
+      --text-primary: var(--p-off-white);
+      --text-secondary: var(--p-zinc-400);
+      --text-tertiary: var(--p-zinc-500);
+      --text-inverted: var(--p-zinc-950);
+      --border-strong: var(--p-zinc-700);
+      --focus-ring: var(--p-off-white);
+      --color-success: var(--p-green-400);
+      --color-success-text: var(--p-green-300);
+      --color-success-bg: var(--p-green-900);
+      --color-error: var(--p-red-400);
+      --color-error-text: var(--p-red-300);
+      --color-error-bg: var(--p-red-900);
+      --color-warning: var(--p-amber-400);
+      --color-warning-text: var(--p-amber-200);
+      --color-warning-bg: var(--p-amber-900);
+      --color-info: var(--p-blue-400);
+      --color-info-text: var(--p-blue-200);
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    html,
+    body {
+      margin: 0;
+      min-width: 18rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--p-font-body);
+      line-height: var(--p-line-body);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    button:focus-visible {
+      outline: var(--p-border-focus) solid var(--focus-ring);
+      outline-offset: var(--p-space-1);
+    }
+
+    .preview-toolbar,
+    .page {
+      width: min(calc(100% - (var(--p-space-4) * 2)), var(--p-content-max));
+      margin-inline: auto;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-4);
+      padding-block: var(--p-space-4);
+      border-bottom: var(--p-border-thin) solid var(--border-strong);
+    }
+
+    .toolbar-label,
+    .eyebrow,
+    .metric-label,
+    .state-label {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .theme-toggle,
+    .icon-button,
+    .text-button,
+    .day-cell,
+    .transaction-row {
+      min-block-size: var(--p-touch-target);
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .theme-toggle,
+    .text-button {
+      border-radius: var(--p-radius-full);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      padding: var(--p-space-2) var(--p-space-3);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-8);
+      padding-block: var(--p-space-8) var(--p-space-12);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--p-font-display);
+      line-height: var(--p-line-tight);
+    }
+
+    h1 {
+      font-size: var(--p-type-headline);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      font-size: var(--p-type-section);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    h3 {
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .page-intro,
+    .preview-section,
+    .calendar-screen,
+    .calendar-section,
+    .state-stack {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-intro {
+      gap: var(--p-space-2);
+    }
+
+    .page-intro p,
+    .preview-heading p,
+    .state-note,
+    .cell-label,
+    .transaction-meta,
+    .section-meta {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .preview-section {
+      gap: var(--p-space-3);
+    }
+
+    .preview-heading {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .phone-stage {
+      display: flex;
+      justify-content: center;
+      padding: var(--p-space-6) var(--p-space-4);
+      background: var(--bg-primary);
+    }
+
+    .calendar-screen {
+      width: min(100%, var(--p-phone-max));
+      gap: var(--p-space-4);
+      padding: var(--p-space-4);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-device);
+      background: var(--bg-primary);
+      box-shadow: var(--p-shadow-md);
+    }
+
+    .app-header,
+    .month-navigation,
+    .section-header,
+    .projection-pill,
+    .transaction-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-3);
+    }
+
+    .app-header h2 {
+      flex: 1;
+      font-size: var(--p-type-headline);
+    }
+
+    .icon-button {
+      display: inline-grid;
+      flex: none;
+      place-items: center;
+      inline-size: var(--p-touch-target);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-surface);
+      font-size: var(--p-type-title);
+    }
+
+    .month-navigation {
+      min-block-size: var(--p-touch-target);
+    }
+
+    .month-navigation__label {
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .month-navigation__actions {
+      display: flex;
+      gap: var(--p-space-2);
+    }
+
+    .month-navigation__actions .icon-button {
+      background: transparent;
+      font-size: var(--p-type-section);
+    }
+
+    .projection-pill {
+      padding: var(--p-space-3) var(--p-space-4);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-surface);
+    }
+
+    .projection-pill__amount {
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-body-large);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .projection-pill__amount--negative {
+      color: var(--color-error-text);
+    }
+
+    .calendar-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .weekday-row,
+    .calendar-week {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: var(--p-space-1);
+    }
+
+    .weekday {
+      padding-block: var(--p-space-1);
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .calendar-week {
+      min-block-size: var(--p-touch-target);
+    }
+
+    .day-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      min-inline-size: 0;
+      padding: var(--p-space-1);
+      border-radius: var(--p-radius-md);
+      appearance: none;
+      background: transparent;
+      text-align: end;
+    }
+
+    .day-cell__number {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .day-cell--outside {
+      opacity: 0.4;
+    }
+
+    .day-cell--positive:not([aria-selected="true"]) {
+      background: var(--color-success-bg);
+    }
+
+    .day-cell--negative:not([aria-selected="true"]) {
+      background: var(--color-error-bg);
+    }
+
+    .day-cell--today {
+      outline: var(--p-border-thin) solid var(--focus-ring);
+      outline-offset: calc(var(--p-border-thin) * -1);
+    }
+
+    .day-cell[aria-selected="true"] {
+      background: var(--bg-dark);
+    }
+
+    .day-cell[aria-selected="true"] .day-cell__number {
+      color: var(--text-inverted);
+      font-weight: var(--p-weight-black);
+    }
+
+    .day-cell__dots {
+      display: flex;
+      gap: var(--p-space-1);
+      min-block-size: var(--p-space-2);
+    }
+
+    .status-dot {
+      inline-size: var(--p-space-1);
+      block-size: var(--p-space-1);
+      border-radius: var(--p-radius-full);
+    }
+
+    .status-dot--warning { background: var(--color-warning); }
+    .status-dot--error { background: var(--color-error); }
+
+    .calendar-section {
+      gap: var(--p-space-3);
+    }
+
+    .section-header {
+      align-items: end;
+    }
+
+    .section-header__meta {
+      flex: none;
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .transaction-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-2);
+    }
+
+    .transaction-row {
+      align-items: flex-start;
+      padding: var(--p-space-3);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-lg);
+      appearance: none;
+      background: var(--bg-surface);
+      text-align: start;
+    }
+
+    .transaction-main {
+      display: flex;
+      min-inline-size: 0;
+      flex: 1;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .transaction-title {
+      overflow: hidden;
+      color: var(--text-primary);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .transaction-amount {
+      flex: none;
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-bold);
+      text-align: end;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      min-block-size: var(--p-space-6);
+      align-items: center;
+      border-radius: var(--p-radius-lg);
+      padding-inline: var(--p-space-2);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      text-transform: uppercase;
+    }
+
+    .expand-button {
+      inline-size: 100%;
+    }
+
+    .preview-empty,
+    .error-state,
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--p-space-2);
+      padding-block: var(--p-space-5);
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .error-panel {
+      width: 100%;
+      padding: var(--p-space-3);
+      border-radius: var(--p-radius-lg);
+      background: var(--color-error-bg);
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-small);
+    }
+
+    .skeleton {
+      width: 100%;
+      block-size: var(--p-space-6);
+      border-radius: var(--p-radius-md);
+      background: var(--bg-surface);
+    }
+
+    .skeleton--cell {
+      block-size: var(--p-touch-target);
+    }
+
+    .state-stack {
+      gap: var(--p-space-3);
+    }
+
+    .state-label {
+      color: var(--text-primary);
+    }
+
+    .state-note {
+      margin-block-start: var(--p-space-2);
+    }
+
+    @media (min-width: 40rem) {
+      .calendar-screen {
+        padding: var(--p-space-6);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-toolbar" aria-label="Preview controls">
+    <span class="toolbar-label">Design preview · Calendar</span>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark theme</button>
+  </header>
+
+  <main class="page">
+    <header class="page-intro">
+      <span class="eyebrow">Budget Calendar</span>
+      <h1>Calendar</h1>
+      <p>Month navigation, daily activity, and exact-date transaction handoff.</p>
+    </header>
+
+    <section class="preview-section" aria-labelledby="calendar-default-title">
+      <header class="preview-heading">
+        <h2 id="calendar-default-title">Calendar · Default</h2>
+        <p>Selected date came from Home: Tuesday, June 18.</p>
+      </header>
+
+      <div class="phone-stage">
+        <article class="calendar-screen">
+          <header class="app-header">
+            <h2>Calendar</h2>
+            <button class="icon-button" type="button" aria-label="Notifications, 3 unread">●</button>
+          </header>
+
+          <div class="month-navigation" aria-label="Month navigation">
+            <strong class="month-navigation__label" id="month-label">Jun 2024</strong>
+            <div class="month-navigation__actions">
+              <button class="icon-button" id="previous-month" type="button" aria-label="Previous month">‹</button>
+              <button class="icon-button" id="next-month" type="button" aria-label="Next month">›</button>
+            </div>
+          </div>
+
+          <div class="projection-pill" aria-label="End of Month Projection, 12,480 pesos">
+            <span class="cell-label">End of Month Projection</span>
+            <strong class="projection-pill__amount">₱12,480.00</strong>
+          </div>
+
+          <section class="calendar-section" aria-labelledby="month-grid-title">
+            <h3 id="month-grid-title">June activity</h3>
+            <div class="calendar-grid" role="grid" aria-label="June 2024 calendar">
+              <div class="weekday-row" role="row">
+                <span class="weekday" role="columnheader">Sun</span><span class="weekday" role="columnheader">Mon</span><span class="weekday" role="columnheader">Tue</span><span class="weekday" role="columnheader">Wed</span><span class="weekday" role="columnheader">Thu</span><span class="weekday" role="columnheader">Fri</span><span class="weekday" role="columnheader">Sat</span>
+              </div>
+              <div class="calendar-week" role="row">
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Sun, May 26" aria-label="Sunday, May 26, outside June 2024"><span class="day-cell__number">26</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Mon, May 27" aria-label="Monday, May 27, outside June 2024"><span class="day-cell__number">27</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Tue, May 28" aria-label="Tuesday, May 28, outside June 2024"><span class="day-cell__number">28</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Wed, May 29" aria-label="Wednesday, May 29, outside June 2024"><span class="day-cell__number">29</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Thu, May 30" aria-label="Thursday, May 30, outside June 2024"><span class="day-cell__number">30</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Fri, May 31" aria-label="Friday, May 31, outside June 2024"><span class="day-cell__number">31</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--positive" role="gridcell" type="button" data-date="Sat, Jun 1" aria-label="Saturday, June 1, 1 transaction"><span class="day-cell__number">1</span><span class="day-cell__dots"><span class="status-dot status-dot--warning" aria-hidden="true"></span></span></button>
+              </div>
+              <div class="calendar-week" role="row">
+                <button class="day-cell day-cell--negative" role="gridcell" type="button" data-date="Sun, Jun 2" aria-label="Sunday, June 2, 2 transactions, overdue"><span class="day-cell__number">2</span><span class="day-cell__dots"><span class="status-dot status-dot--error" aria-hidden="true"></span></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Mon, Jun 3" aria-label="Monday, June 3, no transactions"><span class="day-cell__number">3</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--positive" role="gridcell" type="button" data-date="Tue, Jun 4" aria-label="Tuesday, June 4, 1 transaction"><span class="day-cell__number">4</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Wed, Jun 5" aria-label="Wednesday, June 5, no transactions"><span class="day-cell__number">5</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--negative" role="gridcell" type="button" data-date="Thu, Jun 6" aria-label="Thursday, June 6, 1 transaction, pending"><span class="day-cell__number">6</span><span class="day-cell__dots"><span class="status-dot status-dot--warning" aria-hidden="true"></span></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Fri, Jun 7" aria-label="Friday, June 7, no transactions"><span class="day-cell__number">7</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Sat, Jun 8" aria-label="Saturday, June 8, no transactions"><span class="day-cell__number">8</span><span class="day-cell__dots"></span></button>
+              </div>
+              <div class="calendar-week" role="row">
+                <button class="day-cell" role="gridcell" type="button" data-date="Sun, Jun 9" aria-label="Sunday, June 9, no transactions"><span class="day-cell__number">9</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--positive" role="gridcell" type="button" data-date="Mon, Jun 10" aria-label="Monday, June 10, 2 transactions"><span class="day-cell__number">10</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--negative" role="gridcell" type="button" data-date="Tue, Jun 11" aria-label="Tuesday, June 11, 1 transaction, overdue"><span class="day-cell__number">11</span><span class="day-cell__dots"><span class="status-dot status-dot--error" aria-hidden="true"></span></span></button>
+                <button class="day-cell day-cell--today" role="gridcell" type="button" data-date="Wed, Jun 12" aria-label="Wednesday, June 12, today, no transactions"><span class="day-cell__number">12</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Thu, Jun 13" aria-label="Thursday, June 13, no transactions"><span class="day-cell__number">13</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--positive" role="gridcell" type="button" data-date="Fri, Jun 14" aria-label="Friday, June 14, 1 transaction"><span class="day-cell__number">14</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Sat, Jun 15" aria-label="Saturday, June 15, no transactions"><span class="day-cell__number">15</span><span class="day-cell__dots"></span></button>
+              </div>
+              <div class="calendar-week" role="row">
+                <button class="day-cell day-cell--negative" role="gridcell" type="button" data-date="Sun, Jun 16" aria-label="Sunday, June 16, 1 transaction, pending"><span class="day-cell__number">16</span><span class="day-cell__dots"><span class="status-dot status-dot--warning" aria-hidden="true"></span></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Mon, Jun 17" aria-label="Monday, June 17, no transactions"><span class="day-cell__number">17</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--negative" role="gridcell" type="button" data-date="Tue, Jun 18" aria-selected="true" aria-label="Tuesday, June 18, selected, 2 transactions, pending"><span class="day-cell__number">18</span><span class="day-cell__dots"><span class="status-dot status-dot--warning" aria-hidden="true"></span></span></button>
+                <button class="day-cell day-cell--positive" role="gridcell" type="button" data-date="Wed, Jun 19" aria-label="Wednesday, June 19, 1 transaction"><span class="day-cell__number">19</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Thu, Jun 20" aria-label="Thursday, June 20, no transactions"><span class="day-cell__number">20</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--negative" role="gridcell" type="button" data-date="Fri, Jun 21" aria-label="Friday, June 21, 1 transaction, overdue"><span class="day-cell__number">21</span><span class="day-cell__dots"><span class="status-dot status-dot--error" aria-hidden="true"></span></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Sat, Jun 22" aria-label="Saturday, June 22, no transactions"><span class="day-cell__number">22</span><span class="day-cell__dots"></span></button>
+              </div>
+              <div class="calendar-week" role="row">
+                <button class="day-cell" role="gridcell" type="button" data-date="Sun, Jun 23" aria-label="Sunday, June 23, no transactions"><span class="day-cell__number">23</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--positive" role="gridcell" type="button" data-date="Mon, Jun 24" aria-label="Monday, June 24, 1 transaction"><span class="day-cell__number">24</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Tue, Jun 25" aria-label="Tuesday, June 25, no transactions"><span class="day-cell__number">25</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--negative" role="gridcell" type="button" data-date="Wed, Jun 26" aria-label="Wednesday, June 26, 1 transaction, pending"><span class="day-cell__number">26</span><span class="day-cell__dots"><span class="status-dot status-dot--warning" aria-hidden="true"></span></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Thu, Jun 27" aria-label="Thursday, June 27, no transactions"><span class="day-cell__number">27</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--positive" role="gridcell" type="button" data-date="Fri, Jun 28" aria-label="Friday, June 28, 1 transaction"><span class="day-cell__number">28</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell" role="gridcell" type="button" data-date="Sat, Jun 29" aria-label="Saturday, June 29, no transactions"><span class="day-cell__number">29</span><span class="day-cell__dots"></span></button>
+              </div>
+              <div class="calendar-week" role="row">
+                <button class="day-cell" role="gridcell" type="button" data-date="Sun, Jun 30" aria-label="Sunday, June 30, no transactions"><span class="day-cell__number">30</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Mon, Jul 1" aria-label="Monday, July 1, outside June 2024"><span class="day-cell__number">1</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Tue, Jul 2" aria-label="Tuesday, July 2, outside June 2024"><span class="day-cell__number">2</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Wed, Jul 3" aria-label="Wednesday, July 3, outside June 2024"><span class="day-cell__number">3</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Thu, Jul 4" aria-label="Thursday, July 4, outside June 2024"><span class="day-cell__number">4</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Fri, Jul 5" aria-label="Friday, July 5, outside June 2024"><span class="day-cell__number">5</span><span class="day-cell__dots"></span></button>
+                <button class="day-cell day-cell--outside" role="gridcell" type="button" data-date="Sat, Jul 6" aria-label="Saturday, July 6, outside June 2024"><span class="day-cell__number">6</span><span class="day-cell__dots"></span></button>
+              </div>
+            </div>
+          </section>
+
+          <section class="calendar-section" aria-labelledby="selected-day-title" aria-live="polite">
+            <header class="section-header">
+              <h3 id="selected-day-title">Tue · Jun 18</h3>
+              <span class="section-header__meta" id="selected-count">2 transactions</span>
+            </header>
+            <div class="transaction-list">
+              <button class="transaction-row" type="button" aria-label="Groceries, Main account, expense, 850 pesos, pending">
+                <span class="transaction-main"><span class="transaction-title">Groceries</span><span class="transaction-meta">Main account · Pending</span></span>
+                <span class="transaction-amount">−₱850.00</span>
+              </button>
+            </div>
+            <p class="preview-empty" id="selected-empty" hidden>No transactions</p>
+            <button class="text-button expand-button" id="view-all" type="button" aria-label="View all transactions for Tuesday, June 18">View all transactions</button>
+          </section>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="calendar-states-title">
+      <header class="preview-heading">
+        <h2 id="calendar-states-title">Calendar states</h2>
+        <p>Each failure stays scoped to its affected area.</p>
+      </header>
+      <div class="phone-stage">
+        <article class="calendar-screen state-stack">
+          <span class="state-label">Month grid loading</span>
+          <section class="loading-state" aria-busy="true" aria-label="Loading calendar month">
+            <span class="skeleton skeleton--cell"></span>
+            <span class="skeleton skeleton--cell"></span>
+            <span class="skeleton skeleton--cell"></span>
+          </section>
+
+          <span class="state-label">Selected day empty</span>
+          <section class="preview-empty" aria-label="No transactions">
+            <p>No transactions</p>
+          </section>
+
+          <span class="state-label">Selected day error</span>
+          <section class="error-state" aria-label="Could not load selected day transactions">
+            <div class="error-panel">Could not load transactions for selected day.</div>
+            <button class="text-button" type="button">Try again</button>
+          </section>
+
+          <span class="state-label">Negative projection</span>
+          <div class="projection-pill" aria-label="End of Month Projection, negative 1,200 pesos, warning">
+            <span class="cell-label">End of Month Projection</span>
+            <strong class="projection-pill__amount projection-pill__amount--negative">−₱1,200.00</strong>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <p class="state-note">Calendar receives exact selected date from Home. Layout stays single-column at every width.</p>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const themeToggle = document.getElementById('theme-toggle');
+    const selectedDate = document.getElementById('selected-day-title');
+    const selectedCount = document.getElementById('selected-count');
+    const selectedEmpty = document.getElementById('selected-empty');
+    const viewAll = document.getElementById('view-all');
+    const transactionRow = document.querySelector('.transaction-list .transaction-row');
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      const isDark = theme === 'dark';
+      themeToggle.textContent = isDark ? 'Light theme' : 'Dark theme';
+      themeToggle.setAttribute('aria-pressed', String(isDark));
+    }
+
+    themeToggle.addEventListener('click', () => {
+      setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+
+    document.querySelectorAll('.day-cell').forEach((day) => {
+      day.addEventListener('click', () => {
+        document.querySelectorAll('.day-cell').forEach((cell) => {
+          cell.setAttribute('aria-selected', 'false');
+        });
+        day.setAttribute('aria-selected', 'true');
+        const dateLabel = day.dataset.date;
+        const hasTransactions = dateLabel === 'Tue, Jun 18';
+        selectedDate.textContent = dateLabel.replace(',', ' ·');
+        selectedCount.textContent = hasTransactions ? '2 transactions' : '0 transactions';
+        selectedEmpty.hidden = hasTransactions;
+        transactionRow.hidden = !hasTransactions;
+        viewAll.hidden = !hasTransactions;
+        viewAll.setAttribute('aria-label', `View all transactions for ${dateLabel}`);
+      });
+    });
+  </script>
+</body>
+</html>

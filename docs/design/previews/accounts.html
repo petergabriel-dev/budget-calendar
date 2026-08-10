@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Accounts · Budget Calendar Design Preview</title>
+  <style>
+    /* @primitive */
+    :root {
+      --p-black: #000000;
+      --p-white: #FFFFFF;
+      --p-off-white: #FAFAFA;
+      --p-zinc-950: #09090B;
+      --p-zinc-900: #18181B;
+      --p-zinc-800: #27272A;
+      --p-zinc-700: #3F3F46;
+      --p-zinc-600: #52525B;
+      --p-zinc-500: #71717A;
+      --p-zinc-400: #A1A1AA;
+      --p-zinc-300: #D4D4D8;
+      --p-zinc-200: #E4E4E7;
+      --p-zinc-100: #F4F4F5;
+      --p-green-900: #14532D;
+      --p-green-500: #22C55E;
+      --p-green-400: #4ADE80;
+      --p-green-300: #86EFAC;
+      --p-green-100: #DCFCE7;
+      --p-green-text: #2E7D32;
+      --p-red-900: #7F1D1D;
+      --p-red-500: #EF4444;
+      --p-red-400: #F87171;
+      --p-red-300: #FCA5A5;
+      --p-red-100: #FEE2E2;
+      --p-red-text: #C62828;
+      --p-amber-900: #78350F;
+      --p-amber-800: #92400E;
+      --p-amber-500: #F59E0B;
+      --p-amber-400: #FBBF24;
+      --p-amber-200: #FDE68A;
+      --p-amber-100: #FEF3C7;
+      --p-space-1: 0.25rem;
+      --p-space-2: 0.5rem;
+      --p-space-3: 0.75rem;
+      --p-space-4: 1rem;
+      --p-space-5: 1.25rem;
+      --p-space-6: 1.5rem;
+      --p-space-8: 2rem;
+      --p-space-12: 3rem;
+      --p-radius-md: 0.5rem;
+      --p-radius-lg: 0.75rem;
+      --p-radius-xl: 1rem;
+      --p-radius-device: 2rem;
+      --p-radius-full: 9999px;
+      --p-border-thin: 1px;
+      --p-border-focus: 2px;
+      --p-shadow-md: 0 4px 8px rgb(0 0 0 / 0.16);
+      --p-phone-max: 24rem;
+      --p-content-max: 48rem;
+      --p-touch-target: 3rem;
+      --p-demo-utilization: 72%;
+      --p-font-display: Outfit, ui-sans-serif, system-ui, sans-serif;
+      --p-font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+      --p-weight-semibold: 600;
+      --p-weight-bold: 700;
+      --p-weight-extrabold: 800;
+      --p-weight-black: 900;
+      --p-type-display: clamp(2.5rem, 10vw, 3.5rem);
+      --p-type-headline: clamp(2rem, 8vw, 2.5rem);
+      --p-type-section: clamp(1.25rem, 5vw, 1.5rem);
+      --p-type-title: 1.25rem;
+      --p-type-body-large: 1rem;
+      --p-type-body-medium: 0.875rem;
+      --p-type-body-small: 0.75rem;
+      --p-line-tight: 1.1;
+      --p-line-body: 1.4;
+    }
+
+    /* @semantic */
+    :root,
+    [data-theme="light"] {
+      --bg-dark: var(--p-black);
+      --bg-primary: var(--p-white);
+      --bg-surface: var(--p-zinc-100);
+      --text-primary: var(--p-black);
+      --text-secondary: var(--p-zinc-500);
+      --text-tertiary: var(--p-zinc-400);
+      --text-inverted: var(--p-white);
+      --border-strong: var(--p-zinc-200);
+      --border-subtle: var(--p-zinc-100);
+      --focus-ring: var(--p-black);
+      --color-success: var(--p-green-500);
+      --color-success-text: var(--p-green-text);
+      --color-success-bg: var(--p-green-100);
+      --color-error: var(--p-red-500);
+      --color-error-text: var(--p-red-text);
+      --color-error-bg: var(--p-red-100);
+      --color-warning: var(--p-amber-500);
+      --color-warning-text: var(--p-amber-800);
+      --color-warning-bg: var(--p-amber-100);
+    }
+
+    [data-theme="dark"] {
+      --bg-dark: var(--p-off-white);
+      --bg-primary: var(--p-zinc-950);
+      --bg-surface: var(--p-zinc-900);
+      --text-primary: var(--p-off-white);
+      --text-secondary: var(--p-zinc-400);
+      --text-tertiary: var(--p-zinc-500);
+      --text-inverted: var(--p-zinc-950);
+      --border-strong: var(--p-zinc-700);
+      --border-subtle: var(--p-zinc-800);
+      --focus-ring: var(--p-off-white);
+      --color-success: var(--p-green-400);
+      --color-success-text: var(--p-green-300);
+      --color-success-bg: var(--p-green-900);
+      --color-error: var(--p-red-400);
+      --color-error-text: var(--p-red-300);
+      --color-error-bg: var(--p-red-900);
+      --color-warning: var(--p-amber-400);
+      --color-warning-text: var(--p-amber-200);
+      --color-warning-bg: var(--p-amber-900);
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    html,
+    body {
+      margin: 0;
+      min-width: 18rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--p-font-body);
+      line-height: var(--p-line-body);
+    }
+
+    button { font: inherit; }
+
+    button:focus-visible {
+      outline: var(--p-border-focus) solid var(--focus-ring);
+      outline-offset: var(--p-space-1);
+    }
+
+    .preview-toolbar,
+    .page {
+      width: min(calc(100% - (var(--p-space-4) * 2)), var(--p-content-max));
+      margin-inline: auto;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-4);
+      padding-block: var(--p-space-4);
+      border-bottom: var(--p-border-thin) solid var(--border-strong);
+    }
+
+    .toolbar-label,
+    .eyebrow,
+    .metric-label,
+    .state-label {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .theme-toggle,
+    .icon-button,
+    .text-button,
+    .account-card,
+    .credit-card-tile {
+      min-block-size: var(--p-touch-target);
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .theme-toggle,
+    .text-button {
+      border-radius: var(--p-radius-full);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      padding: var(--p-space-2) var(--p-space-3);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-8);
+      padding-block: var(--p-space-8) var(--p-space-12);
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin: 0; }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--p-font-display);
+      line-height: var(--p-line-tight);
+    }
+
+    h1 {
+      font-size: var(--p-type-headline);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      font-size: var(--p-type-section);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    h3 {
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .page-intro,
+    .preview-section,
+    .accounts-screen,
+    .accounts-section,
+    .state-stack {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-intro { gap: var(--p-space-2); }
+
+    .page-intro p,
+    .preview-heading p,
+    .state-note,
+    .account-meta,
+    .credit-meta,
+    .section-total {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .preview-section { gap: var(--p-space-3); }
+
+    .preview-heading {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .phone-stage {
+      display: flex;
+      justify-content: center;
+      padding: var(--p-space-6) var(--p-space-4);
+      background: var(--bg-primary);
+    }
+
+    .accounts-screen {
+      width: min(100%, var(--p-phone-max));
+      gap: var(--p-space-6);
+      padding: var(--p-space-4);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-device);
+      background: var(--bg-primary);
+      box-shadow: var(--p-shadow-md);
+    }
+
+    .app-header,
+    .section-header,
+    .account-card__top,
+    .credit-card-tile__top,
+    .credit-card-tile__bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-3);
+    }
+
+    .app-header h2 { flex: 1; font-size: var(--p-type-headline); }
+
+    .icon-button {
+      display: inline-grid;
+      flex: none;
+      place-items: center;
+      inline-size: var(--p-touch-target);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-surface);
+      font-size: var(--p-type-title);
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .metric__amount {
+      color: var(--text-primary);
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-display);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .accounts-section { gap: var(--p-space-3); }
+
+    .section-header { align-items: end; }
+    .section-total { flex: none; text-align: end; }
+
+    .account-list,
+    .credit-card-list,
+    .state-stack {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-3);
+    }
+
+    .account-card,
+    .credit-card-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--p-space-4);
+      padding: var(--p-space-4);
+      border-radius: var(--p-radius-xl);
+      appearance: none;
+      text-align: start;
+    }
+
+    .account-card--spending {
+      background: var(--bg-dark);
+      color: var(--text-inverted);
+    }
+
+    .account-card--surface,
+    .credit-card-tile {
+      border: var(--p-border-thin) solid var(--border-strong);
+      background: var(--bg-surface);
+    }
+
+    .account-card__main,
+    .credit-card-tile__main {
+      display: flex;
+      min-inline-size: 0;
+      flex: 1;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .account-card__name,
+    .credit-card-tile__value {
+      overflow: hidden;
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .account-card__balance {
+      flex: none;
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-black);
+      text-align: end;
+    }
+
+    .account-card__type {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      text-transform: uppercase;
+    }
+
+    .account-card--spending .account-card__type,
+    .account-card--spending .account-meta {
+      color: var(--text-inverted);
+      opacity: 0.72;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
+      min-block-size: var(--p-space-6);
+      border-radius: var(--p-radius-lg);
+      padding-inline: var(--p-space-2);
+      background: var(--color-success-bg);
+      color: var(--color-success-text);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      text-transform: uppercase;
+    }
+
+    .badge--excluded {
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+    }
+
+    .account-card--spending .badge {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .credit-card-tile__top { align-items: flex-start; }
+
+    .credit-card-tile__label {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .credit-card-tile__account {
+      overflow: hidden;
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .credit-card-tile__value { font-size: var(--p-type-section); }
+    .credit-card-tile__value--limit { color: var(--text-secondary); }
+    .credit-meta { line-height: var(--p-line-body); }
+
+    .progress-track {
+      display: block;
+      overflow: hidden;
+      block-size: var(--p-space-2);
+      border-radius: var(--p-radius-full);
+      background: var(--border-subtle);
+    }
+
+    .progress-fill {
+      block-size: 100%;
+      inline-size: var(--p-demo-utilization);
+      border-radius: var(--p-radius-full);
+      background: var(--bg-dark);
+    }
+
+    .progress-label {
+      display: block;
+      margin-block-start: var(--p-space-1);
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+    }
+
+    .primary-action { inline-size: 100%; }
+
+    .empty-state,
+    .loading-state,
+    .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--p-space-2);
+      padding: var(--p-space-6);
+      text-align: center;
+    }
+
+    .empty-state__title {
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .empty-state__body,
+    .state-note { color: var(--text-secondary); }
+
+    .skeleton {
+      width: 100%;
+      block-size: var(--p-space-6);
+      border-radius: var(--p-radius-md);
+      background: var(--bg-surface);
+    }
+
+    .skeleton--hero { block-size: var(--p-space-12); }
+
+    .error-panel {
+      width: 100%;
+      padding: var(--p-space-3);
+      border-radius: var(--p-radius-lg);
+      background: var(--color-error-bg);
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-small);
+      text-align: start;
+    }
+
+    .state-label { color: var(--text-primary); }
+    .state-note { margin-block-start: var(--p-space-2); font-size: var(--p-type-body-medium); }
+
+    @media (min-width: 40rem) {
+      .accounts-screen { padding: var(--p-space-6); }
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-toolbar" aria-label="Preview controls">
+    <span class="toolbar-label">Design preview · Accounts</span>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark theme</button>
+  </header>
+
+  <main class="page">
+    <header class="page-intro">
+      <span class="eyebrow">Budget Calendar</span>
+      <h1>Accounts</h1>
+      <p>Net worth, account groups, credit context, and one clear Add account action.</p>
+    </header>
+
+    <section class="preview-section" aria-labelledby="accounts-default-title">
+      <header class="preview-heading">
+        <h2 id="accounts-default-title">Accounts · Default</h2>
+        <p>Cards stay stacked for predictable mobile reading order.</p>
+      </header>
+
+      <div class="phone-stage">
+        <article class="accounts-screen">
+          <header class="app-header">
+            <h2>Accounts</h2>
+            <button class="icon-button" type="button" aria-label="Notifications, 3 unread">●</button>
+          </header>
+
+          <section class="metric" aria-label="Total net worth, 87,540 pesos">
+            <span class="metric-label">Total net worth</span>
+            <strong class="metric__amount">₱87,540.00</strong>
+          </section>
+
+          <section class="accounts-section" aria-labelledby="spending-pool-title">
+            <header class="section-header">
+              <h3 id="spending-pool-title">Spending Pool</h3>
+              <span class="section-total">₱60,500.00</span>
+            </header>
+            <div class="account-list">
+              <button class="account-card account-card--spending" type="button" aria-label="Main wallet, checking, 42,300 pesos, Safe to Spend">
+                <span class="account-card__top"><span class="account-card__main"><span class="account-card__name">Main wallet</span><span class="account-card__type">Checking</span></span><span class="account-card__balance">₱42,300.00</span></span>
+                <span class="account-meta">Daily expenses</span>
+                <span class="badge">Safe to Spend</span>
+              </button>
+              <button class="account-card account-card--spending" type="button" aria-label="Bills account, savings, 18,200 pesos, Safe to Spend">
+                <span class="account-card__top"><span class="account-card__main"><span class="account-card__name">Bills account</span><span class="account-card__type">Savings</span></span><span class="account-card__balance">₱18,200.00</span></span>
+                <span class="account-meta">Recurring bills</span>
+                <span class="badge">Safe to Spend</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="accounts-section" aria-labelledby="savings-title">
+            <header class="section-header">
+              <h3 id="savings-title">Savings &amp; Investments</h3>
+              <span class="section-total">₱27,040.00</span>
+            </header>
+            <div class="account-list">
+              <button class="account-card account-card--surface" type="button" aria-label="Emergency fund, savings, 20,000 pesos, Excluded from Safe to Spend">
+                <span class="account-card__top"><span class="account-card__main"><span class="account-card__name">Emergency fund</span><span class="account-card__type">Savings</span></span><span class="account-card__balance">₱20,000.00</span></span>
+                <span class="account-meta">Long-term reserve</span>
+                <span class="badge badge--excluded">Excluded</span>
+              </button>
+              <button class="account-card account-card--surface" type="button" aria-label="Index fund, investment, 7,040 pesos, Excluded from Safe to Spend">
+                <span class="account-card__top"><span class="account-card__main"><span class="account-card__name">Index fund</span><span class="account-card__type">Investment</span></span><span class="account-card__balance">₱7,040.00</span></span>
+                <span class="account-meta">Growth account</span>
+                <span class="badge badge--excluded">Excluded</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="accounts-section" aria-labelledby="credit-card-title">
+            <header class="section-header">
+              <h3 id="credit-card-title">Credit Cards</h3>
+              <span class="section-total">₱8,000.00 owed</span>
+            </header>
+            <div class="credit-card-list">
+              <button class="credit-card-tile" type="button" aria-label="Credit card, Travel card, 7,000 pesos available, 8,000 pesos owed, 72 percent utilization">
+                <span class="credit-card-tile__top"><span class="credit-card-tile__label">Credit card</span><span class="credit-card-tile__account">Travel card</span></span>
+                <span class="credit-card-tile__main"><span class="credit-card-tile__value">₱7,000.00 available</span><span class="credit-meta">Owed ₱8,000.00 · due ₱1,200.00 Jun 24 · of ₱25,000.00</span></span>
+                <span><span class="progress-track"><span class="progress-fill"></span></span><span class="progress-label">Utilization 72%</span></span>
+              </button>
+            </div>
+          </section>
+
+          <button class="text-button primary-action" type="button">＋ Add account</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="accounts-states-title">
+      <header class="preview-heading">
+        <h2 id="accounts-states-title">Accounts states</h2>
+        <p>Loading, empty, and scoped error treatments.</p>
+      </header>
+
+      <div class="phone-stage">
+        <article class="accounts-screen state-stack">
+          <span class="state-label">Loading</span>
+          <section class="loading-state" aria-busy="true" aria-label="Loading accounts">
+            <span class="skeleton skeleton--hero"></span>
+            <span class="skeleton"></span>
+            <span class="skeleton"></span>
+            <span class="skeleton"></span>
+          </section>
+
+          <span class="state-label">Empty</span>
+          <section class="empty-state" aria-label="No accounts">
+            <strong class="empty-state__title">Add your first account</strong>
+            <p class="empty-state__body">Start by adding where your money lives.</p>
+            <button class="text-button" type="button">＋ Add account</button>
+          </section>
+
+          <span class="state-label">Scoped load error</span>
+          <section class="error-state" aria-label="Could not load accounts">
+            <div class="error-panel">Could not load accounts. Existing cards remain available.</div>
+            <button class="text-button" type="button">Try again</button>
+          </section>
+
+          <span class="state-label">Credit card limit unavailable</span>
+          <button class="credit-card-tile" type="button" aria-label="Credit card, Everyday card, limit not set, 1,200 pesos owed">
+            <span class="credit-card-tile__top"><span class="credit-card-tile__label">Credit card</span><span class="credit-card-tile__account">Everyday card</span></span>
+            <span class="credit-card-tile__main"><span class="credit-card-tile__value credit-card-tile__value--limit">Limit not set</span><span class="credit-meta">Owed ₱1,200.00 · due Jun 28</span></span>
+          </button>
+        </article>
+      </div>
+    </section>
+
+    <p class="state-note">Accounts detail, payment, settings, and form actions remain sheet-owned.</p>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      const isDark = theme === 'dark';
+      themeToggle.textContent = isDark ? 'Light theme' : 'Dark theme';
+      themeToggle.setAttribute('aria-pressed', String(isDark));
+    }
+
+    themeToggle.addEventListener('click', () => {
+      setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+  </script>
+</body>
+</html>

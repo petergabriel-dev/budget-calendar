@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Me / Settings · Budget Calendar Design Preview</title>
+  <style>
+    /* @primitive */
+    :root {
+      --p-black: #000000;
+      --p-white: #FFFFFF;
+      --p-off-white: #FAFAFA;
+      --p-zinc-950: #09090B;
+      --p-zinc-900: #18181B;
+      --p-zinc-800: #27272A;
+      --p-zinc-700: #3F3F46;
+      --p-zinc-500: #71717A;
+      --p-zinc-400: #A1A1AA;
+      --p-zinc-300: #D4D4D8;
+      --p-zinc-200: #E4E4E7;
+      --p-zinc-100: #F4F4F5;
+      --p-green-900: #14532D;
+      --p-green-500: #22C55E;
+      --p-green-300: #86EFAC;
+      --p-green-100: #DCFCE7;
+      --p-green-text: #2E7D32;
+      --p-red-900: #7F1D1D;
+      --p-red-500: #EF4444;
+      --p-red-300: #FCA5A5;
+      --p-red-100: #FEE2E2;
+      --p-red-text: #C62828;
+      --p-space-1: 0.25rem;
+      --p-space-2: 0.5rem;
+      --p-space-3: 0.75rem;
+      --p-space-4: 1rem;
+      --p-space-5: 1.25rem;
+      --p-space-6: 1.5rem;
+      --p-space-8: 2rem;
+      --p-space-12: 3rem;
+      --p-radius-md: 0.5rem;
+      --p-radius-lg: 0.75rem;
+      --p-radius-xl: 1rem;
+      --p-radius-device: 2rem;
+      --p-radius-full: 9999px;
+      --p-border-thin: 1px;
+      --p-border-focus: 2px;
+      --p-shadow-md: 0 4px 8px rgb(0 0 0 / 0.16);
+      --p-phone-max: 24rem;
+      --p-content-max: 48rem;
+      --p-touch-target: 3rem;
+      --p-font-display: Outfit, ui-sans-serif, system-ui, sans-serif;
+      --p-font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+      --p-weight-semibold: 600;
+      --p-weight-bold: 700;
+      --p-weight-extrabold: 800;
+      --p-weight-black: 900;
+      --p-type-headline: clamp(2rem, 8vw, 2.5rem);
+      --p-type-section: clamp(1.25rem, 5vw, 1.5rem);
+      --p-type-title: 1.25rem;
+      --p-type-body-medium: 0.875rem;
+      --p-type-body-small: 0.75rem;
+      --p-line-tight: 1.1;
+      --p-line-body: 1.4;
+    }
+
+    /* @semantic */
+    :root,
+    [data-theme="light"] {
+      --bg-dark: var(--p-black);
+      --bg-primary: var(--p-white);
+      --bg-surface: var(--p-zinc-100);
+      --text-primary: var(--p-black);
+      --text-secondary: var(--p-zinc-500);
+      --text-tertiary: var(--p-zinc-400);
+      --text-inverted: var(--p-white);
+      --border-strong: var(--p-zinc-200);
+      --focus-ring: var(--p-black);
+      --color-success-text: var(--p-green-text);
+      --color-success-bg: var(--p-green-100);
+      --color-error-text: var(--p-red-text);
+      --color-error-bg: var(--p-red-100);
+    }
+
+    [data-theme="dark"] {
+      --bg-dark: var(--p-off-white);
+      --bg-primary: var(--p-zinc-950);
+      --bg-surface: var(--p-zinc-900);
+      --text-primary: var(--p-off-white);
+      --text-secondary: var(--p-zinc-400);
+      --text-tertiary: var(--p-zinc-500);
+      --text-inverted: var(--p-zinc-950);
+      --border-strong: var(--p-zinc-700);
+      --focus-ring: var(--p-off-white);
+      --color-success-text: var(--p-green-300);
+      --color-success-bg: var(--p-green-900);
+      --color-error-text: var(--p-red-300);
+      --color-error-bg: var(--p-red-900);
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    html,
+    body {
+      margin: 0;
+      min-width: 18rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--p-font-body);
+      line-height: var(--p-line-body);
+    }
+
+    button,
+    input { font: inherit; }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: var(--p-border-focus) solid var(--focus-ring);
+      outline-offset: var(--p-space-1);
+    }
+
+    .preview-toolbar,
+    .page {
+      width: min(calc(100% - (var(--p-space-4) * 2)), var(--p-content-max));
+      margin-inline: auto;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-4);
+      padding-block: var(--p-space-4);
+      border-bottom: var(--p-border-thin) solid var(--border-strong);
+    }
+
+    .toolbar-label,
+    .eyebrow,
+    .state-label {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .theme-toggle,
+    .icon-button,
+    .text-button {
+      min-block-size: var(--p-touch-target);
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .theme-toggle,
+    .text-button {
+      border-radius: var(--p-radius-full);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      padding: var(--p-space-2) var(--p-space-3);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-8);
+      padding-block: var(--p-space-8) var(--p-space-12);
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin: 0; }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--p-font-display);
+      line-height: var(--p-line-tight);
+    }
+
+    h1 {
+      font-size: var(--p-type-headline);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      font-size: var(--p-type-section);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    h3 {
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .page-intro,
+    .preview-section,
+    .settings-screen,
+    .settings-card,
+    .state-stack {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-intro { gap: var(--p-space-2); }
+
+    .page-intro p,
+    .preview-heading p,
+    .state-note,
+    .helper-text {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .preview-section { gap: var(--p-space-3); }
+
+    .preview-heading {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .phone-stage {
+      display: flex;
+      justify-content: center;
+      padding: var(--p-space-6) var(--p-space-4);
+      background: var(--bg-primary);
+    }
+
+    .settings-screen {
+      width: min(100%, var(--p-phone-max));
+      gap: var(--p-space-6);
+      padding: var(--p-space-4);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-device);
+      background: var(--bg-primary);
+      box-shadow: var(--p-shadow-md);
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-3);
+    }
+
+    .app-header h2 { flex: 1; font-size: var(--p-type-headline); }
+
+    .icon-button {
+      display: inline-grid;
+      flex: none;
+      place-items: center;
+      inline-size: var(--p-touch-target);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-surface);
+      font-size: var(--p-type-title);
+    }
+
+    .settings-card {
+      gap: var(--p-space-4);
+      padding: var(--p-space-4);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-surface);
+    }
+
+    .settings-card__title {
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-2);
+    }
+
+    .field__label {
+      color: var(--text-primary);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .field__input {
+      inline-size: 100%;
+      min-block-size: var(--p-touch-target);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-md);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      padding: var(--p-space-3);
+    }
+
+    .field__input[aria-invalid="true"] {
+      border-color: var(--color-error-text);
+    }
+
+    .field__error,
+    .save-error {
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-small);
+    }
+
+    .primary-action { inline-size: 100%; background: var(--bg-dark); color: var(--text-inverted); }
+    .primary-action:disabled { cursor: wait; opacity: 0.64; }
+
+    .save-success {
+      color: var(--color-success-text);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .state-stack { gap: var(--p-space-3); }
+
+    .skeleton {
+      inline-size: 100%;
+      block-size: var(--p-space-6);
+      border-radius: var(--p-radius-md);
+      background: var(--bg-primary);
+    }
+
+    .skeleton--title { block-size: var(--p-space-8); }
+    .skeleton--input { block-size: var(--p-touch-target); }
+
+    .error-panel {
+      padding: var(--p-space-3);
+      border-radius: var(--p-radius-lg);
+      background: var(--color-error-bg);
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-small);
+    }
+
+    .state-note { margin-block-start: var(--p-space-2); }
+
+    @media (min-width: 40rem) {
+      .settings-screen { padding: var(--p-space-6); }
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-toolbar" aria-label="Preview controls">
+    <span class="toolbar-label">Design preview · Me / Settings</span>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark theme</button>
+  </header>
+
+  <main class="page">
+    <header class="page-intro">
+      <span class="eyebrow">Budget Calendar · Me tab</span>
+      <h1>Settings</h1>
+      <p>Focused notification preference with local validation and save feedback.</p>
+    </header>
+
+    <section class="preview-section" aria-labelledby="settings-default-title">
+      <header class="preview-heading">
+        <h2 id="settings-default-title">Settings · Default</h2>
+        <p>One preference, no invented profile sections.</p>
+      </header>
+
+      <div class="phone-stage">
+        <article class="settings-screen">
+          <header class="app-header">
+            <h2>Settings</h2>
+            <button class="icon-button" type="button" aria-label="Notifications, 3 unread">●</button>
+          </header>
+
+          <section class="settings-card" aria-labelledby="preferences-title">
+            <h3 class="settings-card__title" id="preferences-title">Notification Preferences</h3>
+            <div class="field">
+              <label class="field__label" for="threshold">STS Low Alert Threshold (%)</label>
+              <input class="field__input" id="threshold" type="number" inputmode="numeric" min="1" max="100" value="15" aria-describedby="threshold-help">
+              <span class="helper-text" id="threshold-help">Valid range: 1 to 100. Default is 15.</span>
+            </div>
+            <button class="text-button primary-action" type="button">Save</button>
+          </section>
+        </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="settings-states-title">
+      <header class="preview-heading">
+        <h2 id="settings-states-title">Settings states</h2>
+        <p>Feedback stays inside affected preference surface.</p>
+      </header>
+
+      <div class="phone-stage">
+        <article class="settings-screen state-stack">
+          <span class="state-label">Loading</span>
+          <section class="settings-card" aria-busy="true" aria-label="Loading notification preferences">
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--input"></span>
+            <span class="skeleton"></span>
+            <span class="skeleton"></span>
+          </section>
+
+          <span class="state-label">Validation error</span>
+          <section class="settings-card">
+            <h3 class="settings-card__title">Notification Preferences</h3>
+            <div class="field">
+              <label class="field__label" for="invalid-threshold">STS Low Alert Threshold (%)</label>
+              <input class="field__input" id="invalid-threshold" type="number" inputmode="numeric" value="0" aria-invalid="true" aria-describedby="invalid-error invalid-help">
+              <span class="helper-text" id="invalid-help">Valid range: 1 to 100. Default is 15.</span>
+              <span class="field__error" id="invalid-error" role="alert">Please enter a threshold between 1 and 100</span>
+            </div>
+            <button class="text-button primary-action" type="button">Save</button>
+          </section>
+
+          <span class="state-label">Saving</span>
+          <section class="settings-card" aria-label="Saving notification preference">
+            <h3 class="settings-card__title">Notification Preferences</h3>
+            <button class="text-button primary-action" type="button" disabled aria-disabled="true">Saving...</button>
+          </section>
+
+          <span class="state-label">Saved</span>
+          <section class="settings-card" aria-live="polite">
+            <h3 class="settings-card__title">Notification Preferences</h3>
+            <p class="save-success">Threshold saved</p>
+          </section>
+
+          <span class="state-label">Load error</span>
+          <section class="settings-card" aria-label="Could not load notification preferences">
+            <div class="error-panel">Could not load notification preferences.</div>
+            <button class="text-button" type="button">Try again</button>
+          </section>
+        </article>
+      </div>
+    </section>
+
+    <p class="state-note">Me tab remains intentionally focused. Notification list lives in global NotificationCenterSheet.</p>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      const isDark = theme === 'dark';
+      themeToggle.textContent = isDark ? 'Light theme' : 'Dark theme';
+      themeToggle.setAttribute('aria-pressed', String(isDark));
+    }
+
+    themeToggle.addEventListener('click', () => {
+      setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+  </script>
+</body>
+</html>

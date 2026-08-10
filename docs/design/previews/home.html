@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home · Budget Calendar Design Preview</title>
+  <style>
+    /* @primitive */
+    :root {
+      --p-black: #000000;
+      --p-white: #FFFFFF;
+      --p-off-white: #FAFAFA;
+      --p-zinc-950: #09090B;
+      --p-zinc-900: #18181B;
+      --p-zinc-800: #27272A;
+      --p-zinc-700: #3F3F46;
+      --p-zinc-600: #52525B;
+      --p-zinc-500: #71717A;
+      --p-zinc-400: #A1A1AA;
+      --p-zinc-300: #D4D4D8;
+      --p-zinc-200: #E4E4E7;
+      --p-zinc-100: #F4F4F5;
+      --p-green-900: #14532D;
+      --p-green-700: #15803D;
+      --p-green-500: #22C55E;
+      --p-green-400: #4ADE80;
+      --p-green-300: #86EFAC;
+      --p-green-100: #DCFCE7;
+      --p-green-text: #2E7D32;
+      --p-red-900: #7F1D1D;
+      --p-red-700: #B91C1C;
+      --p-red-500: #EF4444;
+      --p-red-400: #F87171;
+      --p-red-300: #FCA5A5;
+      --p-red-100: #FEE2E2;
+      --p-red-text: #C62828;
+      --p-amber-900: #78350F;
+      --p-amber-800: #92400E;
+      --p-amber-500: #F59E0B;
+      --p-amber-400: #FBBF24;
+      --p-amber-200: #FDE68A;
+      --p-amber-100: #FEF3C7;
+      --p-blue-900: #1E3A8A;
+      --p-blue-700: #1D4ED8;
+      --p-blue-500: #3B82F6;
+      --p-blue-400: #60A5FA;
+      --p-blue-200: #BFDBFE;
+      --p-blue-100: #DBEAFE;
+      --p-space-1: 0.25rem;
+      --p-space-2: 0.5rem;
+      --p-space-3: 0.75rem;
+      --p-space-4: 1rem;
+      --p-space-5: 1.25rem;
+      --p-space-6: 1.5rem;
+      --p-space-8: 2rem;
+      --p-space-12: 3rem;
+      --p-radius-sm: 0.25rem;
+      --p-radius-md: 0.5rem;
+      --p-radius-lg: 0.75rem;
+      --p-radius-xl: 1rem;
+      --p-radius-full: 9999px;
+      --p-border-thin: 1px;
+      --p-border-focus: 2px;
+      --p-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.16);
+      --p-shadow-md: 0 4px 8px rgb(0 0 0 / 0.16);
+      --p-content-max: 48rem;
+      --p-phone-max: 24rem;
+      --p-radius-device: 2rem;
+      --p-stage-space: 1.5rem;
+      --p-touch-target: 3rem;
+      --p-motion-fast: 160ms ease;
+      --p-font-display: Outfit, ui-sans-serif, system-ui, sans-serif;
+      --p-font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+      --p-weight-medium: 500;
+      --p-weight-semibold: 600;
+      --p-weight-bold: 700;
+      --p-weight-extrabold: 800;
+      --p-weight-black: 900;
+      --p-type-display: clamp(2.5rem, 12vw, 3.5rem);
+      --p-type-headline: clamp(2rem, 8vw, 2.5rem);
+      --p-type-section: clamp(1.25rem, 5vw, 1.5rem);
+      --p-type-title: 1.25rem;
+      --p-type-body-large: 1rem;
+      --p-type-body-medium: 0.875rem;
+      --p-type-body-small: 0.75rem;
+      --p-line-display: 1;
+      --p-line-headline: 1.1;
+      --p-line-section: 1.17;
+      --p-line-body: 1.4;
+    }
+
+    /* @semantic */
+    :root,
+    [data-theme="light"] {
+      --bg-dark: var(--p-black);
+      --bg-muted: var(--p-zinc-800);
+      --bg-primary: var(--p-white);
+      --bg-surface: var(--p-zinc-100);
+      --text-primary: var(--p-black);
+      --text-secondary: var(--p-zinc-500);
+      --text-tertiary: var(--p-zinc-400);
+      --text-inverted: var(--p-white);
+      --text-disabled: var(--p-zinc-300);
+      --border-strong: var(--p-zinc-200);
+      --border-subtle: var(--p-zinc-100);
+      --focus-ring: var(--p-black);
+      --color-success: var(--p-green-500);
+      --color-success-text: var(--p-green-text);
+      --color-success-bg: var(--p-green-100);
+      --color-error: var(--p-red-500);
+      --color-error-text: var(--p-red-text);
+      --color-error-bg: var(--p-red-100);
+      --color-warning: var(--p-amber-500);
+      --color-warning-text: var(--p-amber-800);
+      --color-warning-bg: var(--p-amber-100);
+      --color-info: var(--p-blue-500);
+      --color-info-text: var(--p-blue-700);
+      --color-info-bg: var(--p-blue-100);
+    }
+
+    [data-theme="dark"] {
+      --bg-dark: var(--p-off-white);
+      --bg-muted: var(--p-zinc-800);
+      --bg-primary: var(--p-zinc-950);
+      --bg-surface: var(--p-zinc-900);
+      --text-primary: var(--p-off-white);
+      --text-secondary: var(--p-zinc-400);
+      --text-tertiary: var(--p-zinc-500);
+      --text-inverted: var(--p-zinc-950);
+      --text-disabled: var(--p-zinc-600);
+      --border-strong: var(--p-zinc-700);
+      --border-subtle: var(--p-zinc-800);
+      --focus-ring: var(--p-off-white);
+      --color-success: var(--p-green-400);
+      --color-success-text: var(--p-green-300);
+      --color-success-bg: var(--p-green-900);
+      --color-error: var(--p-red-400);
+      --color-error-text: var(--p-red-300);
+      --color-error-bg: var(--p-red-900);
+      --color-warning: var(--p-amber-400);
+      --color-warning-text: var(--p-amber-200);
+      --color-warning-bg: var(--p-amber-900);
+      --color-info: var(--p-blue-400);
+      --color-info-text: var(--p-blue-200);
+      --color-info-bg: var(--p-blue-900);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background var(--p-motion-fast), color var(--p-motion-fast);
+    }
+
+    body {
+      margin: 0;
+      min-width: 18rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--p-font-body);
+      line-height: var(--p-line-body);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    button:focus-visible,
+    [role="tab"]:focus-visible {
+      outline: var(--p-border-focus) solid var(--focus-ring);
+      outline-offset: var(--p-space-1);
+    }
+
+    .preview-toolbar,
+    .page {
+      width: min(calc(100% - (var(--p-space-4) * 2)), var(--p-content-max));
+      margin-inline: auto;
+    }
+
+    .phone-stage {
+      display: flex;
+      justify-content: center;
+      padding: var(--p-stage-space) var(--p-space-4);
+      background: var(--bg-primary);
+    }
+
+    .phone-stage .home-surface {
+      width: min(100%, var(--p-phone-max));
+      border-radius: var(--p-radius-device);
+      box-shadow: var(--p-shadow-md);
+    }
+
+    .page {
+      background: var(--bg-primary);
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-4);
+      padding-block: var(--p-space-4);
+      border-bottom: var(--p-border-thin) solid var(--border-strong);
+    }
+
+    .preview-toolbar__label,
+    .eyebrow,
+    .metric__label,
+    .state-label {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .theme-toggle,
+    .text-button,
+    .icon-button,
+    .day-button,
+    .segmented__button {
+      min-block-size: var(--p-touch-target);
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .theme-toggle,
+    .text-button {
+      border-radius: var(--p-radius-full);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      padding: var(--p-space-2) var(--p-space-3);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-8);
+      padding-block: var(--p-space-8) var(--p-space-12);
+    }
+
+    .page-intro {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-2);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--p-font-display);
+      line-height: var(--p-line-headline);
+    }
+
+    h1 {
+      font-size: var(--p-type-headline);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      font-size: var(--p-type-section);
+      font-weight: var(--p-weight-extrabold);
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .page-intro p,
+    .state-note {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .preview-section {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-3);
+    }
+
+    .preview-section__heading {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .preview-section__heading p {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+    }
+
+    .home-surface {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-6);
+      padding: var(--p-space-4);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-xl);
+      background: var(--bg-primary);
+      box-shadow: var(--p-shadow-sm);
+    }
+
+    .content-section {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-3);
+    }
+
+    .app-header,
+    .section-header,
+    .metric-row,
+    .transaction-row,
+    .comparison-row,
+    .snapshot-pill,
+    .state-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--p-space-3);
+    }
+
+    .app-header h2 {
+      flex: 1;
+      font-size: var(--p-type-headline);
+    }
+
+    .icon-button {
+      display: inline-grid;
+      place-items: center;
+      inline-size: var(--p-touch-target);
+      border-radius: var(--p-radius-lg);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-size: var(--p-type-title);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--p-space-6);
+      border-radius: var(--p-radius-lg);
+      padding-inline: var(--p-space-2);
+      background: var(--color-error-bg);
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      text-transform: uppercase;
+    }
+
+    .badge--overdue {
+      background: var(--bg-dark);
+      color: var(--text-inverted);
+    }
+
+    .segmented {
+      display: flex;
+      gap: var(--p-space-1);
+      padding: var(--p-space-1);
+      border-radius: var(--p-radius-full);
+      background: var(--bg-surface);
+    }
+
+    .segmented__button {
+      flex: 1;
+      border-radius: var(--p-radius-full);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .segmented__button[aria-selected="true"] {
+      background: var(--bg-dark);
+      color: var(--text-inverted);
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .metric--secondary .metric__amount {
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .metric__amount {
+      color: var(--text-primary);
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-display);
+      font-weight: var(--p-weight-black);
+      letter-spacing: -0.04em;
+      line-height: var(--p-line-display);
+    }
+
+    .metric__supporting {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .metric__supporting--warning {
+      color: var(--color-warning-text);
+    }
+
+    .metric__amount--negative {
+      color: var(--color-error-text);
+    }
+
+    .weekly-summary {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .weekly-summary__amount {
+      color: var(--text-primary);
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-title);
+      font-weight: var(--p-weight-extrabold);
+    }
+
+    .weekly-summary__label {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+    }
+
+    .section-header {
+      align-items: end;
+    }
+
+    .section-header__meta {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .week-picker {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: var(--p-space-1);
+    }
+
+    .day-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--p-space-1);
+      min-inline-size: 0;
+      border-radius: var(--p-radius-lg);
+      background: transparent;
+      color: var(--text-secondary);
+      padding: var(--p-space-2) var(--p-space-1);
+    }
+
+    .day-button__weekday {
+      font-size: var(--p-type-body-small);
+      font-weight: var(--p-weight-semibold);
+      text-transform: uppercase;
+    }
+
+    .day-button__date {
+      color: var(--text-primary);
+      font-family: var(--p-font-display);
+      font-size: var(--p-type-body-large);
+      font-weight: var(--p-weight-bold);
+    }
+
+    .day-button[aria-selected="true"] {
+      background: var(--bg-dark);
+      color: var(--text-inverted);
+    }
+
+    .day-button[aria-selected="true"] .day-button__date {
+      color: var(--text-inverted);
+    }
+
+    .day-button[data-today="true"] {
+      outline: var(--p-border-thin) solid var(--border-strong);
+      outline-offset: calc(var(--p-border-thin) * -1);
+    }
+
+    .day-button__dot {
+      inline-size: var(--p-space-1);
+      block-size: var(--p-space-1);
+      border-radius: var(--p-radius-full);
+      background: var(--color-info);
+    }
+
+    .day-button[aria-selected="true"] .day-button__dot {
+      background: var(--text-inverted);
+    }
+
+    .transaction-preview,
+    .overdue-list,
+    .sandbox-list,
+    .state-stack {
+      display: flex;
+      flex-direction: column;
+      gap: var(--p-space-2);
+    }
+
+    .transaction-row,
+    .overdue-row,
+    .sandbox-row {
+      align-items: flex-start;
+      padding: var(--p-space-3);
+      border: var(--p-border-thin) solid var(--border-strong);
+      border-radius: var(--p-radius-lg);
+      appearance: none;
+      background: var(--bg-surface);
+      text-align: start;
+    }
+
+    .transaction-row__main,
+    .overdue-row__main,
+    .sandbox-row__main {
+      display: flex;
+      min-inline-size: 0;
+      flex: 1;
+      flex-direction: column;
+      gap: var(--p-space-1);
+    }
+
+    .transaction-row__title,
+    .overdue-row__title,
+    .sandbox-row__title {
+      overflow: hidden;
+      color: var(--text-primary);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .transaction-row__meta,
+    .overdue-row__meta,
+    .sandbox-row__meta {
+      overflow: hidden;
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-small);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .transaction-row__amount,
+    .overdue-row__amount,
+    .sandbox-row__amount {
+      flex: none;
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-bold);
+      text-align: end;
+    }
+
+    .overdue-row__trailing {
+      display: flex;
+      flex: none;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--p-space-1);
+    }
+
+    .amount--error { color: var(--color-error-text); }
+    .amount--success { color: var(--color-success-text); }
+    .amount--info { color: var(--color-info-text); }
+
+    .preview-empty,
+    .error-state,
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--p-space-2);
+      padding-block: var(--p-space-5);
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .text-button {
+      color: var(--text-primary);
+    }
+
+    .text-button--full {
+      inline-size: 100%;
+    }
+
+    .skeleton {
+      block-size: var(--p-space-6);
+      border-radius: var(--p-radius-md);
+      background: var(--bg-surface);
+    }
+
+    .skeleton--amount {
+      inline-size: 62%;
+      block-size: var(--p-space-12);
+    }
+
+    .skeleton--short {
+      inline-size: 38%;
+    }
+
+    .warning-panel {
+      padding: var(--p-space-3);
+      border-radius: var(--p-radius-lg);
+      background: var(--color-warning-bg);
+      color: var(--color-warning-text);
+      font-size: var(--p-type-body-small);
+    }
+
+    .error-panel {
+      padding: var(--p-space-3);
+      border-radius: var(--p-radius-lg);
+      background: var(--color-error-bg);
+      color: var(--color-error-text);
+      font-size: var(--p-type-body-small);
+    }
+
+    .snapshot-pill {
+      min-block-size: var(--p-touch-target);
+      border-radius: var(--p-radius-full);
+      background: var(--bg-dark);
+      color: var(--text-inverted);
+      padding: var(--p-space-2) var(--p-space-4);
+      font-size: var(--p-type-body-medium);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .comparison-row {
+      color: var(--text-secondary);
+      font-size: var(--p-type-body-medium);
+    }
+
+    .comparison-row__delta {
+      color: var(--color-success-text);
+      font-weight: var(--p-weight-semibold);
+    }
+
+    .state-label {
+      color: var(--text-primary);
+    }
+
+    .state-note {
+      margin-block-start: var(--p-space-2);
+    }
+
+    @media (min-width: 40rem) {
+      .home-surface {
+        padding: var(--p-space-6);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-toolbar" aria-label="Preview controls">
+    <span class="preview-toolbar__label">Design preview · Home</span>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark theme</button>
+  </header>
+
+  <main class="page">
+    <header class="page-intro">
+      <span class="eyebrow">Budget Calendar</span>
+      <h1>Home</h1>
+      <p>Single-column preview for Live Budget, Sandbox, and required states.</p>
+    </header>
+
+    <section class="preview-section" aria-labelledby="live-default-title">
+      <header class="preview-section__heading">
+        <h2 id="live-default-title">Live Budget · Default</h2>
+        <p>Primary metric, weekly activity, and overdue attention list.</p>
+      </header>
+
+      <div class="phone-stage">
+      <article class="home-surface">
+        <header class="app-header">
+          <h2>Budget</h2>
+          <button class="icon-button" type="button" aria-label="Notifications, 3 unread">●</button>
+        </header>
+
+        <div class="segmented" role="tablist" aria-label="Budget mode">
+          <button class="segmented__button" type="button" role="tab" aria-selected="true">Live Budget</button>
+          <button class="segmented__button" type="button" role="tab" aria-selected="false">Sandbox</button>
+        </div>
+
+        <section class="metric" aria-labelledby="safe-to-spend-label">
+          <span class="metric__label" id="safe-to-spend-label">Safe to spend</span>
+          <strong class="metric__amount">₱12,480.00</strong>
+          <span class="metric__supporting metric__supporting--warning">₱1,248.00 / day · 10 days left</span>
+        </section>
+
+        <section class="metric metric--secondary" aria-labelledby="available-credit-label">
+          <span class="metric__label" id="available-credit-label">Available credit</span>
+          <strong class="metric__amount">₱28,000.00</strong>
+        </section>
+
+        <section class="content-section" aria-labelledby="weekly-title">
+          <header class="section-header">
+            <h3 id="weekly-title">This Week</h3>
+          </header>
+          <div class="weekly-summary">
+            <strong class="weekly-summary__amount">₱4,860.00</strong>
+            <span class="weekly-summary__label">Spent This Week</span>
+          </div>
+          <div class="week-picker" role="tablist" aria-label="Choose day">
+            <button class="day-button" type="button" role="tab" aria-selected="false" data-date="Mon, Jun 17"><span class="day-button__weekday">Mon</span><span class="day-button__date">17</span><span class="day-button__dot" aria-hidden="true"></span></button>
+            <button class="day-button" type="button" role="tab" aria-selected="true" data-date="Tue, Jun 18"><span class="day-button__weekday">Tue</span><span class="day-button__date">18</span><span class="day-button__dot" aria-hidden="true"></span></button>
+            <button class="day-button" type="button" role="tab" aria-selected="false" data-date="Wed, Jun 19"><span class="day-button__weekday">Wed</span><span class="day-button__date">19</span></button>
+            <button class="day-button" type="button" role="tab" aria-selected="false" data-date="Thu, Jun 20"><span class="day-button__weekday">Thu</span><span class="day-button__date">20</span><span class="day-button__dot" aria-hidden="true"></span></button>
+            <button class="day-button" type="button" role="tab" aria-selected="false" data-date="Fri, Jun 21"><span class="day-button__weekday">Fri</span><span class="day-button__date">21</span></button>
+            <button class="day-button" type="button" role="tab" aria-selected="false" data-date="Sat, Jun 22"><span class="day-button__weekday">Sat</span><span class="day-button__date">22</span></button>
+            <button class="day-button" type="button" role="tab" aria-selected="false" data-date="Sun, Jun 23"><span class="day-button__weekday">Sun</span><span class="day-button__date">23</span></button>
+          </div>
+          <div class="transaction-preview" aria-live="polite">
+            <div class="section-header">
+              <h3 id="selected-date">Tue, Jun 18</h3>
+              <span class="section-header__meta">2 transactions</span>
+            </div>
+            <button class="transaction-row" type="button" aria-label="Groceries, Main account, expense, 850 pesos, pending">
+              <span class="transaction-row__main"><span class="transaction-row__title">Groceries</span><span class="transaction-row__meta">Main account · Pending</span></span>
+              <span class="transaction-row__amount amount--error">−₱850.00</span>
+            </button>
+            <button class="transaction-row" type="button" aria-label="Salary, Payroll account, income, 12,000 pesos, confirmed">
+              <span class="transaction-row__main"><span class="transaction-row__title">Salary</span><span class="transaction-row__meta">Payroll account · Confirmed</span></span>
+              <span class="transaction-row__amount amount--success">+₱12,000.00</span>
+            </button>
+            <button class="text-button text-button--full" id="view-all-selected" type="button" aria-label="View all transactions for Tue, Jun 18">View all transactions</button>
+          </div>
+        </section>
+
+        <section class="content-section" aria-labelledby="overdue-title">
+          <header class="section-header">
+            <h3 id="overdue-title">Overdue</h3>
+            <span class="section-header__meta">2 Pending</span>
+          </header>
+          <div class="overdue-list">
+            <button class="overdue-row" type="button" aria-label="Internet bill, Main account, 2 days overdue, 1,200 pesos, overdue">
+              <span class="overdue-row__main"><span class="overdue-row__title">Internet bill</span><span class="overdue-row__meta">Main account · 2 days ago</span></span>
+              <span class="overdue-row__trailing"><span class="overdue-row__amount amount--error">−₱1,200.00</span><span class="badge badge--overdue">Overdue</span></span>
+            </button>
+          </div>
+        </section>
+      </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="sandbox-default-title">
+      <header class="preview-section__heading">
+        <h2 id="sandbox-default-title">Sandbox · Default</h2>
+        <p>Snapshot planning without changing live budget data.</p>
+      </header>
+
+      <div class="phone-stage">
+      <article class="home-surface">
+        <header class="app-header">
+          <h2>Sandbox</h2>
+          <button class="icon-button" type="button" aria-label="Notifications, 3 unread">●</button>
+        </header>
+        <div class="segmented" role="tablist" aria-label="Sandbox mode">
+          <button class="segmented__button" type="button" role="tab" aria-selected="false">Live Budget</button>
+          <button class="segmented__button" type="button" role="tab" aria-selected="true">Sandbox</button>
+        </div>
+        <button class="snapshot-pill" type="button" aria-label="Select sandbox snapshot">June planning snapshot <span aria-hidden="true">⌄</span></button>
+        <section class="metric" aria-labelledby="projected-label">
+          <span class="metric__label" id="projected-label">Projected spend</span>
+          <strong class="metric__amount">₱9,800.00</strong>
+          <span class="metric__supporting">₱980.00 / day</span>
+        </section>
+        <div class="comparison-row"><span>vs ₱12,480.00 real</span><span class="comparison-row__delta">+₱2,680.00</span></div>
+        <section class="content-section" aria-labelledby="sandbox-transactions-title">
+          <header class="section-header">
+            <h3 id="sandbox-transactions-title">Sandbox Transactions</h3>
+            <button class="text-button" type="button">Add</button>
+          </header>
+          <div class="sandbox-list">
+            <button class="sandbox-row" type="button" aria-label="Weekend trip, expense, 2,500 pesos"><span class="sandbox-row__main"><span class="sandbox-row__title">Weekend trip</span><span class="sandbox-row__meta">Expense · Jun 22</span></span><span class="sandbox-row__amount amount--error">−₱2,500.00</span></button>
+            <button class="sandbox-row" type="button" aria-label="Bonus, income, 3,000 pesos"><span class="sandbox-row__main"><span class="sandbox-row__title">Bonus</span><span class="sandbox-row__meta">Income · Jun 25</span></span><span class="sandbox-row__amount amount--success">+₱3,000.00</span></button>
+          </div>
+        </section>
+      </article>
+      </div>
+    </section>
+
+    <section class="preview-section" aria-labelledby="states-title">
+      <header class="preview-section__heading">
+        <h2 id="states-title">Required states</h2>
+        <p>States remain scoped to affected content.</p>
+      </header>
+
+      <div class="phone-stage">
+      <article class="home-surface">
+        <span class="state-label">Metric loading</span>
+        <section class="loading-state" aria-busy="true" aria-label="Loading Safe to Spend">
+          <span class="skeleton skeleton--short"></span>
+          <span class="skeleton skeleton--amount"></span>
+          <span class="skeleton skeleton--short"></span>
+        </section>
+
+        <span class="state-label">Selected day empty</span>
+        <section class="preview-empty" aria-label="No transactions this day">
+          <p>No transactions this day</p>
+        </section>
+
+        <span class="state-label">Preview error</span>
+        <section class="error-state" aria-label="Could not load transactions">
+          <div class="error-panel">Could not load transactions for selected day.</div>
+          <button class="text-button" type="button">Try again</button>
+        </section>
+
+        <span class="state-label">Projected negative</span>
+        <section class="metric" aria-label="Projected spend warning">
+          <span class="metric__label">Projected spend</span>
+          <strong class="metric__amount metric__amount--negative">−₱1,200.00</strong>
+          <span class="metric__supporting">Warning: projected balance is negative.</span>
+        </section>
+      </article>
+      </div>
+    </section>
+
+    <p class="state-note">Theme toggle changes semantic tokens only. Layout stays single-column at every width.</p>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      const isDark = theme === 'dark';
+      themeToggle.textContent = isDark ? 'Light theme' : 'Dark theme';
+      themeToggle.setAttribute('aria-pressed', String(isDark));
+    }
+
+    themeToggle.addEventListener('click', () => {
+      setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+
+    const viewAllButton = document.getElementById('view-all-selected');
+
+    document.querySelectorAll('.day-button').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.day-button').forEach((day) => {
+          day.setAttribute('aria-selected', 'false');
+        });
+        button.setAttribute('aria-selected', 'true');
+        document.getElementById('selected-date').textContent = button.dataset.date;
+        viewAllButton.setAttribute('aria-label', `View all transactions for ${button.dataset.date}`);
+      });
+    });
+  </script>
+</body>
+</html>
