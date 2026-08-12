@@ -458,6 +458,118 @@ class BudgetFlowObservationIntegrationTest {
     }
 
     @Test
+    fun migration12To13_preservesAccountsAndForeignKeyReferences() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val checking = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 500_00L,
+                    description = "Primary",
+                ),
+            ).getOrThrow()
+            val savings = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Savings",
+                    type = AccountType.SAVINGS,
+                    initialBalance = 750_00L,
+                    description = null,
+                ),
+            ).getOrThrow()
+            val card = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Card",
+                    type = AccountType.CREDIT_CARD,
+                    initialBalance = -125_00L,
+                    description = "Travel",
+                    creditLimit = 500_00L,
+                    statementClosingDay = 20,
+                    paymentDueDay = 5,
+                ),
+            ).getOrThrow()
+            val now = DateUtils.nowMillis()
+            fixture.database.recurring_transactionsQueries.insertRecurringTransaction(
+                checking.id,
+                savings.id,
+                25_00L,
+                15L,
+                TransactionType.TRANSFER.dbValue,
+                "Move funds",
+                1L,
+                now,
+                now,
+            )
+            fixture.database.sandbox_transactionsQueries.insertSandboxTransaction(
+                1L,
+                checking.id,
+                savings.id,
+                10_00L,
+                0L,
+                now,
+                TransactionType.TRANSFER.dbValue,
+                TransactionStatus.PENDING.dbValue,
+                "Sandbox move",
+                null,
+                null,
+                now,
+                now,
+            )
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = checking.id,
+                    destinationAccountId = card.id,
+                    amount = 30_00L,
+                    date = now,
+                    type = TransactionType.TRANSFER,
+                    status = TransactionStatus.CONFIRMED,
+                    description = "Card payment",
+                ),
+            ).getOrThrow()
+
+            prepareVersion12Schema(fixture.driver)
+            BudgetCalendarDatabase.Schema.migrate(fixture.driver, oldVersion = 12, newVersion = 13)
+
+            val accounts = fixture.database.accountsQueries
+                .getAllAccountsWithComputedBalance { id, name, type, balance, description, createdAt, updatedAt ->
+                    listOf(id, name, type, balance, description, createdAt, updatedAt)
+                }
+                .executeAsList()
+            assertEquals(3, accounts.size)
+            assertEquals(
+                listOf(
+                    listOf(checking.id, "Checking", AccountType.CHECKING.dbValue, 470_00L, "Primary", checking.createdAt, checking.updatedAt),
+                    listOf(savings.id, "Savings", AccountType.SAVINGS.dbValue, 750_00L, null, savings.createdAt, savings.updatedAt),
+                    listOf(card.id, "Card", AccountType.CREDIT_CARD.dbValue, -95_00L, "Travel", card.createdAt, card.updatedAt),
+                ).toSet(),
+                accounts.toSet(),
+            )
+            assertEquals(1L, fixture.database.recurring_transactionsQueries.getAllRecurringTransactions { id, accountId, destinationAccountId, _, _, _, _, _, _, _ ->
+                listOf(id, accountId, destinationAccountId)
+            }.executeAsList().size.toLong())
+            assertEquals(
+                1,
+                fixture.database.sandbox_transactionsQueries
+                    .getSandboxTransactionsBySnapshot(1L)
+                    .executeAsList()
+                    .count { transaction ->
+                        transaction.account_id == checking.id && transaction.destination_account_id == savings.id
+                    },
+            )
+            assertEquals(
+                1,
+                fixture.database.transactionsQueries
+                    .getTransactionsByAccount(checking.id)
+                    .executeAsList()
+                    .count { transaction -> transaction.destination_account_id == card.id },
+            )
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
+    @Test
     fun migration11_confirmsExistingOverdueCreditCardChargesOnly() = runBlocking {
         val fixture = createFixture()
 
@@ -832,6 +944,34 @@ class BudgetFlowObservationIntegrationTest {
         } finally {
             fixture.driver.close()
         }
+    }
+
+    private fun prepareVersion12Schema(driver: JdbcSqliteDriver) {
+        driver.execute(null, "ALTER TABLE accounts ADD COLUMN is_in_spending_pool INTEGER NOT NULL DEFAULT 0", 0)
+        driver.execute(null, "CREATE INDEX idx_accounts_spending_pool ON accounts(is_in_spending_pool)", 0)
+        driver.execute(null, "UPDATE accounts SET is_in_spending_pool = CASE WHEN type = 'savings' THEN 1 ELSE 0 END", 0)
+        driver.execute(null, "PRAGMA foreign_keys = OFF", 0)
+        driver.execute(null, "ALTER TABLE credit_card_settings RENAME TO credit_card_settings_new", 0)
+        driver.execute(null, """
+            |CREATE TABLE credit_card_settings (
+            |  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            |  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+            |  credit_limit INTEGER,
+            |  statement_balance INTEGER,
+            |  due_date INTEGER,
+            |  created_at INTEGER NOT NULL,
+            |  updated_at INTEGER NOT NULL,
+            |  UNIQUE(account_id)
+            |)
+        """.trimMargin(), 0)
+        driver.execute(null, """
+            |INSERT INTO credit_card_settings (id, account_id, credit_limit, statement_balance, due_date, created_at, updated_at)
+            |  SELECT id, account_id, credit_limit, statement_balance, due_date, created_at, updated_at
+            |  FROM credit_card_settings_new
+        """.trimMargin(), 0)
+        driver.execute(null, "DROP TABLE credit_card_settings_new", 0)
+        driver.execute(null, "CREATE INDEX idx_cc_settings_account ON credit_card_settings(account_id)", 0)
+        driver.execute(null, "PRAGMA foreign_keys = ON", 0)
     }
 
     private fun createFixture(): Fixture {

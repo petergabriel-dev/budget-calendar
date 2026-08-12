@@ -5,7 +5,6 @@ data class AccountEntity(
     val name: String,
     val type: String,
     val balance: Long,
-    val isInSpendingPool: Boolean,
     val description: String?,
     val createdAt: Long,
     val updatedAt: Long,

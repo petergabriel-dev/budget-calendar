@@ -3,13 +3,10 @@ CREATE TABLE accounts (
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK(type IN ('checking', 'savings', 'credit_card', 'cash', 'investment')),
   initial_balance INTEGER NOT NULL DEFAULT 0,
-  is_in_spending_pool INTEGER NOT NULL DEFAULT 0,
   description TEXT,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
-
-CREATE INDEX idx_accounts_spending_pool ON accounts(is_in_spending_pool);
 
 CREATE TABLE transactions (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
