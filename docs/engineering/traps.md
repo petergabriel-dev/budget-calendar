@@ -172,6 +172,13 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: inspect serving/reload and stylesheet loading before changing tokens. Keep metadata outside the phone frame; frame actual app surfaces only. Use theme `bg-primary` for the stage, explicit full tokenized row borders, and tokenized section gaps. Declare every referenced primitive, including `--p-space-5` and `--p-blue-100`, and verify light info text mapping.
 - Current guard: six files under `docs/design/previews/` receive structural CSS/HTML checks before screenshot review.
 
+## Transparent button containers must not receive disabled alpha copies
+
+- Symptom: disabled `Outline`, `OutlineIconTrailing`, or `Ghost` buttons rendered an opaque black container, making labels unreadable.
+- Root cause: copying disabled alpha onto `Color.Transparent` replaces its zero-alpha value with an opaque color.
+- Resolution: `resolveButtonContainerColor` returns transparent colors unchanged and dims only solid containers in `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcButton.kt:78-79`, `:131-145`.
+- Current guard: all six `ButtonVariant` values are checked in enabled and disabled states against both light and dark palettes: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcButtonTest.kt:12-64`.
+
 ## Compose test assertions can mismatch rendered semantics
 
 - Symptom: a test cannot find an expected label or uses unavailable collection helpers.
