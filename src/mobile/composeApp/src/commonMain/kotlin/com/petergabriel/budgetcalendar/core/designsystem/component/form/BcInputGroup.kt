@@ -1,6 +1,7 @@
 package com.petergabriel.budgetcalendar.core.designsystem.component.form
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 
 @Composable
@@ -30,11 +33,15 @@ fun BcInputGroup(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    fieldModifier: Modifier = Modifier,
     readOnly: Boolean = false,
+    onClick: (() -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
     isError: Boolean = false,
     errorText: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    minLines: Int = 1,
+    maxLines: Int = 1,
 ) {
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
@@ -66,6 +73,15 @@ fun BcInputGroup(
                     shape = RoundedCornerShape(radius.lg),
                 )
                 .defaultMinSize(minHeight = spacing.spacing12)
+                .then(
+                    onClick?.let { clickHandler ->
+                        Modifier
+                            .clickable(onClick = clickHandler)
+                            .semantics(mergeDescendants = true) {
+                                contentDescription = "$label, ${value.ifBlank { placeholder }}"
+                            }
+                    } ?: Modifier,
+                )
                 .padding(horizontal = spacing.spacing4, vertical = spacing.spacing3),
             contentAlignment = Alignment.CenterStart,
         ) {
@@ -77,12 +93,14 @@ fun BcInputGroup(
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
-                    modifier = Modifier
+                    modifier = fieldModifier
                         .weight(1f)
                         .onFocusChanged { isFocused = it.isFocused },
                     readOnly = readOnly,
                     enabled = !readOnly,
-                    singleLine = true,
+                    singleLine = minLines == 1 && maxLines == 1,
+                    minLines = minLines,
+                    maxLines = maxLines,
                     keyboardOptions = keyboardOptions,
                     textStyle = typography.bodyMedium.copy(color = colors.textPrimary),
                     decorationBox = { innerTextField ->
