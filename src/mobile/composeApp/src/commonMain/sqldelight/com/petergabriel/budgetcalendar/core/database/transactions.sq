@@ -105,7 +105,7 @@ JOIN accounts a ON t.account_id = a.id
 WHERE t.status IN ('pending', 'overdue')
   AND t.date >= :startMillis
   AND t.date <= :endMillis
-  AND a.is_in_spending_pool = 1
+  AND a.type IN ('checking', 'cash')
 ORDER BY t.date ASC;
 
 getConfirmedTransactionsByDateRange:

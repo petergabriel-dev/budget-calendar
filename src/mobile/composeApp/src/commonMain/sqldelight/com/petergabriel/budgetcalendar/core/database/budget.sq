@@ -8,7 +8,7 @@ FROM (
   LEFT JOIN transactions t
     ON t.account_id = a.id
     AND t.status = 'confirmed'
-    WHERE a.is_in_spending_pool = 1
+    WHERE a.type IN ('checking', 'cash')
   GROUP BY a.id, a.initial_balance
 );
 
@@ -16,7 +16,7 @@ getPendingAndOverdueForSpendingPool:
 SELECT t.status, CAST(t.amount AS INTEGER) AS amount
 FROM transactions t
 JOIN accounts a ON t.account_id = a.id
-WHERE a.is_in_spending_pool = 1
+WHERE a.type IN ('checking', 'cash')
   AND t.status IN ('pending', 'overdue')
   AND t.type = 'expense'
 ORDER BY t.date ASC;

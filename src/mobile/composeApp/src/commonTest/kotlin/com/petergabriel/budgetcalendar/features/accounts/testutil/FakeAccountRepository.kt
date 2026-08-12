@@ -55,7 +55,6 @@ class FakeAccountRepository(
             name = request.name.trim(),
             type = request.type,
             balance = request.initialBalance,
-            isInSpendingPool = request.isInSpendingPool,
             createdAt = now,
             updatedAt = now,
             description = request.description?.trim()?.takeUnless { value -> value.isEmpty() },
@@ -75,7 +74,6 @@ class FakeAccountRepository(
         val updated = existing.copy(
             name = request.name?.trim().takeUnless { it.isNullOrBlank() } ?: existing.name,
             type = request.type ?: existing.type,
-            isInSpendingPool = request.isInSpendingPool ?: existing.isInSpendingPool,
             description = if (request.description == null) {
                 existing.description
             } else {

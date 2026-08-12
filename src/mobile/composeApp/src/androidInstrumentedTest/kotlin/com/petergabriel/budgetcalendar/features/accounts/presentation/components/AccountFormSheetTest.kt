@@ -159,7 +159,6 @@ private val EDIT_ACCOUNT = Account(
     name = "Primary",
     type = AccountType.CHECKING,
     balance = 500_00L,
-    isInSpendingPool = true,
     createdAt = 0L,
     updatedAt = 0L,
 )

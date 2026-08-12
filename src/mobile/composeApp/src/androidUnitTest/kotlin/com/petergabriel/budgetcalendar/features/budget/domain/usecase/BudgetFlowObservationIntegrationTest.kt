@@ -262,6 +262,49 @@ class BudgetFlowObservationIntegrationTest {
     }
 
     @Test
+    fun calculateSafeToSpend_excludesSavingsFromSpendingPool() = runBlocking {
+        val fixture = createFixture()
+
+        try {
+            val checking = fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Checking",
+                    type = AccountType.CHECKING,
+                    initialBalance = 500_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+            fixture.createAccountUseCase(
+                CreateAccountRequest(
+                    name = "Savings",
+                    type = AccountType.SAVINGS,
+                    initialBalance = 500_00L,
+                    isInSpendingPool = true,
+                ),
+            ).getOrThrow()
+            fixture.createTransactionUseCase(
+                CreateTransactionRequest(
+                    accountId = checking.id,
+                    amount = 75_00L,
+                    date = DateUtils.startOfDayMillis(DateUtils.nowMillis()),
+                    type = TransactionType.EXPENSE,
+                    status = TransactionStatus.PENDING,
+                    description = "Pending checking expense",
+                ),
+            ).getOrThrow()
+
+            val summary = withTimeout(5_000) {
+                fixture.calculateSafeToSpendUseCase().first { it.pendingReservations == 75_00L }
+            }
+
+            assertEquals(500_00L, summary.totalLiquidAssets)
+            assertEquals(425_00L, summary.availableToSpend)
+        } finally {
+            fixture.driver.close()
+        }
+    }
+
+    @Test
     fun createConfirmedExpense_deductsAccountBalance() = runBlocking {
         val fixture = createFixture()
 

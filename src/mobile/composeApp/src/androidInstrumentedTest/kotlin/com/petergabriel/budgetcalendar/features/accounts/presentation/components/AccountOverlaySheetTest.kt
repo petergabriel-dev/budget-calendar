@@ -93,7 +93,6 @@ class AccountOverlaySheetTest {
             name = "Primary",
             type = AccountType.CHECKING,
             balance = 25_000L,
-            isInSpendingPool = true,
             createdAt = 0L,
             updatedAt = 0L,
         )

@@ -94,7 +94,6 @@ class AccountListScreenTest {
             name = "Primary",
             type = AccountType.CHECKING,
             balance = 45_000L,
-            isInSpendingPool = true,
             createdAt = 0L,
             updatedAt = 0L,
         )
@@ -103,7 +102,6 @@ class AccountListScreenTest {
             name = "Emergency",
             type = AccountType.SAVINGS,
             balance = 12_000L,
-            isInSpendingPool = false,
             createdAt = 0L,
             updatedAt = 0L,
         )

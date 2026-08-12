@@ -68,7 +68,6 @@ class AddSandboxTransactionSheetTest {
             name = "Primary",
             type = AccountType.CHECKING,
             balance = 10_000L,
-            isInSpendingPool = true,
             createdAt = 0L,
             updatedAt = 0L,
         )

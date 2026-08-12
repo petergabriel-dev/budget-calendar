@@ -38,6 +38,15 @@ class AccountUseCasesTest {
     }
 
     @Test
+    fun accountType_spendingPoolMembership_isDerivedFromType() {
+        assertEquals(true, AccountType.CHECKING.isInSpendingPool)
+        assertEquals(true, AccountType.CASH.isInSpendingPool)
+        assertEquals(false, AccountType.SAVINGS.isInSpendingPool)
+        assertEquals(false, AccountType.CREDIT_CARD.isInSpendingPool)
+        assertEquals(false, AccountType.INVESTMENT.isInSpendingPool)
+    }
+
+    @Test
     fun createAccount_createsValidCheckingAccountWithExpectedFields() = runBlocking {
         val result = createAccountUseCase(
             CreateAccountRequest(
@@ -349,7 +358,7 @@ class AccountUseCasesTest {
     @Test
     fun getSpendingPoolAccounts_returnsEmptyWhenPoolIsEmpty() = runBlocking {
         accountRepository.createAccount(
-            CreateAccountRequest("Not Pool", AccountType.CHECKING, 1000L, isInSpendingPool = false),
+            CreateAccountRequest("Not Pool", AccountType.SAVINGS, 1000L, isInSpendingPool = false),
         )
 
         val poolAccounts = getSpendingPoolAccountsUseCase().first()

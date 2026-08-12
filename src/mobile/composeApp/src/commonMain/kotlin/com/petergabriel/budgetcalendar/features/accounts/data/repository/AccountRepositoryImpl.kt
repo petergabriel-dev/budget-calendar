@@ -87,7 +87,6 @@ class AccountRepositoryImpl(
         val updated = existing.copy(
             name = request.name?.trim().takeUnless { it.isNullOrBlank() } ?: existing.name,
             type = request.type ?: existing.type,
-            isInSpendingPool = request.isInSpendingPool ?: existing.isInSpendingPool,
             description = if (request.description == null) {
                 existing.description
             } else {

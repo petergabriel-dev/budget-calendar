@@ -48,7 +48,6 @@ class CalendarProjectionUseCasesTest {
             name = "Test Checking",
             type = AccountType.CHECKING,
             balance = 500_00L, // $500
-            isInSpendingPool = true,
             description = null,
             createdAt = today,
             updatedAt = today,
@@ -90,7 +89,6 @@ class CalendarProjectionUseCasesTest {
             name = "Test Checking",
             type = AccountType.CHECKING,
             balance = 500_00L, // $500
-            isInSpendingPool = true,
             description = null,
             createdAt = today,
             updatedAt = today,

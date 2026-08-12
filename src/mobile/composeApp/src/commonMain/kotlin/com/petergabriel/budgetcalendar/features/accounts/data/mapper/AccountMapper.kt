@@ -11,7 +11,6 @@ class AccountMapper {
             name = entity.name,
             type = AccountType.fromDbValue(entity.type),
             balance = entity.balance,
-            isInSpendingPool = entity.isInSpendingPool,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
             description = entity.description,

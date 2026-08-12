@@ -71,7 +71,6 @@ private val SAVINGS = Account(
     name = "Savings",
     type = AccountType.SAVINGS,
     balance = 10_000L,
-    isInSpendingPool = true,
     createdAt = 0L,
     updatedAt = 0L,
 )
