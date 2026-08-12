@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +20,7 @@ import com.petergabriel.budgetcalendar.core.designsystem.component.BcConfirmDial
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetFooter
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
+import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcInputGroup
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.MoneyInputUtils
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSettings
@@ -74,17 +74,17 @@ fun CreditCardSettingsForm(
                 errorMessage?.let { error ->
                     Text(text = error, style = typography.bodySmall, color = colors.colorErrorText)
                 }
-                OutlinedTextField(
+                BcInputGroup(
+                    label = "Credit Limit",
                     value = creditLimitInput,
                     onValueChange = {
                         creditLimitInput = it
                         validationErrors.remove("creditLimit")
                     },
-                    label = { Text("Credit Limit") },
+                    placeholder = "",
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = validationErrors.containsKey("creditLimit"),
-                    singleLine = true,
                 )
                 InlineError(validationErrors["creditLimit"])
 
@@ -92,29 +92,29 @@ fun CreditCardSettingsForm(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(spacing.spacing2),
                 ) {
-                    OutlinedTextField(
+                    BcInputGroup(
+                        label = "Closing day (1-31)",
                         value = statementClosingDayInput,
                         onValueChange = {
                             statementClosingDayInput = it
                             validationErrors.remove("statementClosingDay")
                         },
-                        label = { Text("Closing day (1-31)") },
+                        placeholder = "",
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = validationErrors.containsKey("statementClosingDay"),
-                        singleLine = true,
                     )
-                    OutlinedTextField(
+                    BcInputGroup(
+                        label = "Due day (1-31)",
                         value = paymentDueDayInput,
                         onValueChange = {
                             paymentDueDayInput = it
                             validationErrors.remove("paymentDueDay")
                         },
-                        label = { Text("Due day (1-31)") },
+                        placeholder = "",
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = validationErrors.containsKey("paymentDueDay"),
-                        singleLine = true,
                     )
                 }
                 InlineError(validationErrors["statementClosingDay"] ?: validationErrors["paymentDueDay"])

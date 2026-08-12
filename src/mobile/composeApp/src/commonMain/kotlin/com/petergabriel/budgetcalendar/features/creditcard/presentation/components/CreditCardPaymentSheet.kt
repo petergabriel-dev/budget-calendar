@@ -1,15 +1,11 @@
 package com.petergabriel.budgetcalendar.features.creditcard.presentation.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,11 +16,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import com.petergabriel.budgetcalendar.core.designsystem.component.AccountPickerModal
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcConfirmDialog
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetFooter
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
+import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcInputGroup
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.CurrencyUtils
 import com.petergabriel.budgetcalendar.core.utils.MoneyInputUtils
@@ -53,7 +51,7 @@ fun CreditCardPaymentSheet(
     var selectedSourceAccountId by remember(ccSummary.accountId) {
         mutableStateOf(spendingPoolAccounts.firstOrNull()?.id)
     }
-    var accountMenuExpanded by remember { mutableStateOf(false) }
+    var showAccountPicker by remember { mutableStateOf(false) }
     val validationErrors = remember(ccSummary.accountId) { mutableStateMapOf<String, String>() }
     var showDiscardConfirmation by remember(ccSummary.accountId) { mutableStateOf(false) }
 
@@ -94,47 +92,48 @@ fun CreditCardPaymentSheet(
                     Text(text = error, style = typography.bodySmall, color = colors.colorErrorText)
                 }
 
-                OutlinedTextField(
+                BcInputGroup(
+                    label = "Payment Amount",
                     value = amountInput,
                     onValueChange = {
                         amountInput = it
                         validationErrors.remove("amount")
                     },
-                    label = { Text("Payment Amount") },
+                    placeholder = "",
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = validationErrors.containsKey("amount"),
-                    singleLine = true,
                 )
                 InlineError(validationErrors["amount"])
 
-                OutlinedTextField(
+                BcInputGroup(
+                    label = "Source Account",
                     value = selectedSourceLabel,
                     onValueChange = {},
+                    placeholder = "Select source account",
+                    modifier = Modifier.fillMaxWidth(),
                     readOnly = true,
-                    label = { Text("Source Account") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = !isSubmitting) { accountMenuExpanded = true },
-                    trailingIcon = { Text("⌄", color = colors.textSecondary) },
+                    onClick = if (!isSubmitting && spendingPoolAccounts.isNotEmpty()) {
+                        { showAccountPicker = true }
+                    } else {
+                        null
+                    },
                     isError = validationErrors.containsKey("source"),
                 )
-                DropdownMenu(
-                    expanded = accountMenuExpanded,
-                    onDismissRequest = { accountMenuExpanded = false },
-                ) {
-                    spendingPoolAccounts.forEach { account ->
-                        DropdownMenuItem(
-                            text = { Text(account.name) },
-                            onClick = {
-                                selectedSourceAccountId = account.id
-                                accountMenuExpanded = false
-                                validationErrors.remove("source")
-                            },
-                        )
-                    }
-                }
                 InlineError(validationErrors["source"])
+
+                AccountPickerModal(
+                    isVisible = showAccountPicker,
+                    accounts = spendingPoolAccounts,
+                    selectedAccountId = selectedSourceAccountId,
+                    title = "Select Source Account",
+                    onAccountSelected = { id ->
+                        selectedSourceAccountId = id
+                        showAccountPicker = false
+                        validationErrors.remove("source")
+                    },
+                    onDismiss = { showAccountPicker = false },
+                )
 
                 if (spendingPoolAccounts.isEmpty()) {
                     Text(
