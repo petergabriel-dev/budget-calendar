@@ -1,6 +1,5 @@
 package com.petergabriel.budgetcalendar.features.recurring.presentation.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,12 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -31,7 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
+import com.petergabriel.budgetcalendar.core.designsystem.component.AccountPickerModal
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcOptionPickerModal
+import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcInputGroup
+import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcSelectField
+import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.MoneyInputUtils
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
 import com.petergabriel.budgetcalendar.features.recurring.domain.model.CreateRecurringTransactionRequest
@@ -66,9 +65,9 @@ fun RecurringFormSheet(
 
     val localErrors = remember(stateKey) { mutableStateMapOf<String, String>() }
 
-    var accountMenuExpanded by remember { mutableStateOf(false) }
-    var destinationMenuExpanded by remember { mutableStateOf(false) }
-    var dayMenuExpanded by remember { mutableStateOf(false) }
+    var showAccountPicker by remember { mutableStateOf(false) }
+    var showDestinationPicker by remember { mutableStateOf(false) }
+    var showDayPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(stateKey, availableAccounts) {
         localErrors.clear()
@@ -82,12 +81,15 @@ fun RecurringFormSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(
+                    horizontal = BudgetCalendarTheme.spacing.spacing4,
+                    vertical = BudgetCalendarTheme.spacing.spacing2,
+                ),
+            verticalArrangement = Arrangement.spacedBy(BudgetCalendarTheme.spacing.spacing3),
         ) {
             Text(
                 text = if (initialData == null) "Add Recurring" else "Edit Recurring",
-                style = MaterialTheme.typography.titleLarge,
+                style = BudgetCalendarTheme.typography.cardTitle,
             )
 
             if (!error.isNullOrBlank()) {
@@ -111,107 +113,131 @@ fun RecurringFormSheet(
                 }
             }
 
-            OutlinedTextField(
+            BcInputGroup(
+                label = "Amount",
                 value = amountInput,
                 onValueChange = {
                     amountInput = it
                     localErrors.remove("amount")
                 },
-                label = { Text("Amount") },
+                placeholder = "",
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 isError = localErrors.containsKey("amount"),
-                singleLine = true,
             )
             InlineError(localErrors["amount"])
 
-            OutlinedTextField(
+            BcSelectField(
+                label = "Day of month",
                 value = dayOfMonth.toString(),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Day of month") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { dayMenuExpanded = true },
-                trailingIcon = { Text("v") },
-                isError = localErrors.containsKey("dayOfMonth"),
+                onClick = { showDayPicker = true },
+                modifier = Modifier.fillMaxWidth(),
             )
-            DropdownMenu(
-                expanded = dayMenuExpanded,
-                onDismissRequest = { dayMenuExpanded = false },
-            ) {
-                (1..31).forEach { day ->
-                    DropdownMenuItem(
-                        text = { Text(day.toString()) },
-                        onClick = {
-                            dayOfMonth = day
-                            dayMenuExpanded = false
-                            localErrors.remove("dayOfMonth")
-                        },
-                    )
-                }
-            }
             InlineError(localErrors["dayOfMonth"])
 
-            AccountDropdown(
-                label = "Account",
-                accounts = availableAccounts,
-                selectedAccountId = selectedAccountId,
-                expanded = accountMenuExpanded,
-                onExpandedChange = { accountMenuExpanded = it },
-                onAccountSelected = { account ->
-                    selectedAccountId = account.id
-                    accountMenuExpanded = false
-                    localErrors.remove("accountId")
-                    if (destinationAccountId == account.id) {
-                        destinationAccountId = null
-                    }
-                },
-                isError = localErrors.containsKey("accountId"),
-                errorText = localErrors["accountId"],
-            )
-
-            if (selectedType == RecurrenceType.TRANSFER) {
-                AccountDropdown(
-                    label = "Destination Account",
-                    accounts = availableAccounts.filter { account -> account.id != selectedAccountId },
-                    selectedAccountId = destinationAccountId,
-                    expanded = destinationMenuExpanded,
-                    onExpandedChange = { destinationMenuExpanded = it },
-                    onAccountSelected = { account ->
-                        destinationAccountId = account.id
-                        destinationMenuExpanded = false
-                        localErrors.remove("destinationAccountId")
+            if (showDayPicker) {
+                BcOptionPickerModal(
+                    title = "Select Day of Month",
+                    options = (1..31).map(Int::toString),
+                    selectedIndex = dayOfMonth - 1,
+                    onSelect = { index ->
+                        dayOfMonth = index + 1
+                        showDayPicker = false
+                        localErrors.remove("dayOfMonth")
                     },
-                    isError = localErrors.containsKey("destinationAccountId"),
-                    errorText = localErrors["destinationAccountId"],
+                    onDismiss = { showDayPicker = false },
                 )
             }
 
-            OutlinedTextField(
+            BcInputGroup(
+                label = "Account",
+                value = availableAccounts.firstOrNull { account -> account.id == selectedAccountId }?.name.orEmpty(),
+                onValueChange = {},
+                placeholder = "Select account",
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                onClick = if (availableAccounts.isNotEmpty()) {
+                    { showAccountPicker = true }
+                } else {
+                    null
+                },
+                isError = localErrors.containsKey("accountId"),
+            )
+            InlineError(localErrors["accountId"])
+
+            AccountPickerModal(
+                isVisible = showAccountPicker,
+                accounts = availableAccounts,
+                selectedAccountId = selectedAccountId,
+                title = "Select Account",
+                onAccountSelected = { id ->
+                    selectedAccountId = id
+                    showAccountPicker = false
+                    localErrors.remove("accountId")
+                    if (destinationAccountId == id) {
+                        destinationAccountId = null
+                    }
+                },
+                onDismiss = { showAccountPicker = false },
+            )
+
+            if (selectedType == RecurrenceType.TRANSFER) {
+                val destinationAccounts = availableAccounts.filter { account -> account.id != selectedAccountId }
+                BcInputGroup(
+                    label = "Destination Account",
+                    value = destinationAccounts.firstOrNull { account -> account.id == destinationAccountId }?.name.orEmpty(),
+                    onValueChange = {},
+                    placeholder = "Select account",
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    onClick = if (destinationAccounts.isNotEmpty()) {
+                        { showDestinationPicker = true }
+                    } else {
+                        null
+                    },
+                    isError = localErrors.containsKey("destinationAccountId"),
+                )
+                InlineError(localErrors["destinationAccountId"])
+
+                AccountPickerModal(
+                    isVisible = showDestinationPicker,
+                    accounts = destinationAccounts,
+                    selectedAccountId = destinationAccountId,
+                    title = "Select Destination Account",
+                    onAccountSelected = { id ->
+                        destinationAccountId = id
+                        showDestinationPicker = false
+                        localErrors.remove("destinationAccountId")
+                    },
+                    onDismiss = { showDestinationPicker = false },
+                )
+            }
+
+            BcInputGroup(
+                label = "Description (optional)",
                 value = description,
                 onValueChange = {
                     description = it.take(200)
                     localErrors.remove("description")
                 },
-                label = { Text("Description (optional)") },
+                placeholder = "",
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 maxLines = 3,
                 isError = localErrors.containsKey("description"),
+                errorText = localErrors["description"],
             )
-            InlineError(localErrors["description"])
             Text(
                 text = "${description.length}/200",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = BudgetCalendarTheme.typography.bodySmall,
+                color = BudgetCalendarTheme.colors.textSecondary,
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(BudgetCalendarTheme.spacing.spacing1))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(BudgetCalendarTheme.spacing.spacing2),
             ) {
                 TextButton(
                     onClick = onCancel,
@@ -264,12 +290,12 @@ fun RecurringFormSheet(
                 ) {
                     Text(
                         text = "Delete",
-                        color = MaterialTheme.colorScheme.error,
+                        color = BudgetCalendarTheme.colors.colorErrorText,
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(BudgetCalendarTheme.spacing.spacing2))
         }
     }
 }
@@ -313,46 +339,6 @@ private fun validateRecurringForm(
 }
 
 @Composable
-private fun AccountDropdown(
-    label: String,
-    accounts: List<Account>,
-    selectedAccountId: Long?,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    onAccountSelected: (Account) -> Unit,
-    isError: Boolean,
-    errorText: String?,
-) {
-    val selectedLabel = accounts.firstOrNull { account -> account.id == selectedAccountId }?.name ?: "Select account"
-
-    OutlinedTextField(
-        value = selectedLabel,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text(label) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onExpandedChange(true) },
-        trailingIcon = { Text("v") },
-        isError = isError,
-    )
-
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { onExpandedChange(false) },
-    ) {
-        accounts.forEach { account ->
-            DropdownMenuItem(
-                text = { Text(account.name) },
-                onClick = { onAccountSelected(account) },
-            )
-        }
-    }
-
-    InlineError(errorText)
-}
-
-@Composable
 private fun InlineError(message: String?) {
     if (message.isNullOrBlank()) {
         return
@@ -360,8 +346,8 @@ private fun InlineError(message: String?) {
 
     Text(
         text = message,
-        color = MaterialTheme.colorScheme.error,
-        style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(start = 4.dp),
+        color = BudgetCalendarTheme.colors.colorErrorText,
+        style = BudgetCalendarTheme.typography.bodySmall,
+        modifier = Modifier.padding(start = BudgetCalendarTheme.spacing.spacing1),
     )
 }
