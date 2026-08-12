@@ -2,7 +2,8 @@ package com.petergabriel.budgetcalendar.features.creditcard.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetSpendingPoolAccountsUseCase
+import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
+import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountsUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.UpdateCreditCardSettingsRequest
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCreditCardSettingsUseCase
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.GetCreditCardSummariesUseCase
@@ -28,7 +29,7 @@ class CreditCardViewModel(
     private val updateCreditCardSettingsUseCase: UpdateCreditCardSettingsUseCase,
     private val makeCreditCardPaymentUseCase: MakeCreditCardPaymentUseCase,
     private val getPendingAndOverdueExpensesByAccountUseCase: GetPendingAndOverdueExpensesByAccountUseCase,
-    private val getSpendingPoolAccountsUseCase: GetSpendingPoolAccountsUseCase,
+    private val getAccountsUseCase: GetAccountsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreditCardUiState(isLoading = true))
@@ -39,11 +40,11 @@ class CreditCardViewModel(
 
     private var summariesJob: Job? = null
     private var selectedCardTransactionsJob: Job? = null
-    private var spendingPoolAccountsJob: Job? = null
+    private var paymentSourceAccountsJob: Job? = null
 
     init {
         observeCreditCardSummaries()
-        observeSpendingPoolAccounts()
+        observePaymentSourceAccounts()
     }
 
     fun selectCard(accountId: Long) {
@@ -261,15 +262,21 @@ class CreditCardViewModel(
         }
     }
 
-    private fun observeSpendingPoolAccounts() {
-        spendingPoolAccountsJob?.cancel()
-        spendingPoolAccountsJob = viewModelScope.launch {
-            getSpendingPoolAccountsUseCase()
+    private fun observePaymentSourceAccounts() {
+        paymentSourceAccountsJob?.cancel()
+        paymentSourceAccountsJob = viewModelScope.launch {
+            getAccountsUseCase()
                 .catch { throwable ->
                     _uiState.update { state -> state.copy(error = throwable.message) }
                 }
                 .collect { accounts ->
-                    _uiState.update { state -> state.copy(spendingPoolAccounts = accounts) }
+                    _uiState.update { state ->
+                        state.copy(
+                            paymentSourceAccounts = accounts.filter { account ->
+                                account.type != AccountType.CREDIT_CARD
+                            },
+                        )
+                    }
                 }
         }
     }

@@ -2,7 +2,7 @@ package com.petergabriel.budgetcalendar.features.creditcard.presentation
 
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAccountRequest
-import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetSpendingPoolAccountsUseCase
+import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountsUseCase
 import com.petergabriel.budgetcalendar.features.accounts.testutil.FakeAccountRepository
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.UpdateCreditCardSettingsRequest
 import com.petergabriel.budgetcalendar.features.creditcard.domain.usecase.CreateCreditCardSettingsUseCase
@@ -52,6 +52,25 @@ class CreditCardViewModelTest {
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun paymentSources_includeSavings_andExcludeCreditCards() = runTest(dispatcher) {
+        val savings = accountRepository.createAccount(
+            CreateAccountRequest(
+                name = "Savings",
+                type = AccountType.SAVINGS,
+                initialBalance = 20_000L,
+                isInSpendingPool = false,
+            ),
+        )
+        createCard()
+
+        val viewModel = viewModel()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.paymentSourceAccounts.any { account -> account.id == savings.id })
+        assertTrue(viewModel.uiState.value.paymentSourceAccounts.none { account -> account.type == AccountType.CREDIT_CARD })
     }
 
     @Test
@@ -135,6 +154,6 @@ class CreditCardViewModelTest {
             CreateTransactionUseCase(transactionRepository),
         ),
         getPendingAndOverdueExpensesByAccountUseCase = GetPendingAndOverdueExpensesByAccountUseCase(transactionRepository),
-        getSpendingPoolAccountsUseCase = GetSpendingPoolAccountsUseCase(accountRepository),
+        getAccountsUseCase = GetAccountsUseCase(accountRepository),
     )
 }

@@ -54,7 +54,7 @@ class AccountOverlaySheetTest {
                     isVisible = true,
                     ccSummary = cardSummary,
                     suggestedAmount = 5_000L,
-                    spendingPoolAccounts = listOf(account),
+                    paymentSourceAccounts = listOf(account),
                     errorMessage = "write failed",
                     onConfirmPayment = { _, _ -> },
                     onCancel = {},

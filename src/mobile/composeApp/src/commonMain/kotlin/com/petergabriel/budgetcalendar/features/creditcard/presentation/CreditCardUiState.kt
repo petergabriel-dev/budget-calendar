@@ -14,7 +14,7 @@ data class CreditCardUiState(
     val selectedCard: CreditCardSummary? = null,
     val selectedCardSettings: CreditCardSettings? = null,
     val selectedCardTransactions: List<Transaction> = emptyList(),
-    val spendingPoolAccounts: List<Account> = emptyList(),
+    val paymentSourceAccounts: List<Account> = emptyList(),
     val isLoading: Boolean = false,
     val isPaymentSubmitting: Boolean = false,
     val isSettingsSubmitting: Boolean = false,

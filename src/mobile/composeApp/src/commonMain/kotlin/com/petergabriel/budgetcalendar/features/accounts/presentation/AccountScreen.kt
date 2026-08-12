@@ -186,7 +186,7 @@ fun AccountScreen(
                     isVisible = creditCardUiState.isPaymentSheetVisible,
                     ccSummary = selectedCard,
                     suggestedAmount = creditCardUiState.suggestedPaymentAmount,
-                    spendingPoolAccounts = creditCardUiState.spendingPoolAccounts,
+                    paymentSourceAccounts = creditCardUiState.paymentSourceAccounts,
                     isSubmitting = creditCardUiState.isPaymentSubmitting,
                     errorMessage = creditCardUiState.paymentError,
                     onConfirmPayment = creditCardViewModel::makePayment,

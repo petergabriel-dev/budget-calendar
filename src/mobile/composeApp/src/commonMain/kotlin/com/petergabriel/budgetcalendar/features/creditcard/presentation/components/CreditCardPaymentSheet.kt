@@ -34,7 +34,7 @@ fun CreditCardPaymentSheet(
     isVisible: Boolean,
     ccSummary: CreditCardSummary,
     suggestedAmount: Long,
-    spendingPoolAccounts: List<Account>,
+    paymentSourceAccounts: List<Account>,
     isSubmitting: Boolean = false,
     errorMessage: String? = null,
     onConfirmPayment: (sourceAccountId: Long, amount: Long) -> Unit,
@@ -49,26 +49,26 @@ fun CreditCardPaymentSheet(
         mutableStateOf(MoneyInputUtils.centsToInput(suggestedAmount))
     }
     var selectedSourceAccountId by remember(ccSummary.accountId) {
-        mutableStateOf(spendingPoolAccounts.firstOrNull()?.id)
+        mutableStateOf(paymentSourceAccounts.firstOrNull()?.id)
     }
     var showAccountPicker by remember { mutableStateOf(false) }
     val validationErrors = remember(ccSummary.accountId) { mutableStateMapOf<String, String>() }
     var showDiscardConfirmation by remember(ccSummary.accountId) { mutableStateOf(false) }
 
-    LaunchedEffect(spendingPoolAccounts) {
-        if (selectedSourceAccountId == null || spendingPoolAccounts.none { account -> account.id == selectedSourceAccountId }) {
-            selectedSourceAccountId = spendingPoolAccounts.firstOrNull()?.id
+    LaunchedEffect(paymentSourceAccounts) {
+        if (selectedSourceAccountId == null || paymentSourceAccounts.none { account -> account.id == selectedSourceAccountId }) {
+            selectedSourceAccountId = paymentSourceAccounts.firstOrNull()?.id
         }
     }
 
-    val selectedSourceLabel = spendingPoolAccounts
+    val selectedSourceLabel = paymentSourceAccounts
         .firstOrNull { account -> account.id == selectedSourceAccountId }
         ?.name
         ?: "Select source account"
     val parsedAmount = MoneyInputUtils.parseToCents(amountInput.trim())
     val exceedsReserved = parsedAmount != null && parsedAmount > ccSummary.reservedAmount
     val isDirty = amountInput != MoneyInputUtils.centsToInput(suggestedAmount) ||
-        selectedSourceAccountId != spendingPoolAccounts.firstOrNull()?.id
+        selectedSourceAccountId != paymentSourceAccounts.firstOrNull()?.id
 
     fun requestDismiss() {
         if (isSubmitting) return
@@ -113,7 +113,7 @@ fun CreditCardPaymentSheet(
                     placeholder = "Select source account",
                     modifier = Modifier.fillMaxWidth(),
                     readOnly = true,
-                    onClick = if (!isSubmitting && spendingPoolAccounts.isNotEmpty()) {
+                    onClick = if (!isSubmitting && paymentSourceAccounts.isNotEmpty()) {
                         { showAccountPicker = true }
                     } else {
                         null
@@ -124,7 +124,7 @@ fun CreditCardPaymentSheet(
 
                 AccountPickerModal(
                     isVisible = showAccountPicker,
-                    accounts = spendingPoolAccounts,
+                    accounts = paymentSourceAccounts,
                     selectedAccountId = selectedSourceAccountId,
                     title = "Select Source Account",
                     onAccountSelected = { id ->
@@ -135,9 +135,9 @@ fun CreditCardPaymentSheet(
                     onDismiss = { showAccountPicker = false },
                 )
 
-                if (spendingPoolAccounts.isEmpty()) {
+                if (paymentSourceAccounts.isEmpty()) {
                     Text(
-                        text = "No spending pool account available. Add one in Accounts before paying a card.",
+                        text = "No payment source account available. Add one in Accounts before paying a card.",
                         style = typography.bodySmall,
                         color = colors.colorWarningText,
                     )
@@ -177,7 +177,7 @@ fun CreditCardPaymentSheet(
                     },
                     modifier = Modifier.weight(1f),
                     variant = ButtonVariant.Primary,
-                    enabled = spendingPoolAccounts.isNotEmpty() && !isSubmitting,
+                    enabled = paymentSourceAccounts.isNotEmpty() && !isSubmitting,
                 )
             }
         },
