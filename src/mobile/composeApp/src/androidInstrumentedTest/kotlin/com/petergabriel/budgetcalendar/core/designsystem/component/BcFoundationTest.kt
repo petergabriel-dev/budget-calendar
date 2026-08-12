@@ -4,13 +4,17 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcSwitchRow
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,6 +44,29 @@ class BcFoundationTest {
         composeTestRule.onNodeWithText("SAFE TO SPEND").assertIsDisplayed()
         composeTestRule.onNodeWithText("₱125.00").assertIsDisplayed()
         composeTestRule.onNodeWithText("Last day of month").assertIsDisplayed()
+    }
+
+    @Test
+    fun switchRow_exposesLabelSubtitleAndToggleAction() {
+        var checked = false
+        composeTestRule.setContent {
+            BudgetCalendarTheme {
+                BcSwitchRow(
+                    label = "Include in Safe to Spend",
+                    subtitle = "Only enabled accounts are included in available funds.",
+                    checked = checked,
+                    onCheckedChange = { checked = it },
+                    modifier = Modifier.testTag("switch_row"),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Include in Safe to Spend").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Only enabled accounts are included in available funds.").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("switch_row").performClick()
+        composeTestRule.runOnIdle {
+            assertEquals(true, checked)
+        }
     }
 
     @Test
