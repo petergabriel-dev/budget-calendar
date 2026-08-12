@@ -125,7 +125,6 @@ class TransactionFormViewModelTest {
                 name = "MariBank",
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -2_500L,
-                isInSpendingPool = false,
             ),
         )
         creditCardRepository.insert(

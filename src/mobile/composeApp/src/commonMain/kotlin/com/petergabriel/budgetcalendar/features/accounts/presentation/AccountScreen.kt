@@ -126,7 +126,7 @@ fun AccountScreen(
                 initialData = uiState.editingAccount,
                 isSubmitting = uiState.isSubmitting,
                 errorMessage = uiState.mutationError,
-                onSave = { name, type, balance, isInSpendingPool, description, creditLimit, statementClosingDay, paymentDueDay ->
+                onSave = { name, type, balance, description, creditLimit, statementClosingDay, paymentDueDay ->
                     val editing = uiState.editingAccount
                     if (editing == null) {
                         viewModel.createAccount(
@@ -134,7 +134,6 @@ fun AccountScreen(
                                 name = name,
                                 type = type,
                                 initialBalance = if (type == AccountType.CREDIT_CARD) -balance else balance,
-                                isInSpendingPool = isInSpendingPool,
                                 description = description,
                                 creditLimit = creditLimit,
                                 statementClosingDay = statementClosingDay,
@@ -147,7 +146,6 @@ fun AccountScreen(
                             request = UpdateAccountRequest(
                                 name = name,
                                 type = type,
-                                isInSpendingPool = isInSpendingPool,
                                 description = description,
                             ),
                         )

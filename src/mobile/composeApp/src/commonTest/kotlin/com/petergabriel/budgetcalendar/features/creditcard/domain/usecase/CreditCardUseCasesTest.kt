@@ -64,7 +64,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun createCreditCardSettings_validCreditCardAccount_createsSettings() = runBlocking {
-        val card = createAccount("Visa", AccountType.CREDIT_CARD, -5_000L, isInSpendingPool = false)
+        val card = createAccount("Visa", AccountType.CREDIT_CARD, -5_000L)
 
         val result = createCreditCardSettingsUseCase(
             accountId = card.id,
@@ -87,7 +87,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun createCreditCardSettings_nonCreditCardAccount_returnsError() = runBlocking {
-        val checking = createAccount("Checking", AccountType.CHECKING, 10_000L, isInSpendingPool = true)
+        val checking = createAccount("Checking", AccountType.CHECKING, 10_000L)
 
         val result = createCreditCardSettingsUseCase(accountId = checking.id)
 
@@ -108,7 +108,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun getCreditCardSettings_existingSettings_returnsStoredRow() = runBlocking {
-        val card = createAccount("Mastercard", AccountType.CREDIT_CARD, -3_200L, isInSpendingPool = false)
+        val card = createAccount("Mastercard", AccountType.CREDIT_CARD, -3_200L)
         val created = createCreditCardSettingsUseCase(
             accountId = card.id,
             creditLimit = 15_000L,
@@ -124,7 +124,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun getCreditCardSettings_missingRow_autoCreatesWithNullOptionals() = runBlocking {
-        val card = createAccount("Amex", AccountType.CREDIT_CARD, -1_900L, isInSpendingPool = false)
+        val card = createAccount("Amex", AccountType.CREDIT_CARD, -1_900L)
 
         val result = getCreditCardSettingsUseCase(card.id)
 
@@ -139,7 +139,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun updateCreditCardSettings_validUpdate_persistsChanges() = runBlocking {
-        val card = createAccount("Union", AccountType.CREDIT_CARD, -2_100L, isInSpendingPool = false)
+        val card = createAccount("Union", AccountType.CREDIT_CARD, -2_100L)
         createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
 
         val result = updateCreditCardSettingsUseCase(
@@ -166,7 +166,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun updateCreditCardSettings_invalidCycleDay_returnsValidationError() = runBlocking {
-        val card = createAccount("Discover", AccountType.CREDIT_CARD, -800L, isInSpendingPool = false)
+        val card = createAccount("Discover", AccountType.CREDIT_CARD, -800L)
         createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
 
         val result = updateCreditCardSettingsUseCase(
@@ -184,7 +184,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun updateCreditCardSettings_negativeCreditLimit_returnsValidationError() = runBlocking {
-        val card = createAccount("JCB", AccountType.CREDIT_CARD, -800L, isInSpendingPool = false)
+        val card = createAccount("JCB", AccountType.CREDIT_CARD, -800L)
         createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
 
         val result = updateCreditCardSettingsUseCase(
@@ -200,8 +200,8 @@ class CreditCardUseCasesTest {
 
     @Test
     fun getCreditCardSummaries_multipleCards_producesIndependentSummaries() = runBlocking {
-        val visa = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L, isInSpendingPool = false)
-        val amex = createAccount("Amex", AccountType.CREDIT_CARD, -5_000L, isInSpendingPool = false)
+        val visa = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L)
+        val amex = createAccount("Amex", AccountType.CREDIT_CARD, -5_000L)
         createCreditCardSettingsUseCase(
             accountId = visa.id,
             creditLimit = 12_000L,
@@ -226,8 +226,8 @@ class CreditCardUseCasesTest {
 
     @Test
     fun getCreditCardSummaries_creditLimitComputesAvailableCredit_withoutLimitReturnsNull() = runBlocking {
-        val limited = createAccount("Limited", AccountType.CREDIT_CARD, -3_500L, isInSpendingPool = false)
-        val unlimited = createAccount("Unlimited", AccountType.CREDIT_CARD, -1_500L, isInSpendingPool = false)
+        val limited = createAccount("Limited", AccountType.CREDIT_CARD, -3_500L)
+        val unlimited = createAccount("Unlimited", AccountType.CREDIT_CARD, -1_500L)
         createCreditCardSettingsUseCase(accountId = limited.id, creditLimit = 10_000L).getOrThrow()
         createCreditCardSettingsUseCase(accountId = unlimited.id, creditLimit = null).getOrThrow()
         creditCardRepository.setProjectedBalance(limited.id, -3_500L)
@@ -243,7 +243,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun getCreditCardSummaries_statementDueUsesLastCloseBalanceAndPaymentsSince() = runBlocking {
-        val card = createAccount("Due", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
+        val card = createAccount("Due", AccountType.CREDIT_CARD, -4_000L)
         createCreditCardSettingsUseCase(
             accountId = card.id,
             creditLimit = 20_000L,
@@ -263,7 +263,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun getCreditCardSummaries_postClosingChargeDoesNotIncreaseStatementDue() = runBlocking {
-        val card = createAccount("Post Close", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
+        val card = createAccount("Post Close", AccountType.CREDIT_CARD, -4_000L)
         createCreditCardSettingsUseCase(
             accountId = card.id,
             creditLimit = 20_000L,
@@ -282,7 +282,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun getCreditCardSummaries_missingCycleLeavesStatementDueNull() = runBlocking {
-        val card = createAccount("No Cycle", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false)
+        val card = createAccount("No Cycle", AccountType.CREDIT_CARD, -4_000L)
         createCreditCardSettingsUseCase(accountId = card.id, creditLimit = 20_000L).getOrThrow()
         creditCardRepository.setProjectedBalance(card.id, -4_000L)
 
@@ -294,7 +294,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun getCreditCardSummaryById_returnsSingleSummaryWithReservedAmount() = runBlocking {
-        val card = createAccount("Single", AccountType.CREDIT_CARD, -2_000L, isInSpendingPool = false)
+        val card = createAccount("Single", AccountType.CREDIT_CARD, -2_000L)
         createCreditCardSettingsUseCase(
             accountId = card.id,
             creditLimit = 6_000L,
@@ -321,8 +321,8 @@ class CreditCardUseCasesTest {
 
     @Test
     fun makeCreditCardPayment_validPayment_createsTransfer() = runBlocking {
-        val source = createAccount("Checking", AccountType.CHECKING, 30_000L, isInSpendingPool = true)
-        val destination = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L, isInSpendingPool = false)
+        val source = createAccount("Checking", AccountType.CHECKING, 30_000L)
+        val destination = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L)
         createCreditCardSettingsUseCase(accountId = destination.id).getOrThrow()
 
         val result = makeCreditCardPaymentUseCase(
@@ -345,8 +345,8 @@ class CreditCardUseCasesTest {
 
     @Test
     fun makeCreditCardPayment_amountLessOrEqualZero_returnsError() = runBlocking {
-        val source = createAccount("Checking", AccountType.CHECKING, 30_000L, isInSpendingPool = true)
-        val destination = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L, isInSpendingPool = false)
+        val source = createAccount("Checking", AccountType.CHECKING, 30_000L)
+        val destination = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L)
         createCreditCardSettingsUseCase(accountId = destination.id).getOrThrow()
 
         val result = makeCreditCardPaymentUseCase(
@@ -361,7 +361,7 @@ class CreditCardUseCasesTest {
 
     @Test
     fun makeCreditCardPayment_sourceEqualsDestination_returnsError() = runBlocking {
-        val card = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L, isInSpendingPool = false)
+        val card = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L)
         createCreditCardSettingsUseCase(accountId = card.id).getOrThrow()
 
         val result = makeCreditCardPaymentUseCase(
@@ -376,8 +376,8 @@ class CreditCardUseCasesTest {
 
     @Test
     fun makeCreditCardPayment_destinationNotCreditCard_returnsError() = runBlocking {
-        val source = createAccount("Checking", AccountType.CHECKING, 30_000L, isInSpendingPool = true)
-        val destination = createAccount("Savings", AccountType.SAVINGS, 20_000L, isInSpendingPool = false)
+        val source = createAccount("Checking", AccountType.CHECKING, 30_000L)
+        val destination = createAccount("Savings", AccountType.SAVINGS, 20_000L)
 
         val result = makeCreditCardPaymentUseCase(
             sourceAccountId = source.id,
@@ -391,8 +391,8 @@ class CreditCardUseCasesTest {
 
     @Test
     fun makeCreditCardPayment_amountGreaterThanReserved_isAllowed() = runBlocking {
-        val source = createAccount("Checking", AccountType.CHECKING, 30_000L, isInSpendingPool = true)
-        val destination = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L, isInSpendingPool = false)
+        val source = createAccount("Checking", AccountType.CHECKING, 30_000L)
+        val destination = createAccount("Visa", AccountType.CREDIT_CARD, -3_000L)
         createCreditCardSettingsUseCase(accountId = destination.id).getOrThrow()
         creditCardRepository.setProjectedBalance(destination.id, -700L)
 
@@ -410,14 +410,12 @@ class CreditCardUseCasesTest {
         name: String,
         type: AccountType,
         initialBalance: Long,
-        isInSpendingPool: Boolean,
     ): Account {
         return accountRepository.createAccount(
             CreateAccountRequest(
                 name = name,
                 type = type,
                 initialBalance = initialBalance,
-                isInSpendingPool = isInSpendingPool,
             ),
         )
     }

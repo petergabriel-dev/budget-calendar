@@ -37,7 +37,6 @@ class CreditCardRepositoryImplTest {
                     name = "Card",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = -10_000L,
-                    isInSpendingPool = false,
                 ),
             )
             val sinceMillis = 1_000_150L

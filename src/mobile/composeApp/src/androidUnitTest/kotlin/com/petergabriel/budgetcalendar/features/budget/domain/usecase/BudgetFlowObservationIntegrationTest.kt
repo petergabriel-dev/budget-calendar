@@ -52,7 +52,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 100_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
             val card = fixture.createAccountUseCase(
@@ -60,7 +59,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Card",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
-                    isInSpendingPool = false,
                     creditLimit = 100_00L,
                     statementClosingDay = 20,
                     paymentDueDay = 5,
@@ -103,7 +101,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 100_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
             val card = fixture.createAccountUseCase(
@@ -111,7 +108,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Card",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = -30_00L,
-                    isInSpendingPool = false,
                     creditLimit = 100_00L,
                     statementClosingDay = 20,
                     paymentDueDay = 5,
@@ -145,7 +141,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Card",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
-                    isInSpendingPool = false,
                     creditLimit = 100_00L,
                     statementClosingDay = 20,
                     paymentDueDay = 5,
@@ -211,7 +206,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Primary Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 500_00L,
-                    isInSpendingPool = true,
                 ),
             )
             assertTrue(createAccountResult.isSuccess)
@@ -271,7 +265,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 500_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
             fixture.createAccountUseCase(
@@ -279,7 +272,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Savings",
                     type = AccountType.SAVINGS,
                     initialBalance = 500_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
             fixture.createTransactionUseCase(
@@ -314,7 +306,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Primary Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 500_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
 
@@ -358,7 +349,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Primary Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 500_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
 
@@ -410,7 +400,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Primary Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 500_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
 
@@ -478,7 +467,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Primary Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 500_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
             val card = fixture.createAccountUseCase(
@@ -486,7 +474,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Card A",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
-                    isInSpendingPool = false,
                     creditLimit = 100_00L,
                     statementClosingDay = 20,
                     paymentDueDay = 5,
@@ -567,7 +554,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Primary Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 500_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
             val card = fixture.createAccountUseCase(
@@ -575,7 +561,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Card A",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
-                    isInSpendingPool = false,
                     creditLimit = 100_00L,
                     statementClosingDay = 20,
                     paymentDueDay = 5,
@@ -642,7 +627,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 1_000_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
             val card = fixture.createAccountUseCase(
@@ -650,7 +634,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Card",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
-                    isInSpendingPool = false,
                     creditLimit = 100_00L,
                     statementClosingDay = 20,
                     paymentDueDay = 5,
@@ -705,7 +688,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Primary Checking",
                     type = AccountType.CHECKING,
                     initialBalance = 1_000_00L,
-                    isInSpendingPool = true,
                 ),
             ).getOrThrow()
             val card = fixture.createAccountUseCase(
@@ -713,7 +695,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Card A",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
-                    isInSpendingPool = false,
                     creditLimit = 100_00L,
                     statementClosingDay = 20,
                     paymentDueDay = 5,
@@ -789,7 +770,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Card B",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = 0L,
-                    isInSpendingPool = false,
                     creditLimit = 100_00L,
                     statementClosingDay = 20,
                     paymentDueDay = 5,
@@ -810,7 +790,6 @@ class BudgetFlowObservationIntegrationTest {
                     name = "Card C",
                     type = AccountType.CREDIT_CARD,
                     initialBalance = -30_00L,
-                    isInSpendingPool = false,
                     creditLimit = 100_00L,
                     statementClosingDay = 20,
                     paymentDueDay = 5,

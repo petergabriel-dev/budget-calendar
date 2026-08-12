@@ -70,7 +70,6 @@ class AccountRepositoryImpl(
             request.name.trim(),
             request.type.dbValue,
             request.initialBalance,
-            if (request.isInSpendingPool) 1L else 0L,
             description,
             now,
             now,
@@ -98,7 +97,6 @@ class AccountRepositoryImpl(
         database.accountsQueries.updateAccount(
             updated.name,
             updated.type.dbValue,
-            if (updated.isInSpendingPool) 1L else 0L,
             updated.description,
             updated.updatedAt,
             id,

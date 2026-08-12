@@ -47,7 +47,6 @@ class AccountViewModelTest {
                 name = "Primary",
                 type = AccountType.CHECKING,
                 initialBalance = 10_000L,
-                isInSpendingPool = true,
             ),
         )
         accountRepository.setHasTransactions(account.id, true)
@@ -73,7 +72,6 @@ class AccountViewModelTest {
                 name = "Primary",
                 type = AccountType.CHECKING,
                 initialBalance = 10_000L,
-                isInSpendingPool = true,
             ),
         )
         advanceUntilIdle()

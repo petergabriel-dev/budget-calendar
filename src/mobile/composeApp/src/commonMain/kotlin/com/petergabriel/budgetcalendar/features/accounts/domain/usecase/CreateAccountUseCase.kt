@@ -37,14 +37,7 @@ class CreateAccountUseCase(
         }
 
         val createdAccount = accountRepository.createAccount(
-            request.copy(
-                name = trimmedName,
-                isInSpendingPool = if (request.type == AccountType.CREDIT_CARD) {
-                    false
-                } else {
-                    request.isInSpendingPool
-                },
-            ),
+            request.copy(name = trimmedName),
         )
 
         if (createdAccount.type == AccountType.CREDIT_CARD) {

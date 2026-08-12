@@ -61,7 +61,6 @@ class CreditCardViewModelTest {
                 name = "Savings",
                 type = AccountType.SAVINGS,
                 initialBalance = 20_000L,
-                isInSpendingPool = false,
             ),
         )
         createCard()
@@ -119,7 +118,6 @@ class CreditCardViewModelTest {
             name = "Visa",
             type = AccountType.CREDIT_CARD,
             initialBalance = -5_000L,
-            isInSpendingPool = false,
         ),
     ).also { card ->
         createSettings(

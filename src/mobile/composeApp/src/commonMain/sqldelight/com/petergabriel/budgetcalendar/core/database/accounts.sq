@@ -16,14 +16,13 @@ WHERE a.id = :id
 GROUP BY a.id, a.name, a.type, a.initial_balance, a.is_in_spending_pool, a.description, a.created_at, a.updated_at;
 
 insertAccount:
-INSERT INTO accounts(name, type, initial_balance, is_in_spending_pool, description, created_at, updated_at)
-VALUES (:name, :type, :initial_balance, :is_in_spending_pool, :description, :created_at, :updated_at);
+INSERT INTO accounts(name, type, initial_balance, description, created_at, updated_at)
+VALUES (:name, :type, :initial_balance, :description, :created_at, :updated_at);
 
 updateAccount:
 UPDATE accounts
 SET name = :name,
     type = :type,
-    is_in_spending_pool = :is_in_spending_pool,
     description = :description,
     updated_at = :updated_at
 WHERE id = :id;

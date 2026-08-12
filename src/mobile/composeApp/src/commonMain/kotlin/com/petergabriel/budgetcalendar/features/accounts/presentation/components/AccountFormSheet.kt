@@ -26,7 +26,6 @@ import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcInputGroup
 import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcSelectField
-import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcSwitchRow
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.MoneyInputUtils
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
@@ -42,7 +41,6 @@ fun AccountFormSheet(
         name: String,
         type: AccountType,
         balance: Long,
-        isInSpendingPool: Boolean,
         description: String,
         creditLimit: Long?,
         statementClosingDay: Int?,
@@ -60,9 +58,6 @@ fun AccountFormSheet(
     var balanceInput by remember(initialData?.id) {
         mutableStateOf(MoneyInputUtils.centsToInput(initialData?.balance ?: 0L))
     }
-    var includeInSpendingPool by remember(initialData?.id) {
-        mutableStateOf(initialData?.isInSpendingPool ?: true)
-    }
     var descriptionInput by remember(initialData?.id) {
         mutableStateOf(initialData?.description.orEmpty())
     }
@@ -77,16 +72,9 @@ fun AccountFormSheet(
         validationErrors.clear()
     }
 
-    LaunchedEffect(selectedType) {
-        if (selectedType == AccountType.CREDIT_CARD) {
-            includeInSpendingPool = false
-        }
-    }
-
     val isDirty = name != initialData?.name.orEmpty() ||
         selectedType != (initialData?.type ?: AccountType.CHECKING) ||
         balanceInput != MoneyInputUtils.centsToInput(initialData?.balance ?: 0L) ||
-        includeInSpendingPool != (initialData?.isInSpendingPool ?: true) ||
         descriptionInput != initialData?.description.orEmpty() ||
         creditLimitInput.isNotEmpty() ||
         statementClosingDayInput.isNotEmpty() ||
@@ -249,15 +237,6 @@ fun AccountFormSheet(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                if (selectedType != AccountType.CREDIT_CARD) {
-                    BcSwitchRow(
-                        label = "Include in Safe to Spend",
-                        subtitle = "Only enabled accounts are included in available funds.",
-                        checked = includeInSpendingPool,
-                        onCheckedChange = { includeInSpendingPool = it },
-                        modifier = Modifier.testTag(INCLUDE_IN_SPENDING_POOL_SWITCH_TAG),
-                    )
-                }
             }
         },
         footer = {
@@ -289,7 +268,6 @@ fun AccountFormSheet(
                             name.trim(),
                             selectedType,
                             balance,
-                            selectedType != AccountType.CREDIT_CARD && includeInSpendingPool,
                             descriptionInput,
                             MoneyInputUtils.parseToCents(creditLimitInput.trim()),
                             statementClosingDayInput.trim().toIntOrNull(),
@@ -377,4 +355,3 @@ private const val ACCOUNT_BALANCE_FIELD_TAG = "account_balance_field"
 private const val ACCOUNT_CREDIT_LIMIT_FIELD_TAG = "account_credit_limit_field"
 private const val ACCOUNT_CLOSING_DAY_FIELD_TAG = "account_closing_day_field"
 private const val ACCOUNT_DUE_DAY_FIELD_TAG = "account_due_day_field"
-private const val INCLUDE_IN_SPENDING_POOL_SWITCH_TAG = "include_in_spending_pool_switch"

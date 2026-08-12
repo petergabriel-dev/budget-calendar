@@ -97,7 +97,6 @@ class HomeViewModelTest {
             name = name,
             type = AccountType.CREDIT_CARD,
             initialBalance = projectedBalance,
-            isInSpendingPool = false,
         ),
     ).also { account ->
         creditCardRepository.insert(

@@ -86,7 +86,6 @@ class SandboxUseCasesTest {
                     name = "Primary",
                     type = AccountType.CHECKING,
                     initialBalance = 100_000L,
-                    isInSpendingPool = true,
                 ),
             )
         }

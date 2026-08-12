@@ -53,7 +53,6 @@ class AccountUseCasesTest {
                 name = "  Primary Checking  ",
                 type = AccountType.CHECKING,
                 initialBalance = 150_00L,
-                isInSpendingPool = true,
             ),
         )
 
@@ -74,7 +73,6 @@ class AccountUseCasesTest {
                 name = "   ",
                 type = AccountType.CHECKING,
                 initialBalance = 100_00L,
-                isInSpendingPool = true,
             ),
         )
 
@@ -89,7 +87,6 @@ class AccountUseCasesTest {
                 name = "a".repeat(51),
                 type = AccountType.CHECKING,
                 initialBalance = 100_00L,
-                isInSpendingPool = true,
             ),
         )
 
@@ -104,7 +101,6 @@ class AccountUseCasesTest {
                 name = "Savings",
                 type = AccountType.SAVINGS,
                 initialBalance = -1L,
-                isInSpendingPool = false,
             ),
         )
 
@@ -122,7 +118,6 @@ class AccountUseCasesTest {
                 name = "Card",
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -10_00L,
-                isInSpendingPool = false,
                 creditLimit = 50_000L,
                 statementClosingDay = 20,
                 paymentDueDay = 5,
@@ -140,7 +135,6 @@ class AccountUseCasesTest {
                 name = "Card",
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -10_00L,
-                isInSpendingPool = false,
                 creditLimit = null,
                 statementClosingDay = 20,
                 paymentDueDay = 5,
@@ -159,7 +153,6 @@ class AccountUseCasesTest {
                 name = "Card",
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -10_00L,
-                isInSpendingPool = false,
                 creditLimit = 50_000L,
                 statementClosingDay = null,
                 paymentDueDay = 5,
@@ -170,7 +163,6 @@ class AccountUseCasesTest {
                 name = "Card",
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -10_00L,
-                isInSpendingPool = false,
                 creditLimit = 50_000L,
                 statementClosingDay = 20,
                 paymentDueDay = null,
@@ -191,7 +183,6 @@ class AccountUseCasesTest {
                 name = "Card",
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -10_00L,
-                isInSpendingPool = false,
                 creditLimit = 50_000L,
                 statementClosingDay = 20,
                 paymentDueDay = 5,
@@ -215,7 +206,6 @@ class AccountUseCasesTest {
                 name = "Card",
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -10_00L,
-                isInSpendingPool = false,
                 creditLimit = 50_000L,
                 statementClosingDay = 20,
                 paymentDueDay = 5,
@@ -234,7 +224,6 @@ class AccountUseCasesTest {
                 name = "Card",
                 type = AccountType.CREDIT_CARD,
                 initialBalance = -1_000L,
-                isInSpendingPool = true,
                 creditLimit = 50_000L,
                 statementClosingDay = 20,
                 paymentDueDay = 5,
@@ -252,7 +241,6 @@ class AccountUseCasesTest {
                 name = "Old Name",
                 type = AccountType.CHECKING,
                 initialBalance = 1000L,
-                isInSpendingPool = true,
             ),
         )
 
@@ -284,7 +272,6 @@ class AccountUseCasesTest {
                 name = "Checking",
                 type = AccountType.CHECKING,
                 initialBalance = 5_000L,
-                isInSpendingPool = true,
             ),
         )
 
@@ -292,7 +279,6 @@ class AccountUseCasesTest {
             id = account.id,
             request = UpdateAccountRequest(
                 type = AccountType.CREDIT_CARD,
-                isInSpendingPool = true,
             ),
         )
 
@@ -307,7 +293,6 @@ class AccountUseCasesTest {
                 name = "Delete Me",
                 type = AccountType.CHECKING,
                 initialBalance = 0L,
-                isInSpendingPool = false,
             ),
         )
 
@@ -324,7 +309,6 @@ class AccountUseCasesTest {
                 name = "Has Tx",
                 type = AccountType.CHECKING,
                 initialBalance = 0L,
-                isInSpendingPool = false,
             ),
         )
         accountRepository.setHasTransactions(account.id, hasTransactions = true)
@@ -341,13 +325,13 @@ class AccountUseCasesTest {
     @Test
     fun getSpendingPoolAccounts_returnsOnlyPoolAccounts() = runBlocking {
         accountRepository.createAccount(
-            CreateAccountRequest("Pool A", AccountType.CHECKING, 1000L, isInSpendingPool = true),
+            CreateAccountRequest("Pool A", AccountType.CHECKING, 1000L),
         )
         accountRepository.createAccount(
-            CreateAccountRequest("Not Pool", AccountType.SAVINGS, 2000L, isInSpendingPool = false),
+            CreateAccountRequest("Not Pool", AccountType.SAVINGS, 2000L),
         )
         accountRepository.createAccount(
-            CreateAccountRequest("Pool B", AccountType.CASH, 3000L, isInSpendingPool = true),
+            CreateAccountRequest("Pool B", AccountType.CASH, 3000L),
         )
 
         val poolAccounts = getSpendingPoolAccountsUseCase().first()
@@ -358,7 +342,7 @@ class AccountUseCasesTest {
     @Test
     fun getSpendingPoolAccounts_returnsEmptyWhenPoolIsEmpty() = runBlocking {
         accountRepository.createAccount(
-            CreateAccountRequest("Not Pool", AccountType.SAVINGS, 1000L, isInSpendingPool = false),
+            CreateAccountRequest("Not Pool", AccountType.SAVINGS, 1000L),
         )
 
         val poolAccounts = getSpendingPoolAccountsUseCase().first()
@@ -369,13 +353,13 @@ class AccountUseCasesTest {
     @Test
     fun calculateNetWorth_subtractsCreditCardLiabilitiesFromAssets() = runBlocking {
         accountRepository.createAccount(
-            CreateAccountRequest("Checking", AccountType.CHECKING, 20_000L, isInSpendingPool = true),
+            CreateAccountRequest("Checking", AccountType.CHECKING, 20_000L),
         )
         accountRepository.createAccount(
-            CreateAccountRequest("Savings", AccountType.SAVINGS, 5_000L, isInSpendingPool = false),
+            CreateAccountRequest("Savings", AccountType.SAVINGS, 5_000L),
         )
         accountRepository.createAccount(
-            CreateAccountRequest("Card", AccountType.CREDIT_CARD, -4_000L, isInSpendingPool = false),
+            CreateAccountRequest("Card", AccountType.CREDIT_CARD, -4_000L),
         )
 
         val result = calculateNetWorthUseCase()
@@ -387,10 +371,10 @@ class AccountUseCasesTest {
     @Test
     fun calculateNetWorth_returnsPositiveWhenAllAccountsAreAssets() = runBlocking {
         accountRepository.createAccount(
-            CreateAccountRequest("Checking", AccountType.CHECKING, 10_000L, isInSpendingPool = true),
+            CreateAccountRequest("Checking", AccountType.CHECKING, 10_000L),
         )
         accountRepository.createAccount(
-            CreateAccountRequest("Savings", AccountType.SAVINGS, 8_000L, isInSpendingPool = false),
+            CreateAccountRequest("Savings", AccountType.SAVINGS, 8_000L),
         )
 
         val result = calculateNetWorthUseCase()
@@ -402,10 +386,10 @@ class AccountUseCasesTest {
     @Test
     fun calculateNetWorth_returnsNegativeWhenAllAccountsAreLiabilities() = runBlocking {
         accountRepository.createAccount(
-            CreateAccountRequest("Card A", AccountType.CREDIT_CARD, -7_500L, isInSpendingPool = false),
+            CreateAccountRequest("Card A", AccountType.CREDIT_CARD, -7_500L),
         )
         accountRepository.createAccount(
-            CreateAccountRequest("Card B", AccountType.CREDIT_CARD, -2_500L, isInSpendingPool = false),
+            CreateAccountRequest("Card B", AccountType.CREDIT_CARD, -2_500L),
         )
 
         val result = calculateNetWorthUseCase()
