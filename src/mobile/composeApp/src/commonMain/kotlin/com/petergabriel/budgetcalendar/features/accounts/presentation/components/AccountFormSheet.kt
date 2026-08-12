@@ -6,12 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,16 +20,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcButton
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcConfirmDialog
+import com.petergabriel.budgetcalendar.core.designsystem.component.BcOptionPickerModal
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetFooter
 import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
 import com.petergabriel.budgetcalendar.core.designsystem.component.ButtonVariant
 import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcInputGroup
+import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcSelectField
+import com.petergabriel.budgetcalendar.core.designsystem.component.form.BcSwitchRow
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.MoneyInputUtils
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.Account
 import com.petergabriel.budgetcalendar.features.accounts.domain.model.AccountType
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountFormSheet(
     isVisible: Boolean,
@@ -74,7 +70,7 @@ fun AccountFormSheet(
     var statementClosingDayInput by remember(initialData?.id) { mutableStateOf("") }
     var paymentDueDayInput by remember(initialData?.id) { mutableStateOf("") }
     val validationErrors = remember(initialData?.id) { mutableStateMapOf<String, String>() }
-    var typeMenuExpanded by remember { mutableStateOf(false) }
+    var showTypePicker by remember { mutableStateOf(false) }
     var showDiscardConfirmation by remember(initialData?.id) { mutableStateOf(false) }
 
     LaunchedEffect(initialData?.id) {
@@ -121,129 +117,108 @@ fun AccountFormSheet(
                     )
                 }
 
-                OutlinedTextField(
+                BcInputGroup(
+                    label = "Name",
                     value = name,
                     onValueChange = {
                         name = it
                         validationErrors.remove("name")
                     },
-                    label = { Text("Name") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(ACCOUNT_NAME_FIELD_TAG),
+                    placeholder = "",
+                    modifier = Modifier.fillMaxWidth(),
+                    fieldModifier = Modifier.testTag(ACCOUNT_NAME_FIELD_TAG),
                     isError = validationErrors.containsKey("name"),
-                    singleLine = true,
+                    errorText = validationErrors["name"],
                 )
-                InlineError(validationErrors["name"])
 
-                ExposedDropdownMenuBox(
-                    expanded = typeMenuExpanded,
-                    onExpandedChange = { typeMenuExpanded = it },
-                ) {
-                    OutlinedTextField(
-                        value = selectedType.displayName(),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Type") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                            .testTag(ACCOUNT_TYPE_FIELD_TAG),
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuExpanded)
+                BcSelectField(
+                    label = "Type",
+                    value = selectedType.displayName(),
+                    onClick = { showTypePicker = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    fieldModifier = Modifier.testTag(ACCOUNT_TYPE_FIELD_TAG),
+                )
+
+                if (showTypePicker) {
+                    BcOptionPickerModal(
+                        title = "Select Account Type",
+                        options = AccountType.entries.map { it.displayName() },
+                        selectedIndex = AccountType.entries.indexOf(selectedType),
+                        onSelect = { index ->
+                            selectedType = AccountType.entries[index]
+                            showTypePicker = false
                         },
+                        onDismiss = { showTypePicker = false },
+                        optionTestTag = { index -> accountTypeOptionTag(AccountType.entries[index]) },
                     )
-                    ExposedDropdownMenu(
-                        expanded = typeMenuExpanded,
-                        onDismissRequest = { typeMenuExpanded = false },
-                    ) {
-                        AccountType.entries.forEach { type ->
-                            DropdownMenuItem(
-                                text = { Text(type.displayName()) },
-                                modifier = Modifier.testTag(accountTypeOptionTag(type)),
-                                onClick = {
-                                    selectedType = type
-                                    typeMenuExpanded = false
-                                },
-                            )
-                        }
-                    }
                 }
 
-                OutlinedTextField(
+                BcInputGroup(
+                    label = if (selectedType == AccountType.CREDIT_CARD && initialData == null) {
+                        "Current balance owed"
+                    } else if (initialData == null) {
+                        "Initial Balance"
+                    } else {
+                        "Balance"
+                    },
                     value = balanceInput,
                     onValueChange = {
                         balanceInput = it
                         validationErrors.remove("balance")
                     },
-                    label = {
-                        Text(
-                            text = if (selectedType == AccountType.CREDIT_CARD && initialData == null) {
-                                "Current balance owed"
-                            } else if (initialData == null) {
-                                "Initial Balance"
-                            } else {
-                                "Balance"
-                            },
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(ACCOUNT_BALANCE_FIELD_TAG),
+                    placeholder = "",
+                    modifier = Modifier.fillMaxWidth(),
+                    fieldModifier = Modifier.testTag(ACCOUNT_BALANCE_FIELD_TAG),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = validationErrors.containsKey("balance"),
-                    singleLine = true,
+                    errorText = validationErrors["balance"],
                 )
-                InlineError(validationErrors["balance"])
 
                 if (selectedType == AccountType.CREDIT_CARD && initialData == null) {
-                    OutlinedTextField(
+                    BcInputGroup(
+                        label = "Credit Limit",
                         value = creditLimitInput,
                         onValueChange = {
                             creditLimitInput = it
                             validationErrors.remove("creditLimit")
                         },
-                        label = { Text("Credit Limit") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag(ACCOUNT_CREDIT_LIMIT_FIELD_TAG),
+                        placeholder = "",
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldModifier = Modifier.testTag(ACCOUNT_CREDIT_LIMIT_FIELD_TAG),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         isError = validationErrors.containsKey("creditLimit"),
-                        singleLine = true,
+                        errorText = validationErrors["creditLimit"],
                     )
-                    InlineError(validationErrors["creditLimit"])
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(spacing.spacing2),
                     ) {
-                        OutlinedTextField(
+                        BcInputGroup(
+                            label = "Closing Day",
                             value = statementClosingDayInput,
                             onValueChange = {
                                 statementClosingDayInput = it
                                 validationErrors.remove("statementClosingDay")
                             },
-                            label = { Text("Closing Day") },
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag(ACCOUNT_CLOSING_DAY_FIELD_TAG),
+                            placeholder = "",
+                            modifier = Modifier.weight(1f),
+                            fieldModifier = Modifier.testTag(ACCOUNT_CLOSING_DAY_FIELD_TAG),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             isError = validationErrors.containsKey("statementClosingDay"),
-                            singleLine = true,
                         )
-                        OutlinedTextField(
+                        BcInputGroup(
+                            label = "Due Day",
                             value = paymentDueDayInput,
                             onValueChange = {
                                 paymentDueDayInput = it
                                 validationErrors.remove("paymentDueDay")
                             },
-                            label = { Text("Due Day") },
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag(ACCOUNT_DUE_DAY_FIELD_TAG),
+                            placeholder = "",
+                            modifier = Modifier.weight(1f),
+                            fieldModifier = Modifier.testTag(ACCOUNT_DUE_DAY_FIELD_TAG),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             isError = validationErrors.containsKey("paymentDueDay"),
-                            singleLine = true,
                         )
                     }
                     InlineError(validationErrors["statementClosingDay"] ?: validationErrors["paymentDueDay"])
@@ -275,28 +250,13 @@ fun AccountFormSheet(
                 )
 
                 if (selectedType != AccountType.CREDIT_CARD) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Include in Safe to Spend",
-                                style = typography.bodyMedium,
-                                color = colors.textPrimary,
-                            )
-                            Text(
-                                text = "Only enabled accounts are included in available funds.",
-                                style = typography.bodySmall,
-                                color = colors.textSecondary,
-                            )
-                        }
-                        Switch(
-                            modifier = Modifier.testTag(INCLUDE_IN_SPENDING_POOL_SWITCH_TAG),
-                            checked = includeInSpendingPool,
-                            onCheckedChange = { includeInSpendingPool = it },
-                        )
-                    }
+                    BcSwitchRow(
+                        label = "Include in Safe to Spend",
+                        subtitle = "Only enabled accounts are included in available funds.",
+                        checked = includeInSpendingPool,
+                        onCheckedChange = { includeInSpendingPool = it },
+                        modifier = Modifier.testTag(INCLUDE_IN_SPENDING_POOL_SWITCH_TAG),
+                    )
                 }
             }
         },
