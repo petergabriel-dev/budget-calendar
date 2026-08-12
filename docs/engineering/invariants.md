@@ -5,14 +5,15 @@ Must-not-break rules below are verified from current code only.
 ## Balance is ledger-derived
 
 - Account balance = `initial_balance + SUM(signed_amount)` for confirmed transactions. Account reads use this formula: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:6-21`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:60-75`.
-- Spending-pool total uses the same confirmed ledger formula: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:1-13`.
+- Spending-pool membership derives from `AccountType`: only `CHECKING` and `CASH` are included; `SAVINGS`, `CREDIT_CARD`, and `INVESTMENT` are excluded. `Account.isInSpendingPool` is computed from its type: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/model/Account.kt:3-30`.
+- Spending-pool total uses the same confirmed ledger formula, with SQL selecting `a.type IN ('checking', 'cash')`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:1-13`.
 - Do not reintroduce mutable account-balance adjustment. Transaction writes store ledger rows and emit invalidation; they do not mutate an account balance column: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:127-173`.
 
 ## Safe-to-Spend formula
 
 - STS = `pool balance - pending reservations - overdue reservations - credit-card reserved`, clamped `>= 0`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:45-50`.
 - Confirmed spending is reported, but not subtracted again from STS; confirmed spending is already reflected in computed pool balance: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:40-63`.
-- Pending/overdue reservations include spending-pool expenses only: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:15-22`.
+- Pending/overdue reservations include expenses from `CHECKING`/`CASH` accounts only; the predicate is `a.type IN ('checking', 'cash')`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:15-22`.
 - Credit-card reserved = sum of each card's projected unpaid balance, clamped per card before summing: `max(0, -(initial_balance + SUM(signed_amount) WHERE status != 'cancelled'))`. This includes pending/overdue/confirmed charges and payments; `statement_balance`/`due_date` and statement-cycle days do not feed STS: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-58`, `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:580-646`.
 - Payment-sheet submissions create confirmed paired transfers. Confirmed pool-cash decrease and card-reserve release therefore leave final STS unchanged: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/MakeCreditCardPaymentUseCase.kt:36-48`, `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:684-732`.
 
@@ -57,8 +58,7 @@ Must-not-break rules below are verified from current code only.
 
 - Creating a credit-card account requires credit limit `> 0`, statement closing day 1-31, and payment due day 1-31 before account creation proceeds; card settings are written after account insert and rollback deletes the account if settings fail: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:23-61`.
 - Add-account UI labels card balance as "Current balance owed", collects required limit/closing/due fields, and stores owed as negative `initialBalance`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/components/AccountFormSheet.kt:187-264`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:151-159`.
-- Credit-card account creation forces `isInSpendingPool = false`, even if the request asks for true: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:40-47`.
-- Updating an account to or as `credit_card` also forces `isInSpendingPool = false`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/UpdateAccountUseCase.kt:22-32`.
+- Credit-card accounts never enter the spending pool because `AccountType.CREDIT_CARD.isInSpendingPool` is `false`; account creation validates card settings but does not persist a pool override: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/model/Account.kt:3-11`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:23-61`.
 
 ## Transaction sheet treats credit-card expenses as card charges
 

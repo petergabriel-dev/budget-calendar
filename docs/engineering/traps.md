@@ -41,6 +41,18 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: `transactionChangedTrigger` + `flatMapLatest` around SQLDelight query chains.
 - Current guard: transaction writes emit trigger: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:127-206`; account/budget repos re-query via `flatMapLatest`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:31-62`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/data/repository/BudgetRepositoryImpl.kt:27-84`.
 
+## Spending-pool membership must follow account type
+
+- Symptom: Safe-to-Spend includes savings balances or payment-source selection excludes savings accounts.
+- Root cause: treating spending-pool membership and payment-source eligibility as the same question, or restoring a mutable per-account override after membership became type-derived.
+- Current guard: `AccountType` marks only `CHECKING`/`CASH` as pool members; budget SQL repeats `a.type IN ('checking', 'cash')` for pool totals and pending/overdue reservations. Credit-card payments observe all accounts and exclude only `CREDIT_CARD`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/model/Account.kt:3-30`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:1-22`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/transactions.sq:88-109`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/CreditCardViewModel.kt:265-279`.
+
+## Positional SQLDelight mapper follows projection order
+
+- Symptom: account data maps to wrong fields or fails compile after an account query projection changes.
+- Root cause: SQLDelight mapper callbacks are positional; `AccountRepositoryImpl.toEntity` must match `accounts.sq` column order exactly.
+- Current guard: account projections and `toEntity` both contain `id`, `name`, `type`, `balance`, `description`, `created_at`, and `updated_at`; migration 13 rebuilds `accounts` with the same surviving columns after removing the stored pool flag: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:1-47`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:124-142`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/13.sqm:3-18`.
+
 ## Confirmed spending double-deduction
 
 - Symptom: after confirming a pending expense, STS changed incorrectly (`bug-reports/safe-to-spend/2026-04-01_1330_safe-to-spend-not-subtracting-confirmed-spending.md:9-18`).
@@ -53,7 +65,7 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Symptom: STS over-reported after a credit-card charge moved from `pending` to `confirmed` because the reservation disappeared while the card debt still existed.
 - Root cause: old reserve SQL counted only pending/overdue card expenses, not the card's full liability balance or payments.
 - Resolution: credit-card reserve now uses projected unpaid balance per card: `max(0, -(initial_balance + SUM(signed_amount) WHERE status != 'cancelled'))`; the total query sums the per-card clamp: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-58`.
-- Current guard: cards are never in the spending pool, so card debt reaches STS only through the reserve: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:23-31`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/UpdateAccountUseCase.kt:22-32`.
+- Current guard: cards are never in the spending pool because `AccountType.CREDIT_CARD.isInSpendingPool` is `false`, so card debt reaches STS only through the reserve: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/model/Account.kt:3-11`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-39`.
 
 ## Pending card payments release STS early
 
