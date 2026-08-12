@@ -75,7 +75,7 @@ fun BcButton(
                 } ?: Modifier,
             ),
         shape = shape,
-        color = token.containerColor.copy(alpha = alpha),
+        color = resolveButtonContainerColor(token.containerColor, alpha),
         contentColor = token.contentColor.copy(alpha = alpha),
         border = if (isFocused) {
             BorderStroke(
@@ -128,13 +128,17 @@ fun BcButton(
     }
 }
 
-private data class BcButtonToken(
+internal data class BcButtonToken(
     val containerColor: Color,
     val contentColor: Color,
     val border: BorderStroke?,
 )
 
-private fun variantToken(
+internal fun resolveButtonContainerColor(color: Color, alpha: Float): Color {
+    return if (color.alpha == 0f) color else color.copy(alpha = alpha)
+}
+
+internal fun variantToken(
     variant: ButtonVariant,
     colors: BcColors,
     borderWidth: androidx.compose.ui.unit.Dp,
