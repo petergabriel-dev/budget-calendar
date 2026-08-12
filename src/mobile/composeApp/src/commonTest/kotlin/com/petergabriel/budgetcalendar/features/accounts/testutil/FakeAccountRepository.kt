@@ -95,14 +95,6 @@ class FakeAccountRepository(
         emitAccounts()
     }
 
-    override suspend fun getTotalSpendingPoolBalance(): Long {
-        return accounts
-            .asSequence()
-            .map(::toComputedBalanceAccount)
-            .filter { account -> account.isInSpendingPool }
-            .sumOf { account -> account.balance }
-    }
-
     override suspend fun hasTransactionsForAccount(accountId: Long): Boolean {
         return hasTransactionsByAccountId[accountId] == true
     }

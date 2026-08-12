@@ -12,7 +12,6 @@ interface IAccountRepository {
     suspend fun createAccount(request: CreateAccountRequest): Account
     suspend fun updateAccount(id: Long, request: UpdateAccountRequest): Account?
     suspend fun deleteAccount(id: Long)
-    suspend fun getTotalSpendingPoolBalance(): Long
     suspend fun hasTransactionsForAccount(accountId: Long): Boolean
     suspend fun calculateNetWorth(): Long
 }

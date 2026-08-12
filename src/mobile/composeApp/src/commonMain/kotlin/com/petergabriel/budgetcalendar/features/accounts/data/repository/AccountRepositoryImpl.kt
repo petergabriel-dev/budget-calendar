@@ -112,10 +112,6 @@ class AccountRepositoryImpl(
         database.accountsQueries.deleteAccount(id)
     }
 
-    override suspend fun getTotalSpendingPoolBalance(): Long {
-        return database.accountsQueries.getTotalSpendingPoolBalance().executeAsOne()
-    }
-
     override suspend fun hasTransactionsForAccount(accountId: Long): Boolean {
         val count = database.transactionsQueries.countTransactionsByAccount(accountId, accountId).executeAsOne()
         return count > 0
