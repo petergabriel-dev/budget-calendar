@@ -34,12 +34,30 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: migration 7 renamed balance to `initial_balance` and added/backfilled `signed_amount`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/7.sqm:1-23`.
 - Current guard: balance reads compute `initial_balance + SUM(signed_amount)` for confirmed rows; sandbox transactions live in `sandbox_transactions`, not main `transactions`: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/accounts.sq:60-75`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:71-86`.
 
+## Migration tests must match generated SQLDelight query APIs
+
+- Symptom: migration test does not compile or invokes a generated query as if it were a direct function.
+- Root cause: generated query names and result APIs come from the current `.sq` definitions; assumed names/signatures can be stale, especially for sandbox and foreign-key queries.
+- Resolution: inspect generated query sources or current `.sq` definitions, use the exact generated method name, and call `executeAsList()`/other result APIs on the returned query object as required: `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:504-518`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/sandbox_transactions.sq:1-80`.
+
+## Migration fixture failures need exact failing phase
+
+- Symptom: a migration test reports `SQLiteException` at the test method line, appearing to implicate fixture creation or a direct insert.
+- Root cause: `runBlocking` stack traces point to the test method even when the exception occurs later during schema migration; migration setup can also collide with the current schema version.
+- Resolution: inspect the XML test report and generated migration code to identify the failing SQL and phase before changing fixture inserts. For a v12-to-v13 migration against the current fixture, synthesize only the historical v12 schema differences before invoking migration: `src/mobile/composeApp/build/generated/sqldelight/code/BudgetCalendarDatabase/commonMain/com/petergabriel/budgetcalendar/core/database/composeApp/BudgetCalendarDatabaseImpl.kt:470-530`, `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:531-532,949-975`.
+
 ## SQLDelight flows do not refresh dependent repos by magic
 
 - Symptom: STS/account UI did not update after transaction writes (`bug-reports/account-management/2026-04-01_1615_flow-observation-not-triggering.md:9-29`).
 - Root cause: dependent SQLDelight `.asFlow()` queries emitted once or replayed stale values; `combine(trigger)` did not force re-query.
 - Resolution: `transactionChangedTrigger` + `flatMapLatest` around SQLDelight query chains.
 - Current guard: transaction writes emit trigger: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:127-206`; account/budget repos re-query via `flatMapLatest`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:31-62`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/data/repository/BudgetRepositoryImpl.kt:27-84`.
+
+## Overloaded account flags hide distinct business questions
+
+- Symptom: one boolean causes Safe-to-Spend eligibility and valid money-source behavior to drift, often hidden because forms default the value to `true`.
+- Root cause: one overloaded flag answered two unrelated questions.
+- Resolution: derive Safe-to-Spend eligibility from `AccountType`; make each call site select the explicit question it asks. Pool reads use type-derived membership, while card payments filter valid sources separately: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/model/Account.kt:3-30`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/CreditCardViewModel.kt:265-279`.
 
 ## Spending-pool membership must follow account type
 

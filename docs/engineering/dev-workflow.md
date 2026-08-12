@@ -6,14 +6,15 @@ Current mobile app lives under `src/mobile/`; Gradle root includes only `:compos
 
 - Use Pi modes in order: discuss to clarify, plan to produce Section 4 task queues, build to implement one confirmed task at a time.
 - Engineering docs live under `docs/engineering/`; ADRs live under `docs/engineering/decisions/`.
-- When exact text repeats across call sites, include enclosing function/component context in replacement anchors so only intended site changes.
+- When exact text repeats across call sites, include enclosing function/component context in replacement anchors so only intended site changes. Generic callback text may occur multiple times in one test file; anchor the full test method and callback block before editing.
+- For bulk cleanup, prefer exact string replacement or a simple verified pattern. Over-escaped regexes or unbalanced grouping can fail before edits; inspect current state and diff before retrying.
 - Design-token and component reference is `docs/engineering/design-system.html` plus Compose code under `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/`; never resolve `core/designsystem/...` from repo root. If an expected source path fails, inspect the project tree before retrying.
 
 ## Code search
 
 - Prefer semantic search first: `ccc search "safe to spend calculation"` from repo root. Project skill docs own `ccc` indexing/search workflow: `.pi/skills/ccc/SKILL.md`.
-- Run ccc searches serially. The shared daemon can race on its socket (`FileExistsError`); retry with a narrower query after refresh before falling back.
-- Empty `--path` values are rejected. Use a valid project-relative path. No semantic results do not prove source absence: after narrower retries, use exact `find`/`rg`/`read` with concrete file paths. `read` does not expand wildcard paths.
+- Run ccc searches serially. Broad semantic searches can time out after 30s, and the shared daemon can race on its socket (`FileExistsError`); retry with a narrower query after refresh before falling back.
+- Empty `--path` values are rejected. Use a valid project-relative path. No semantic results do not prove source absence: after narrower retries, use exact `find`/`rg`/`read` with concrete file paths. `read` does not expand wildcard paths. Record the exact fallback when ccc times out or returns no result.
 - For raw-token or path scans, discover exact directories first; do not include guessed/nonexistent paths because one bad operand can hide useful output.
 - After source changes, refresh ccc and record clean indexing even when known symbols still return no semantic matches.
 
@@ -21,7 +22,7 @@ Current mobile app lives under `src/mobile/`; Gradle root includes only `:compos
 
 - Inside `Row` or `Column` scope, call `Modifier.weight(...)` without importing `androidx.compose.foundation.layout.weight`; that import resolves an internal parent-data accessor and fails compilation.
 - Named arguments cannot be passed through a Kotlin function reference. Use an explicit lambda or branch when callbacks need named arguments; compile the affected source before interpreting later test failures.
-- Compose test APIs vary by dependency version. Search available APIs before using collection helpers such as `onLast()` or `onAllNodes`; prefer stable semantic nodes and canonical rendered text.
+- Compose test APIs vary by dependency version. Search available APIs before using collection helpers such as `onLast()` or `onAllNodes`; prefer stable semantic nodes and canonical rendered text. After deleting assertions, re-scan imports and surviving uses before removing an assertion helper import.
 - Update every production and test call site after changing a function signature, including required nullable/default fields, before interpreting compiler or runtime failures.
 
 ## Engineering-doc references
