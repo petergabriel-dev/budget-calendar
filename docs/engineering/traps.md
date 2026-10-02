@@ -44,14 +44,14 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 
 - Symptom: a migration test reports `SQLiteException` at the test method line, appearing to implicate fixture creation or a direct insert.
 - Root cause: `runBlocking` stack traces point to the test method even when the exception occurs later during schema migration; migration setup can also collide with the current schema version.
-- Resolution: inspect the XML test report and generated migration code to identify the failing SQL and phase before changing fixture inserts. For a v12-to-v13 migration against the current fixture, synthesize only the historical v12 schema differences before invoking migration: `src/mobile/composeApp/build/generated/sqldelight/code/BudgetCalendarDatabase/commonMain/com/petergabriel/budgetcalendar/core/database/composeApp/BudgetCalendarDatabaseImpl.kt:470-530`, `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:531-532,949-975`.
+- Resolution: inspect the XML test report and generated migration code to identify the failing SQL and phase before changing fixture inserts. For a v12-to-v13 migration against the current fixture, synthesize only the historical v12 schema differences before invoking migration: `src/mobile/composeApp/build/generated/sqldelight/code/BudgetCalendarDatabase/commonMain/com/petergabriel/budgetcalendar/core/database/composeApp/BudgetCalendarDatabaseImpl.kt:470-530`, `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:531-532,952-979`.
 
 ## SQLDelight flows do not refresh dependent repos by magic
 
 - Symptom: STS/account UI did not update after transaction writes (`bug-reports/account-management/2026-04-01_1615_flow-observation-not-triggering.md:9-29`).
 - Root cause: dependent SQLDelight `.asFlow()` queries emitted once or replayed stale values; `combine(trigger)` did not force re-query.
 - Resolution: `transactionChangedTrigger` + `flatMapLatest` around SQLDelight query chains.
-- Current guard: transaction writes emit trigger: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:127-206`; account/budget repos re-query via `flatMapLatest`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:31-62`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/data/repository/BudgetRepositoryImpl.kt:27-84`.
+- Current guard: transaction writes emit trigger: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:103-181`; account/budget repos re-query via `flatMapLatest`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:31-62`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/data/repository/BudgetRepositoryImpl.kt:27-75`.
 
 ## Overloaded account flags hide distinct business questions
 
@@ -75,14 +75,14 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 
 - Symptom: after confirming a pending expense, STS changed incorrectly (`bug-reports/safe-to-spend/2026-04-01_1330_safe-to-spend-not-subtracting-confirmed-spending.md:9-18`).
 - Root cause: confirmed expenses are already reflected in balance; subtracting them again double-counts them (`bug-reports/safe-to-spend/2026-04-01_1330_safe-to-spend-not-subtracting-confirmed-spending.md:70-89`).
-- Resolution: keep STS formula as pool balance minus pending/overdue/CC reserved; do not subtract `confirmedSpending` again.
-- Current guard: `availableToSpend` excludes `confirmedSpending`, while still reporting it in summary: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:40-63`.
+- Resolution: keep STS formula as pool balance minus pending/overdue/CC reserved; confirmed expenses are already included in pool balance, so never subtract them twice.
+- Current guard: `BudgetSummary` has no separate confirmed-spending field; the confirmed-only pool query already includes those expenses, while STS subtracts only pending, overdue, and card reserve: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/model/BudgetSummary.kt:3-10`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:1-13`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:18-27`.
 
 ## Retired credit-card reservation trap: confirmed card charge released reserve
 
 - Symptom: STS over-reported after a credit-card charge moved from `pending` to `confirmed` because the reservation disappeared while the card debt still existed.
 - Root cause: old reserve SQL counted only pending/overdue card expenses, not the card's full liability balance or payments.
-- Resolution: credit-card reserve now uses projected unpaid balance per card: `max(0, -(initial_balance + SUM(signed_amount) WHERE status != 'cancelled'))`; the total query sums the per-card clamp: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-58`.
+- Resolution: credit-card reserve now uses projected unpaid balance per card: `max(0, -(initial_balance + SUM(signed_amount) WHERE status != 'cancelled'))`; the total query sums the per-card clamp: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-39`.
 - Current guard: cards are never in the spending pool because `AccountType.CREDIT_CARD.isInSpendingPool` is `false`, so card debt reaches STS only through the reserve: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/model/Account.kt:3-11`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-39`.
 
 ## Pending card payments release STS early
@@ -90,7 +90,7 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Symptom: submitting a card payment could increase STS before source cash was confirmed as spent.
 - Root cause: card reserve includes non-cancelled destination payment rows, but pool balance includes only confirmed source rows. A pending payment releases reserve without lowering pool cash.
 - Resolution: payment-sheet submissions create confirmed paired transfers; source cash decrease and reserve release reach final ledger state together.
-- Current guard: `MakeCreditCardPaymentUseCase` sets `TransactionStatus.CONFIRMED`, while SQLite integration asserts $1,000 cash plus $120 card debt becomes $880 cash, $0 reserve, and $880 STS: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/MakeCreditCardPaymentUseCase.kt:36-48`, `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:684-732`.
+- Current guard: `MakeCreditCardPaymentUseCase` sets `TransactionStatus.CONFIRMED`, while SQLite integration asserts $1,000 cash plus $120 card debt becomes $880 cash, $0 reserve, and $880 STS: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/domain/usecase/MakeCreditCardPaymentUseCase.kt:36-48`, `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:804-950`.
 
 ## Stale credit-card summaries from settings-only flows
 
@@ -134,12 +134,7 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: add-card UI accepts "Current balance owed" as positive input once, then `AccountScreen` negates it for `CreateAccountRequest.initialBalance`.
 - Current guard: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:151-159` and domain still permits negative card balances while rejecting negative non-card balances: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/usecase/CreateAccountUseCase.kt:19-20`.
 
-## STS confirmedSpending tests must use current-month dates
 
-- Symptom: `calculateSafeToSpend_confirmedExpenseDoesNotIncreaseSTS` expected `confirmedSpending` but got 0 after calendar month changed.
-- Root cause: `CalculateSafeToSpendUseCase` samples wall-clock `DateUtils.currentMonthBounds()` and reports confirmed spending only for EXPENSE rows inside that current month.
-- Resolution: date STS confirmed-spending test transactions from `DateUtils.currentMonthBounds().first`, not hardcoded absolute dates that silently rot across months.
-- Current guard: filter and summary behavior live in `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:18-63`; test uses current-month bounds in `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetUseCasesTest.kt`.
 
 ## DatePicker one-day timezone drift
 

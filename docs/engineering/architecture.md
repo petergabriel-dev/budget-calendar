@@ -32,7 +32,7 @@ Compose UI -> ViewModel -> UseCase -> Repository interface -> RepositoryImpl -> 
 
 ## Feature/package layout
 
-Common feature dirs under `features/`: `accounts`, `budget`, `calendar`, `creditcard`, `home`, `notifications`, `recurring`, `sandbox`, `transactions` (verified by directory tree under `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features`).
+Common feature dirs under `features/`: `accounts`, `budget`, `calendar`, `creditcard`, `home`, `notifications`, `sandbox`, `transactions` (verified by directory tree under `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features`).
 
 Typical full features use:
 
@@ -51,8 +51,8 @@ features/<feature>/
 ## Reactive backbone
 
 - Transaction repository owns `transactionChangedTrigger`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:28-29`; interface exposes it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/domain/repository/ITransactionRepository.kt:10-12`.
-- Transaction mutators emit after create/status/delete/overdue changes: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:127-206`.
-- Account and budget repositories subscribe with `onStart { emit(Unit) }.flatMapLatest { ... }` so dependent SQL re-runs after transaction writes: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:24-62`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/data/repository/BudgetRepositoryImpl.kt:19-84`.
+- Transaction mutators emit after create/status/delete/overdue changes: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt:103-181`.
+- Account and budget repositories subscribe with `onStart { emit(Unit) }.flatMapLatest { ... }` so dependent SQL re-runs after transaction writes: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:24-62`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/data/repository/BudgetRepositoryImpl.kt:19-77`.
 - Rationale: [ADR-0002](decisions/ADR-0002-reactive-cross-repository-invalidation.md).
 
 ## Balance and Safe-to-Spend model
@@ -61,16 +61,16 @@ features/<feature>/
 - Spending-pool membership is type-derived: `AccountType` marks only `CHECKING` and `CASH` as pool accounts; `Account.isInSpendingPool` computes from that type. Account repository pool flows filter this derived property: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/domain/model/Account.kt:3-30`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/data/repository/AccountRepositoryImpl.kt:51-62`.
 - Spending-pool total uses same formula over confirmed transactions, with SQL selecting `a.type IN ('checking', 'cash')`; pending/overdue pool reads use the same predicate in both budget and transaction queries: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:1-22`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/transactions.sq:88-109`.
 - Sandbox transactions are separate rows in `sandbox_transactions`; main `transactions` has no `is_sandbox` flag: `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/Database.sq:71-86`.
-- Safe-to-Spend combines pool balance, `CHECKING`/`CASH` pending/overdue reservations, credit-card projected-unpaid reserve, rollovers, and confirmed transactions. Credit-card reserve is computed in SQL from each card's liability balance (`initial_balance + non-cancelled signed_amount`) with per-card clamp before summing: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:17-64`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:15-58`.
+- Safe-to-Spend combines spending-pool balance (computed from confirmed transactions), `CHECKING`/`CASH` pending/overdue reservations, and credit-card projected-unpaid reserve; confirmed expenses are not a separate input. Credit-card reserve SQL clamps each card's liability (`initial_balance + non-cancelled signed_amount`) before summing: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/CalculateSafeToSpendUseCase.kt:9-28`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:24-39`.
 - Rationale: [ADR-0001](decisions/ADR-0001-computed-account-balance-from-ledger.md).
 
-- Credit-card payment sources are a separate concept from the spending pool: the credit-card ViewModel observes all accounts, excludes only `CREDIT_CARD`, and exposes them as `paymentSourceAccounts`; budget flows continue using `GetSpendingPoolAccountsUseCase`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/CreditCardViewModel.kt:265-279`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/CreditCardUiState.kt:12-22`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/presentation/BudgetViewModel.kt:24-31`.
+- Credit-card payment sources are separate from the spending pool: the credit-card ViewModel observes all accounts, excludes only `CREDIT_CARD`, and exposes them as `paymentSourceAccounts`; STS pool membership remains explicit in budget SQL: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/CreditCardViewModel.kt:265-279`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/CreditCardUiState.kt:12-22`, `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/budget.sq:1-22`.
 
 ## Dependency injection
 
 - Koin modules are centralized in `di/KoinModules.kt`.
-- Modules: `databaseModule`, `repositoryModule`, `useCaseModule`, `viewModelModule`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:108-211`.
-- `initKoin()` installs platform + shared modules: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:213-220`.
+- Modules: `databaseModule`, `repositoryModule`, `useCaseModule`, `viewModelModule`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:88-172`.
+- `initKoin()` installs platform + shared modules: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:174-185`.
 
 ## Platform boundary
 

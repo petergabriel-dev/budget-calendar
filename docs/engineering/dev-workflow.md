@@ -113,5 +113,5 @@ cd src/mobile
 ## DI wiring
 
 - All shared Koin wiring is in `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt`.
-- Installed modules: `platformModule`, `databaseModule`, `repositoryModule`, `useCaseModule`, `viewModelModule`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:106-220`.
-- Repositories are `single`, use cases are `factory`, ViewModels use `viewModel`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:120-211`.
+- Installed modules: `platformModule`, `databaseModule`, `repositoryModule`, `useCaseModule`, `viewModelModule`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:174-185`.
+- Repositories are `single`, use cases are `factory`, ViewModels use `viewModel`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/di/KoinModules.kt:99-172`.
