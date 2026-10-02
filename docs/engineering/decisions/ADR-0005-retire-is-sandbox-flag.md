@@ -43,7 +43,7 @@ Code:
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/data/repository/TransactionRepositoryImpl.kt`
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt`
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/domain/usecase/PromoteTransactionUseCase.kt`
-- `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/recurring/domain/usecase/GenerateMonthlyTransactionsUseCase.kt`
+- `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/recurring/domain/usecase/GenerateMonthlyTransactionsUseCase.kt` (retired by ADR-0014)
 
 ## Consequences
 

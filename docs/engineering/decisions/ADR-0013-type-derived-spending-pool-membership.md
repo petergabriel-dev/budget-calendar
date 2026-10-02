@@ -43,7 +43,7 @@ Code:
 - `src/mobile/composeApp/src/commonMain/sqldelight/com/petergabriel/budgetcalendar/core/database/13.sqm:1-20`
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/CreditCardViewModel.kt:265-279`
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/CreditCardUiState.kt:12-22`
-- `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/presentation/BudgetViewModel.kt:24-31`
+- `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/budget/presentation/BudgetViewModel.kt:24-31` (retired by ADR-0014)
 - `src/mobile/composeApp/src/androidUnitTest/kotlin/com/petergabriel/budgetcalendar/features/budget/domain/usecase/BudgetFlowObservationIntegrationTest.kt:460-570`
 
 Related ADRs:

@@ -37,7 +37,7 @@ Code:
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/form/BcSelectField.kt:16-46`
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/components/AccountFormSheet.kt:134-153`
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/creditcard/presentation/components/CreditCardPaymentSheet.kt:109-145`
-- `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/recurring/presentation/components/RecurringFormSheet.kt:130-213`
+- `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/recurring/presentation/components/RecurringFormSheet.kt:130-213` (retired by ADR-0014)
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:282-336`
 - `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionDetailsSheet.kt:53-83`
 
