@@ -23,13 +23,16 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transa
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionItemDensity
 import com.petergabriel.budgetcalendar.features.transactions.presentation.components.TransactionListItem
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 @Composable
 fun DayTransactionList(
     transactions: List<Transaction>,
     modifier: Modifier = Modifier,
     accountNameProvider: (Long) -> String = { accountId -> "Account #$accountId" },
-    maxItems: Int? = null,
     density: TransactionItemDensity = TransactionItemDensity.Regular,
     isLoading: Boolean = false,
     errorMessage: String? = null,
@@ -39,10 +42,7 @@ fun DayTransactionList(
     val spacing = BudgetCalendarTheme.spacing
     val colors = BudgetCalendarTheme.colors
     val typography = BudgetCalendarTheme.typography
-    val displayTransactions = buildDisplayTransactions(
-        transactions = transactions,
-        maxItems = maxItems,
-    )
+    val displayTransactions = buildDisplayTransactions(transactions)
 
     if (isLoading && displayTransactions.isEmpty()) {
         Box(
@@ -76,7 +76,7 @@ fun DayTransactionList(
             onRetry?.let { retry ->
                 BcButton(
                     text = "Retry",
-                    contentDescription = "Retry loading selected-day transactions",
+                    contentDescription = "Retry loading day transactions",
                     onClick = retry,
                     variant = ButtonVariant.Outline,
                 )
@@ -120,10 +120,7 @@ fun DayTransactionList(
     }
 }
 
-private fun buildDisplayTransactions(
-    transactions: List<Transaction>,
-    maxItems: Int?,
-): List<Transaction> {
+private fun buildDisplayTransactions(transactions: List<Transaction>): List<Transaction> {
     val collapsedTransfers = transactions.filterNot { transaction ->
         transaction.type == TransactionType.TRANSFER &&
             transaction.signedAmount > 0 &&
@@ -137,5 +134,31 @@ private fun buildDisplayTransactions(
             .thenByDescending { it.id },
     )
 
-    return maxItems?.let(sorted::take) ?: sorted
+    return sorted
+}
+
+internal fun formatDayTransactionHeaderLabel(
+    selectedDate: LocalDate,
+    today: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
+): String {
+    return if (selectedDate == today) {
+        "Today · ${selectedDate.toMonthDayLabel()}"
+    } else {
+        "${selectedDate.toWeekdayLabel()} · ${selectedDate.toMonthDayLabel()}"
+    }
+}
+
+private fun LocalDate.toMonthDayLabel(): String {
+    val monthLabel = month.name
+        .lowercase()
+        .replaceFirstChar { character -> character.titlecase() }
+        .take(3)
+
+    return "$monthLabel $day"
+}
+
+private fun LocalDate.toWeekdayLabel(): String {
+    return dayOfWeek.name
+        .lowercase()
+        .replaceFirstChar { character -> character.titlecase() }
 }

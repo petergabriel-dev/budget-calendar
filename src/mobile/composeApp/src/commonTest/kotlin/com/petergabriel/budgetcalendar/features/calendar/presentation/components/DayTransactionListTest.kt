@@ -5,7 +5,7 @@ import kotlinx.datetime.Month
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DayTransactionSectionHeaderTest {
+class DayTransactionListTest {
     @Test
     fun formatDayTransactionHeaderLabel_returnsTodayPrefixWhenSelectedDateIsToday() {
         val today = LocalDate(year = 2026, month = Month.FEBRUARY, day = 3)
