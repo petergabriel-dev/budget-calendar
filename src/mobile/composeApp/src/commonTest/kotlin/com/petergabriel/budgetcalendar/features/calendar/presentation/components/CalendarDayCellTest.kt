@@ -9,20 +9,18 @@ import kotlin.test.assertEquals
 
 class CalendarDayCellTest {
 
-    private val selectedBackground = Color(0xFF101010)
     private val successTint = Color(0x3322C55E)
     private val errorTint = Color(0x33EF4444)
     private val todayBorder = Color(0xFF000000)
     private val transparent = Color.Transparent
 
     @Test
-    fun contentDescription_includesDateSelectionSummaryAndStatuses() {
+    fun contentDescription_includesDateSummaryAndStatuses() {
         val description = calendarDayContentDescription(
             CalendarDay(
                 date = LocalDate(2026, 8, 18),
                 isCurrentMonth = true,
                 isToday = true,
-                isSelected = true,
                 dailySummary = DaySummary(
                     totalIncome = 10_000L,
                     totalExpenses = 2_000L,
@@ -37,7 +35,7 @@ class CalendarDayCellTest {
 
         kotlin.test.assertTrue(description.contains("Tuesday, August 18"))
         kotlin.test.assertTrue(description.contains("today"))
-        kotlin.test.assertTrue(description.contains("selected"))
+        kotlin.test.assertFalse(description.contains("selected"))
         kotlin.test.assertTrue(description.contains("2 transactions"))
         kotlin.test.assertTrue(description.contains("pending"))
         kotlin.test.assertTrue(description.contains("overdue"))
@@ -46,10 +44,8 @@ class CalendarDayCellTest {
     @Test
     fun resolveColors_nonTodayPositiveNet_usesSuccessTintBackgroundAndTransparentBorder() {
         val background = resolveCalendarDayCellBackground(
-            isSelected = false,
             isToday = false,
             netAmount = 500L,
-            selectedBackground = selectedBackground,
             successTint = successTint,
             errorTint = errorTint,
             baseBackground = transparent,
@@ -66,10 +62,8 @@ class CalendarDayCellTest {
     @Test
     fun resolveColors_nonTodayNegativeNet_usesErrorTintBackgroundAndTransparentBorder() {
         val background = resolveCalendarDayCellBackground(
-            isSelected = false,
             isToday = false,
             netAmount = -300L,
-            selectedBackground = selectedBackground,
             successTint = successTint,
             errorTint = errorTint,
             baseBackground = transparent,
@@ -83,23 +77,4 @@ class CalendarDayCellTest {
         assertEquals(transparent, border)
     }
 
-    @Test
-    fun resolveColors_selectedNonTodayWithNonZeroNet_selectedBackgroundWins() {
-        val background = resolveCalendarDayCellBackground(
-            isSelected = true,
-            isToday = false,
-            netAmount = 900L,
-            selectedBackground = selectedBackground,
-            successTint = successTint,
-            errorTint = errorTint,
-            baseBackground = transparent,
-        )
-        val border = resolveCalendarDayCellBorderColor(
-            isToday = false,
-            todayBorder = todayBorder,
-        )
-
-        assertEquals(selectedBackground, background)
-        assertEquals(transparent, border)
-    }
 }

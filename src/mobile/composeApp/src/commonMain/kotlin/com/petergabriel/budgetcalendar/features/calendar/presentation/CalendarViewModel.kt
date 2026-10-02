@@ -31,10 +31,8 @@ class CalendarViewModel(
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
 
     private var monthTransactionsJob: Job? = null
-    private var selectedDayTransactionsJob: Job? = null
     private var monthProjectionJob: Job? = null
     private var accountNamesJob: Job? = null
-    private var cachedTransactions: List<Transaction> = emptyList()
 
     init {
         observeAccounts()
@@ -43,27 +41,20 @@ class CalendarViewModel(
 
     fun loadMonth(yearMonth: YearMonth) {
         monthTransactionsJob?.cancel()
-        selectedDayTransactionsJob?.cancel()
         monthProjectionJob?.cancel()
-        cachedTransactions = emptyList()
 
-        val selectedDate = _uiState.value.selectedDate
         val placeholderMonth = buildCalendarMonthUseCase(
             yearMonth = yearMonth,
             transactions = emptyList(),
-            selectedDate = selectedDate,
         )
         _uiState.update { state ->
             state.copy(
                 currentMonth = yearMonth,
                 calendarMonth = placeholderMonth,
-                selectedDayTransactions = emptyList(),
                 isMonthLoading = true,
                 monthError = null,
                 isProjectionLoading = true,
                 projectionError = null,
-                isSelectedDayLoading = true,
-                selectedDayError = null,
             )
         }
 
@@ -74,46 +65,15 @@ class CalendarViewModel(
                         state.copy(
                             isMonthLoading = false,
                             monthError = throwable.message ?: "Unable to load month",
-                            isSelectedDayLoading = if (yearMonth.contains(state.selectedDate)) false else state.isSelectedDayLoading,
                         )
                     }
                 }
                 .collect { monthTransactions ->
-                    cachedTransactions = monthTransactions
                     publishMonthState(
                         yearMonth = yearMonth,
-                        selectedDate = _uiState.value.selectedDate,
                         monthTransactions = monthTransactions,
                     )
                 }
-        }
-
-        if (!yearMonth.contains(selectedDate)) {
-            selectedDayTransactionsJob = viewModelScope.launch {
-                getMonthTransactionsUseCase(selectedDate.toYearMonth())
-                    .catch { throwable ->
-                        _uiState.update { state ->
-                            state.copy(
-                                isSelectedDayLoading = false,
-                                selectedDayError = throwable.message ?: "Unable to load selected day",
-                            )
-                        }
-                    }
-                    .collect { selectedDayTransactions ->
-                        val calendarMonth = buildCalendarMonthUseCase(
-                            yearMonth = selectedDate.toYearMonth(),
-                            transactions = selectedDayTransactions,
-                            selectedDate = selectedDate,
-                        )
-                        _uiState.update { state ->
-                            state.copy(
-                                selectedDayTransactions = calendarMonth.transactionsByDate[selectedDate].orEmpty(),
-                                isSelectedDayLoading = false,
-                                selectedDayError = null,
-                            )
-                        }
-                    }
-            }
         }
 
         observeProjection(yearMonth)
@@ -129,29 +89,10 @@ class CalendarViewModel(
         observeProjection(_uiState.value.currentMonth)
     }
 
-    fun selectDate(date: LocalDate) {
-        val currentMonth = _uiState.value.currentMonth
-        selectedDayTransactionsJob?.cancel()
-        selectedDayTransactionsJob = null
-        _uiState.update { state ->
-            state.copy(
-                selectedDate = date,
-                selectedDayTransactions = emptyList(),
-                isSelectedDayLoading = true,
-                selectedDayError = null,
-            )
-        }
-
-        if (!currentMonth.contains(date)) {
+    fun showMonthContaining(date: LocalDate) {
+        if (!_uiState.value.currentMonth.contains(date)) {
             loadMonth(date.toYearMonth())
-            return
         }
-
-        publishMonthState(
-            yearMonth = currentMonth,
-            selectedDate = date,
-            monthTransactions = cachedTransactions,
-        )
     }
 
     fun navigateMonth(direction: Int) {
@@ -165,7 +106,6 @@ class CalendarViewModel(
 
     override fun onCleared() {
         monthTransactionsJob?.cancel()
-        selectedDayTransactionsJob?.cancel()
         monthProjectionJob?.cancel()
         accountNamesJob?.cancel()
         super.onCleared()
@@ -212,30 +152,19 @@ class CalendarViewModel(
 
     private fun publishMonthState(
         yearMonth: YearMonth,
-        selectedDate: LocalDate,
         monthTransactions: List<Transaction>,
     ) {
         val calendarMonth = buildCalendarMonthUseCase(
             yearMonth = yearMonth,
             transactions = monthTransactions,
-            selectedDate = selectedDate,
         )
 
         _uiState.update { state ->
-            val selectedDateIsInMonth = yearMonth.contains(selectedDate)
             state.copy(
                 currentMonth = yearMonth,
-                selectedDate = selectedDate,
                 calendarMonth = calendarMonth,
                 isMonthLoading = false,
                 monthError = null,
-                selectedDayTransactions = if (selectedDateIsInMonth) {
-                    calendarMonth.transactionsByDate[selectedDate].orEmpty()
-                } else {
-                    state.selectedDayTransactions
-                },
-                isSelectedDayLoading = if (selectedDateIsInMonth) false else state.isSelectedDayLoading,
-                selectedDayError = if (selectedDateIsInMonth) null else state.selectedDayError,
             )
         }
     }

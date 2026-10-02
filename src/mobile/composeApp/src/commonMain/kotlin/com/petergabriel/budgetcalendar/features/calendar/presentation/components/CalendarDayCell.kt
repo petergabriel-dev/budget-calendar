@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,23 +44,20 @@ fun CalendarDayCell(
     val spacing = BudgetCalendarTheme.spacing
     val radius = BudgetCalendarTheme.radius
 
-    val selectedBackground = colors.bgDark
     val successTintBackground = colors.colorSuccessBg.copy(alpha = CALENDAR_DAY_CELL_TINT_ALPHA)
     val errorTintBackground = colors.colorErrorBg.copy(alpha = CALENDAR_DAY_CELL_TINT_ALPHA)
     val baseBackground = colors.bgPrimary
     val cellShape = RoundedCornerShape(radius.lg)
 
     val background = resolveCalendarDayCellBackground(
-        isSelected = day.isSelected,
         isToday = day.isToday,
         netAmount = day.dailySummary?.netAmount,
-        selectedBackground = selectedBackground,
         successTint = successTintBackground,
         errorTint = errorTintBackground,
         baseBackground = baseBackground,
     )
 
-    val contentColor = if (day.isSelected) colors.textInverted else colors.textPrimary
+    val contentColor = colors.textPrimary
     val borderColor = resolveCalendarDayCellBorderColor(
         isToday = day.isToday,
         todayBorder = colors.focusRing,
@@ -74,11 +70,10 @@ fun CalendarDayCell(
             .clip(cellShape)
             .border(width = spacing.spacing1 / 2, color = borderColor, shape = cellShape)
             .background(background)
-            .clickable(onClick = onTap)
+            .clickable(onClickLabel = "View transactions", onClick = onTap)
             .alpha(if (day.isCurrentMonth) 1f else 0.55f)
             .semantics {
                 role = Role.Button
-                selected = day.isSelected
                 contentDescription = calendarDayContentDescription(day)
             }
             .padding(spacing.spacing1),
@@ -87,7 +82,7 @@ fun CalendarDayCell(
         Text(
             text = day.date.day.toString(),
             style = typography.calendarDay,
-            fontWeight = if (day.isSelected) FontWeight.Black else FontWeight.Medium,
+            fontWeight = FontWeight.Medium,
             color = contentColor,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.End,
@@ -113,7 +108,6 @@ fun CalendarDayCell(
 internal fun calendarDayContentDescription(day: CalendarDay): String = buildString {
     append(day.date.toAccessibleCalendarDate())
     if (day.isToday) append(", today")
-    if (day.isSelected) append(", selected")
     day.dailySummary?.let { summary ->
         append(", ${summary.transactionCount} ${if (summary.transactionCount == 1) "transaction" else "transactions"}")
         when {
@@ -136,10 +130,8 @@ private fun kotlinx.datetime.LocalDate.toAccessibleCalendarDate(): String {
 }
 
 internal fun resolveCalendarDayCellBackground(
-    isSelected: Boolean,
     isToday: Boolean,
     netAmount: Long?,
-    selectedBackground: Color,
     successTint: Color,
     errorTint: Color,
     baseBackground: Color,
@@ -147,7 +139,6 @@ internal fun resolveCalendarDayCellBackground(
     val resolvedNetAmount = netAmount ?: 0L
 
     return when {
-        isSelected -> selectedBackground
         isToday && resolvedNetAmount < 0L -> errorTint
         isToday -> successTint
         !isToday && resolvedNetAmount > 0L -> successTint

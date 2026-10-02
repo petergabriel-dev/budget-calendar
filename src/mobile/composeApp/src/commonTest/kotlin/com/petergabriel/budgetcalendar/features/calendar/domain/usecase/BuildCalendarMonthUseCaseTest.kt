@@ -26,7 +26,6 @@ class BuildCalendarMonthUseCaseTest {
             val month = useCase(
                 yearMonth = yearMonth,
                 transactions = emptyList(),
-                selectedDate = yearMonth.firstDay,
                 timeZone = timeZone,
                 nowMillisProvider = { 0L },
             )

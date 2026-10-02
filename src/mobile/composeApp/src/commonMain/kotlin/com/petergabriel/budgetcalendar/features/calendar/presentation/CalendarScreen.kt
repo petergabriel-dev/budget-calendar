@@ -65,7 +65,7 @@ fun CalendarScreen(
 
     LaunchedEffect(pendingOpenDate) {
         pendingOpenDate?.let { date ->
-            viewModel.selectDate(date)
+            viewModel.showMonthContaining(date)
             openDate = date
             onPendingOpenDateConsumed()
         }
@@ -138,7 +138,7 @@ fun CalendarScreen(
         CalendarGrid(
             days = uiState.calendarMonth?.days.orEmpty(),
             onDateSelected = { date ->
-                viewModel.selectDate(date)
+                viewModel.showMonthContaining(date)
                 openDate = date
             },
             modifier = Modifier.weight(1f),
@@ -161,15 +161,15 @@ fun CalendarScreen(
             bodyScrollable = false,
             body = {
                 DayTransactionList(
-                    transactions = uiState.selectedDayTransactions,
+                    transactions = uiState.transactionsOn(date),
                     modifier = Modifier.weight(1f),
                     accountNameProvider = { accountId ->
                         uiState.accountNamesById[accountId] ?: "Account #$accountId"
                     },
                     density = TransactionItemDensity.Compact,
-                    isLoading = uiState.isSelectedDayLoading,
-                    errorMessage = uiState.selectedDayError,
-                    onRetry = { viewModel.selectDate(date) },
+                    isLoading = uiState.isMonthLoading,
+                    errorMessage = uiState.monthError,
+                    onRetry = { viewModel.loadMonth(uiState.currentMonth) },
                     onTransactionTap = openTransactionDetails,
                 )
             },

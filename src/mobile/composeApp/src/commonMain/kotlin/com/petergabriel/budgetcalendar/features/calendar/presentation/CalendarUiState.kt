@@ -11,18 +11,17 @@ import kotlin.time.Clock
 
 data class CalendarUiState(
     val currentMonth: YearMonth = nowLocalDate().toYearMonth(),
-    val selectedDate: LocalDate = nowLocalDate(),
     val calendarMonth: CalendarMonth? = null,
-    val selectedDayTransactions: List<Transaction> = emptyList(),
     val endOfMonthProjection: Long = 0L,
     val accountNamesById: Map<Long, String> = emptyMap(),
     val isMonthLoading: Boolean = false,
     val monthError: String? = null,
     val isProjectionLoading: Boolean = false,
     val projectionError: String? = null,
-    val isSelectedDayLoading: Boolean = false,
-    val selectedDayError: String? = null,
-)
+) {
+    fun transactionsOn(date: LocalDate): List<Transaction> =
+        calendarMonth?.transactionsByDate?.get(date).orEmpty()
+}
 
 private fun nowLocalDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate {
     return Clock.System.now().toLocalDateTime(timeZone).date

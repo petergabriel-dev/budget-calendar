@@ -2,6 +2,9 @@ package com.petergabriel.budgetcalendar.features.calendar.presentation
 
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountsUseCase
 import com.petergabriel.budgetcalendar.features.accounts.testutil.FakeAccountRepository
+import com.petergabriel.budgetcalendar.features.calendar.domain.model.firstDay
+import com.petergabriel.budgetcalendar.features.calendar.domain.model.plusMonths
+import com.petergabriel.budgetcalendar.features.calendar.domain.model.toYearMonth
 import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.BuildCalendarMonthUseCase
 import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.CalculateDaySummaryUseCase
 import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.CalculateMonthProjectionUseCase
@@ -20,11 +23,11 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.YearMonth
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -55,72 +58,49 @@ class CalendarViewModelTest {
     }
 
     @Test
-    fun loadMonth_keepsSelectedDateOutsideDisplayedMonth() = runTest(dispatcher) {
+    fun showMonthContaining_inMonthDoesNotReload() = runTest(dispatcher) {
         val viewModel = calendarViewModel()
-        val selectedDate = LocalDate(2026, 8, 1)
-
-        viewModel.selectDate(selectedDate)
         advanceUntilIdle()
-        viewModel.loadMonth(YearMonth(2026, 9))
-        advanceUntilIdle()
+        val currentMonth = viewModel.uiState.value.currentMonth
 
-        assertEquals(selectedDate, viewModel.uiState.value.selectedDate)
+        viewModel.showMonthContaining(currentMonth.firstDay())
+
+        assertEquals(currentMonth, viewModel.uiState.value.currentMonth)
+        assertFalse(viewModel.uiState.value.isMonthLoading)
     }
 
     @Test
-    fun loadMonth_showsOffMonthSelectedDateTransactions() = runTest(dispatcher) {
-        val selectedDate = LocalDate(2026, 8, 1)
-        val transaction = createTransaction(selectedDate)
+    fun showMonthContaining_adjacentDateLoadsItsMonth() = runTest(dispatcher) {
         val viewModel = calendarViewModel()
-
-        viewModel.selectDate(selectedDate)
         advanceUntilIdle()
-        viewModel.loadMonth(YearMonth(2026, 9))
-        advanceUntilIdle()
+        val adjacentDate = viewModel.uiState.value.currentMonth.plusMonths(1).firstDay()
 
-        assertEquals(listOf(transaction), viewModel.uiState.value.selectedDayTransactions)
+        viewModel.showMonthContaining(adjacentDate)
+
+        assertEquals(adjacentDate.toYearMonth(), viewModel.uiState.value.currentMonth)
+        assertTrue(viewModel.uiState.value.isMonthLoading)
+        advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isMonthLoading)
     }
 
     @Test
-    fun offMonthSelectedDate_reactsToTransactionWrites() = runTest(dispatcher) {
-        val selectedDate = LocalDate(2026, 8, 1)
+    fun transactionsOn_readsCurrentMonthRowsAndExcludesCancelledRows() = runTest(dispatcher) {
         val viewModel = calendarViewModel()
-
-        viewModel.selectDate(selectedDate)
         advanceUntilIdle()
-        viewModel.loadMonth(YearMonth(2026, 9))
+        val date = viewModel.uiState.value.currentMonth.firstDay()
+        val cancelledTransaction = createTransaction(date, TransactionStatus.CANCELLED)
+        val firstTransaction = createTransaction(date)
         advanceUntilIdle()
-        val transaction = createTransaction(selectedDate)
-        advanceUntilIdle()
+        assertEquals(listOf(firstTransaction), viewModel.uiState.value.transactionsOn(date))
 
-        assertEquals(listOf(transaction), viewModel.uiState.value.selectedDayTransactions)
-    }
-
-    @Test
-    fun offMonthSelectedDate_excludesCancelledTransactions() = runTest(dispatcher) {
-        val selectedDate = LocalDate(2026, 8, 1)
-        createTransaction(selectedDate, TransactionStatus.CANCELLED)
-        val viewModel = calendarViewModel()
-
-        viewModel.selectDate(selectedDate)
-        advanceUntilIdle()
-        viewModel.loadMonth(YearMonth(2026, 9))
+        val laterTransaction = createTransaction(date)
         advanceUntilIdle()
 
-        assertTrue(viewModel.uiState.value.selectedDayTransactions.isEmpty())
-    }
-
-    @Test
-    fun loadMonth_doesNotClampEndOfMonthSelection() = runTest(dispatcher) {
-        val viewModel = calendarViewModel()
-        val selectedDate = LocalDate(2026, 1, 31)
-
-        viewModel.selectDate(selectedDate)
-        advanceUntilIdle()
-        viewModel.loadMonth(YearMonth(2026, 2))
-        advanceUntilIdle()
-
-        assertEquals(selectedDate, viewModel.uiState.value.selectedDate)
+        val transactions = viewModel.uiState.value.transactionsOn(date)
+        assertEquals(2, transactions.size)
+        assertTrue(transactions.contains(firstTransaction))
+        assertTrue(transactions.contains(laterTransaction))
+        assertFalse(transactions.contains(cancelledTransaction))
     }
 
     private fun calendarViewModel() = CalendarViewModel(

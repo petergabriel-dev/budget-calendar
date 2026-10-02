@@ -9,7 +9,6 @@ import com.petergabriel.budgetcalendar.features.transactions.domain.model.Transa
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.minus
@@ -23,7 +22,6 @@ class BuildCalendarMonthUseCase(
     operator fun invoke(
         yearMonth: YearMonth,
         transactions: List<Transaction>,
-        selectedDate: LocalDate,
         timeZone: TimeZone = TimeZone.currentSystemDefault(),
         nowMillisProvider: () -> Long = { DateUtils.nowMillis() },
     ): CalendarMonth {
@@ -59,7 +57,6 @@ class BuildCalendarMonthUseCase(
                 date = cellDate,
                 isCurrentMonth = yearMonth.contains(cellDate),
                 isToday = cellDate == today,
-                isSelected = cellDate == selectedDate,
                 dailySummary = daySummaries[cellDate],
             )
         }
