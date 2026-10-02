@@ -8,7 +8,6 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.Calculat
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.CreateAccountUseCase
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.DeleteAccountUseCase
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetAccountsUseCase
-import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.GetSpendingPoolAccountsUseCase
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.UpdateAccountUseCase
 import com.petergabriel.budgetcalendar.features.accounts.presentation.AccountViewModel
 import com.petergabriel.budgetcalendar.features.budget.data.mapper.BudgetMapper
@@ -119,7 +118,6 @@ val useCaseModule = module {
     factory { GetAccountsUseCase(get()) }
     factory { UpdateAccountUseCase(get()) }
     factory { DeleteAccountUseCase(get()) }
-    factory { GetSpendingPoolAccountsUseCase(get()) }
     factory { CalculateNetWorthUseCase(get()) }
 
     factory { CreateTransactionUseCase(get()) }
@@ -176,7 +174,7 @@ val viewModelModule = module {
     viewModel { HomeViewModel(get()) }
     viewModel { TransactionViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { TransactionFormViewModel(get(), get(), get(), get(), get()) }
-    viewModel { BudgetViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { BudgetViewModel(get(), get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get()) }
     viewModel { SandboxViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CreditCardViewModel(get(), get(), get(), get(), get(), get(), get()) }

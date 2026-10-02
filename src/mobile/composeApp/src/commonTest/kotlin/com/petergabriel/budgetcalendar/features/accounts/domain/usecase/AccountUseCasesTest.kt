@@ -20,7 +20,6 @@ class AccountUseCasesTest {
     private lateinit var createAccountUseCase: CreateAccountUseCase
     private lateinit var updateAccountUseCase: UpdateAccountUseCase
     private lateinit var deleteAccountUseCase: DeleteAccountUseCase
-    private lateinit var getSpendingPoolAccountsUseCase: GetSpendingPoolAccountsUseCase
     private lateinit var calculateNetWorthUseCase: CalculateNetWorthUseCase
 
     @BeforeTest
@@ -33,7 +32,6 @@ class AccountUseCasesTest {
         )
         updateAccountUseCase = UpdateAccountUseCase(accountRepository)
         deleteAccountUseCase = DeleteAccountUseCase(accountRepository)
-        getSpendingPoolAccountsUseCase = GetSpendingPoolAccountsUseCase(accountRepository)
         calculateNetWorthUseCase = CalculateNetWorthUseCase(accountRepository)
     }
 
@@ -320,34 +318,6 @@ class AccountUseCasesTest {
             "Cannot delete account with existing transactions",
             result.exceptionOrNull()?.message,
         )
-    }
-
-    @Test
-    fun getSpendingPoolAccounts_returnsOnlyPoolAccounts() = runBlocking {
-        accountRepository.createAccount(
-            CreateAccountRequest("Pool A", AccountType.CHECKING, 1000L),
-        )
-        accountRepository.createAccount(
-            CreateAccountRequest("Not Pool", AccountType.SAVINGS, 2000L),
-        )
-        accountRepository.createAccount(
-            CreateAccountRequest("Pool B", AccountType.CASH, 3000L),
-        )
-
-        val poolAccounts = getSpendingPoolAccountsUseCase().first()
-
-        assertEquals(listOf("Pool A", "Pool B"), poolAccounts.map { account -> account.name })
-    }
-
-    @Test
-    fun getSpendingPoolAccounts_returnsEmptyWhenPoolIsEmpty() = runBlocking {
-        accountRepository.createAccount(
-            CreateAccountRequest("Not Pool", AccountType.SAVINGS, 1000L),
-        )
-
-        val poolAccounts = getSpendingPoolAccountsUseCase().first()
-
-        assertTrue(poolAccounts.isEmpty())
     }
 
     @Test
