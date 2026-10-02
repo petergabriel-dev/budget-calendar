@@ -53,17 +53,6 @@ import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.Get
 import com.petergabriel.budgetcalendar.features.notifications.domain.usecase.UpdateUserSettingsUseCase
 import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationCenterViewModel
 import com.petergabriel.budgetcalendar.features.notifications.presentation.NotificationSettingsViewModel
-import com.petergabriel.budgetcalendar.features.recurring.data.mapper.RecurringTransactionMapper
-import com.petergabriel.budgetcalendar.features.recurring.data.repository.RecurringTransactionRepositoryImpl
-import com.petergabriel.budgetcalendar.features.recurring.domain.repository.IRecurringTransactionRepository
-import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.CreateRecurringTransactionUseCase
-import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.DeleteRecurringTransactionUseCase
-import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.GenerateMonthlyTransactionsUseCase
-import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.GetRecurringTransactionsUseCase
-import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.GetUpcomingGeneratedTransactionsUseCase
-import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.ToggleRecurringActiveUseCase
-import com.petergabriel.budgetcalendar.features.recurring.domain.usecase.UpdateRecurringTransactionUseCase
-import com.petergabriel.budgetcalendar.features.recurring.presentation.RecurringViewModel
 import com.petergabriel.budgetcalendar.features.sandbox.data.mapper.SandboxMapper
 import com.petergabriel.budgetcalendar.features.sandbox.data.repository.SandboxRepositoryImpl
 import com.petergabriel.budgetcalendar.features.sandbox.domain.repository.ISandboxRepository
@@ -107,7 +96,6 @@ val databaseModule = module {
     single { BudgetCalendarDatabase(get()) }
     single { AccountMapper() }
     single { TransactionMapper() }
-    single { RecurringTransactionMapper() }
     single { BudgetMapper() }
     single { SandboxMapper() }
     single { CreditCardMapper() }
@@ -120,7 +108,6 @@ val repositoryModule = module {
     single { TransactionRepositoryImpl(get(), get()) } bind ITransactionRepository::class
     single { BudgetRepositoryImpl(get(), get(), get()) } bind IBudgetRepository::class
     single { MonthlyRolloverRepositoryImpl(get(), get()) } bind IMonthlyRolloverRepository::class
-    single { RecurringTransactionRepositoryImpl(get(), get()) } bind IRecurringTransactionRepository::class
     single { SandboxRepositoryImpl(get(), get()) } bind ISandboxRepository::class
     single { CreditCardRepositoryImpl(get(), get()) } bind ICreditCardRepository::class
     single { NotificationRepositoryImpl(get(), get()) } bind INotificationRepository::class
@@ -154,14 +141,6 @@ val useCaseModule = module {
     factory { CalculateDaySummaryUseCase() }
     factory { BuildCalendarMonthUseCase(get()) }
     factory { CalculateMonthProjectionUseCase(get(), get()) }
-
-    factory { CreateRecurringTransactionUseCase(get()) }
-    factory { GetRecurringTransactionsUseCase(get()) }
-    factory { UpdateRecurringTransactionUseCase(get()) }
-    factory { GenerateMonthlyTransactionsUseCase(get(), get()) }
-    factory { ToggleRecurringActiveUseCase(get(), get()) }
-    factory { DeleteRecurringTransactionUseCase(get()) }
-    factory { GetUpcomingGeneratedTransactionsUseCase(get(), get()) }
 
     factory { CreateSandboxUseCase(get(), get()) }
     factory { GetSandboxesUseCase(get()) }
@@ -199,7 +178,6 @@ val viewModelModule = module {
     viewModel { TransactionFormViewModel(get(), get(), get(), get(), get()) }
     viewModel { BudgetViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get()) }
-    viewModel { RecurringViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SandboxViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CreditCardViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { NotificationCenterViewModel(get(), get(), get(), get()) }

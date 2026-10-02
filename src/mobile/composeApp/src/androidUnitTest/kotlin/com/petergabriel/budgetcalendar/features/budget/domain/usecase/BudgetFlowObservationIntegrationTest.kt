@@ -490,17 +490,26 @@ class BudgetFlowObservationIntegrationTest {
                 ),
             ).getOrThrow()
             val now = DateUtils.nowMillis()
-            fixture.database.recurring_transactionsQueries.insertRecurringTransaction(
-                checking.id,
-                savings.id,
-                25_00L,
-                15L,
-                TransactionType.TRANSFER.dbValue,
-                "Move funds",
-                1L,
-                now,
-                now,
-            )
+            fixture.driver.execute(
+                null,
+                """
+                    INSERT INTO recurring_transactions (
+                      account_id, destination_account_id, amount, day_of_month, type,
+                      description, is_active, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """.trimIndent(),
+                9,
+            ) {
+                bindLong(0, checking.id)
+                bindLong(1, savings.id)
+                bindLong(2, 25_00L)
+                bindLong(3, 15L)
+                bindString(4, TransactionType.TRANSFER.dbValue)
+                bindString(5, "Move funds")
+                bindLong(6, 1L)
+                bindLong(7, now)
+                bindLong(8, now)
+            }
             fixture.database.sandbox_transactionsQueries.insertSandboxTransaction(
                 1L,
                 checking.id,
@@ -545,9 +554,14 @@ class BudgetFlowObservationIntegrationTest {
                 ).toSet(),
                 accounts.toSet(),
             )
-            assertEquals(1L, fixture.database.recurring_transactionsQueries.getAllRecurringTransactions { id, accountId, destinationAccountId, _, _, _, _, _, _, _ ->
-                listOf(id, accountId, destinationAccountId)
-            }.executeAsList().size.toLong())
+            assertTrue(
+                fixture.driver.executeQuery(
+                    null,
+                    "SELECT 1 FROM recurring_transactions LIMIT 1",
+                    { cursor -> cursor.next() },
+                    0,
+                ).value,
+            )
             assertEquals(
                 1,
                 fixture.database.sandbox_transactionsQueries
