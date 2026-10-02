@@ -22,6 +22,7 @@ fun NotificationSettingsScreen(
     modifier: Modifier = Modifier,
     unreadCount: Int,
     onBellClick: () -> Unit,
+    onThresholdInputFocusChanged: (Boolean) -> Unit = {},
     viewModel: NotificationSettingsViewModel = koinViewModel(),
 ) {
     val spacing = BudgetCalendarTheme.spacing
@@ -57,6 +58,7 @@ fun NotificationSettingsScreen(
             loadError = uiState.loadError,
             onValueChange = viewModel::onThresholdInputChange,
             onSave = viewModel::save,
+            onThresholdInputFocusChanged = onThresholdInputFocusChanged,
             onRetry = viewModel::retry,
             modifier = Modifier.fillMaxWidth(),
         )

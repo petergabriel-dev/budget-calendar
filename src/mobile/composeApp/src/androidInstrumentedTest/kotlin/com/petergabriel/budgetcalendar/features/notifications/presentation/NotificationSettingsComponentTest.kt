@@ -41,6 +41,29 @@ class NotificationSettingsComponentTest {
     }
 
     @Test
+    fun thresholdInputFocus_isReportedToApp() {
+        var isFocused = false
+        composeTestRule.setContent {
+            BudgetCalendarTheme {
+                NotificationThresholdSetting(
+                    value = "15",
+                    isLoading = false,
+                    isSaving = false,
+                    validationError = null,
+                    saveError = null,
+                    didSave = false,
+                    onValueChange = {},
+                    onSave = {},
+                    onThresholdInputFocusChanged = { isFocused = it },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("15").performClick()
+        composeTestRule.runOnIdle { check(isFocused) }
+    }
+
+    @Test
     fun validationAndSuccessFeedback_areVisibleAndAnnounced() {
         composeTestRule.setContent {
             BudgetCalendarTheme {

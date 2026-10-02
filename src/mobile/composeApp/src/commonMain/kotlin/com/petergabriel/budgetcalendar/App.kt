@@ -1,6 +1,8 @@
 package com.petergabriel.budgetcalendar
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -15,7 +17,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,12 +59,15 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
 
+private val tabSwipeThreshold = 64.dp
+
 @Composable
 @Preview
 fun App() {
     BudgetCalendarTheme {
         var selectedTab by rememberSaveable { mutableStateOf(AppTab.HOME) }
         var pendingCalendarDate by rememberSaveable { mutableStateOf<String?>(null) }
+        var isThresholdInputFocused by remember { mutableStateOf(false) }
         var showAddForm by remember { mutableStateOf(false) }
         var showNotificationCenter by remember { mutableStateOf(false) }
         var hasSkippedFirstResume by remember { mutableStateOf(false) }
@@ -76,6 +84,7 @@ fun App() {
         val lifecycleOwner = LocalLifecycleOwner.current
         val coroutineScope = rememberCoroutineScope()
         val spacing = BudgetCalendarTheme.spacing
+        val tabSwipeThresholdPx = with(LocalDensity.current) { tabSwipeThreshold.toPx() }
 
         LaunchedEffect(transactionFormViewModel) {
             transactionFormViewModel.effects.collect { effect ->
@@ -138,7 +147,12 @@ fun App() {
                             BcTabItem(
                                 label = tab.label,
                                 selected = selectedTab == tab,
-                                onClick = { selectedTab = tab },
+                                onClick = {
+                                    if (selectedTab != tab) {
+                                        isThresholdInputFocused = false
+                                        selectedTab = tab
+                                    }
+                                },
                                 icon = tab.icon,
                             )
                         },
@@ -150,45 +164,74 @@ fun App() {
                 }
             },
         ) { innerPadding ->
-            when (selectedTab) {
-                AppTab.HOME -> HomeScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    unreadCount = unreadCount,
-                    onBellClick = { showNotificationCenter = true },
-                    onViewAllSelected = { date ->
-                        val nextNavigation = AppNavigationState(
-                            selectedTab = selectedTab,
-                            pendingCalendarDate = pendingCalendarDate,
-                        ).openCalendarOn(date)
-                        pendingCalendarDate = nextNavigation.pendingCalendarDate
-                        selectedTab = nextNavigation.selectedTab
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(selectedTab, tabSwipeThresholdPx, isThresholdInputFocused) {
+                        if (selectedTab != AppTab.ME || !isThresholdInputFocused) {
+                            var horizontalDragTotal = 0f
+                            detectHorizontalDragGestures(
+                                onHorizontalDrag = { _, dragAmount ->
+                                    horizontalDragTotal += dragAmount
+                                },
+                                onDragEnd = {
+                                    when {
+                                        horizontalDragTotal > tabSwipeThresholdPx -> {
+                                            selectedTab = selectedTab.neighbor(-1)
+                                        }
+
+                                        horizontalDragTotal < -tabSwipeThresholdPx -> {
+                                            selectedTab = selectedTab.neighbor(1)
+                                        }
+                                    }
+                                    horizontalDragTotal = 0f
+                                },
+                                onDragCancel = { horizontalDragTotal = 0f },
+                            )
+                        }
                     },
-                )
+            ) {
+                when (selectedTab) {
+                    AppTab.HOME -> HomeScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        unreadCount = unreadCount,
+                        onBellClick = { showNotificationCenter = true },
+                        onViewAllSelected = { date ->
+                            val nextNavigation = AppNavigationState(
+                                selectedTab = selectedTab,
+                                pendingCalendarDate = pendingCalendarDate,
+                            ).openCalendarOn(date)
+                            pendingCalendarDate = nextNavigation.pendingCalendarDate
+                            selectedTab = nextNavigation.selectedTab
+                        },
+                    )
 
-                AppTab.CALENDAR -> CalendarScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    unreadCount = unreadCount,
-                    onBellClick = { showNotificationCenter = true },
-                    pendingSelectedDate = pendingCalendarDate?.let(LocalDate::parse),
-                    onPendingSelectedDateConsumed = {
-                        pendingCalendarDate = AppNavigationState(
-                            selectedTab = selectedTab,
-                            pendingCalendarDate = pendingCalendarDate,
-                        ).consumePendingCalendarDate().pendingCalendarDate
-                    },
-                )
+                    AppTab.CALENDAR -> CalendarScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        unreadCount = unreadCount,
+                        onBellClick = { showNotificationCenter = true },
+                        pendingSelectedDate = pendingCalendarDate?.let(LocalDate::parse),
+                        onPendingSelectedDateConsumed = {
+                            pendingCalendarDate = AppNavigationState(
+                                selectedTab = selectedTab,
+                                pendingCalendarDate = pendingCalendarDate,
+                            ).consumePendingCalendarDate().pendingCalendarDate
+                        },
+                    )
 
-                AppTab.ACCOUNTS -> AccountScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    unreadCount = unreadCount,
-                    onBellClick = { showNotificationCenter = true },
-                )
+                    AppTab.ACCOUNTS -> AccountScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        unreadCount = unreadCount,
+                        onBellClick = { showNotificationCenter = true },
+                    )
 
-                AppTab.ME -> NotificationSettingsScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    unreadCount = unreadCount,
-                    onBellClick = { showNotificationCenter = true },
-                )
+                    AppTab.ME -> NotificationSettingsScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        unreadCount = unreadCount,
+                        onBellClick = { showNotificationCenter = true },
+                        onThresholdInputFocusChanged = { isThresholdInputFocused = it },
+                    )
+                }
             }
         }
 

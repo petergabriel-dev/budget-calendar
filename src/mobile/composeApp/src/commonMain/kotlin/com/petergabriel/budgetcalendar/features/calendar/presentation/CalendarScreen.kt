@@ -1,7 +1,6 @@
 package com.petergabriel.budgetcalendar.features.calendar.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -12,12 +11,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -63,7 +60,6 @@ fun CalendarScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val transactionFormUiState by transactionFormViewModel.uiState.collectAsStateWithLifecycle()
 
-    var horizontalDragTotal by remember { mutableFloatStateOf(0f) }
     var showTransactionForm by remember { mutableStateOf(false) }
     var showExpandSheet by remember { mutableStateOf(false) }
     var selectedTransaction by remember { mutableStateOf<Transaction?>(null) }
@@ -107,31 +103,10 @@ fun CalendarScreen(
         showTransactionForm = true
     }
 
-    val swipeModifier = if (showExpandSheet) {
-        Modifier
-    } else {
-        Modifier.pointerInput(uiState.currentMonth) {
-            detectHorizontalDragGestures(
-                onHorizontalDrag = { _, dragAmount ->
-                    horizontalDragTotal += dragAmount
-                },
-                onDragEnd = {
-                    when {
-                        horizontalDragTotal > 70f -> viewModel.navigateMonth(-1)
-                        horizontalDragTotal < -70f -> viewModel.navigateMonth(1)
-                    }
-                    horizontalDragTotal = 0f
-                },
-                onDragCancel = { horizontalDragTotal = 0f },
-            )
-        }
-    }
-
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(colors.bgPrimary)
-            .then(swipeModifier)
             .padding(spacing.spacing4),
     ) {
         Column(

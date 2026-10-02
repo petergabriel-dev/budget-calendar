@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
@@ -36,6 +37,7 @@ fun NotificationThresholdSetting(
     onSave: () -> Unit,
     onRetry: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
+    onThresholdInputFocusChanged: (Boolean) -> Unit = {},
 ) {
     val colors = BudgetCalendarTheme.colors
     val spacing = BudgetCalendarTheme.spacing
@@ -62,6 +64,9 @@ fun NotificationThresholdSetting(
             onValueChange = onValueChange,
             placeholder = if (isLoading) "Loading..." else "15",
             readOnly = !canEdit,
+            fieldModifier = Modifier.onFocusChanged {
+                onThresholdInputFocusChanged(it.isFocused)
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = !validationError.isNullOrBlank(),
             errorText = validationError,
