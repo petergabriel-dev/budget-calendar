@@ -236,8 +236,8 @@ fun App() {
                             modifier = Modifier.padding(innerPadding),
                             unreadCount = unreadCount,
                             onBellClick = { showNotificationCenter = true },
-                            pendingSelectedDate = pendingCalendarDate?.let(LocalDate::parse),
-                            onPendingSelectedDateConsumed = {
+                            pendingOpenDate = pendingCalendarDate?.let(LocalDate::parse),
+                            onPendingOpenDateConsumed = {
                                 pendingCalendarDate = AppNavigationState(
                                     selectedTab = selectedTab,
                                     pendingCalendarDate = pendingCalendarDate,

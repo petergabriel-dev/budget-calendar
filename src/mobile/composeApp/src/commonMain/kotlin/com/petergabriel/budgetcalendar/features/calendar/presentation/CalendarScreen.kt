@@ -2,8 +2,6 @@ package com.petergabriel.budgetcalendar.features.calendar.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,7 +24,6 @@ import com.petergabriel.budgetcalendar.core.designsystem.component.BcSheetShell
 import com.petergabriel.budgetcalendar.core.designsystem.theme.BudgetCalendarTheme
 import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.CalendarGrid
-import com.petergabriel.budgetcalendar.features.calendar.presentation.components.DayTransactionSectionHeader
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.DayTransactionList
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.EndOfMonthProjectionPill
 import com.petergabriel.budgetcalendar.features.calendar.presentation.components.MonthNavigationRow
@@ -41,6 +38,8 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -48,27 +47,27 @@ fun CalendarScreen(
     modifier: Modifier = Modifier,
     unreadCount: Int,
     onBellClick: () -> Unit,
-    pendingSelectedDate: LocalDate? = null,
-    onPendingSelectedDateConsumed: () -> Unit = {},
+    pendingOpenDate: LocalDate? = null,
+    onPendingOpenDateConsumed: () -> Unit = {},
     viewModel: CalendarViewModel = koinViewModel(),
     transactionFormViewModel: TransactionFormViewModel = koinViewModel(),
 ) {
     val spacing = BudgetCalendarTheme.spacing
     val colors = BudgetCalendarTheme.colors
-    val typography = BudgetCalendarTheme.typography
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val transactionFormUiState by transactionFormViewModel.uiState.collectAsStateWithLifecycle()
 
     var showTransactionForm by remember { mutableStateOf(false) }
-    var showExpandSheet by remember { mutableStateOf(false) }
+    var openDate: LocalDate? by remember { mutableStateOf(null) }
     var selectedTransaction by remember { mutableStateOf<Transaction?>(null) }
     var editingTransaction by remember { mutableStateOf<Transaction?>(null) }
 
-    LaunchedEffect(pendingSelectedDate) {
-        pendingSelectedDate?.let { date ->
+    LaunchedEffect(pendingOpenDate) {
+        pendingOpenDate?.let { date ->
             viewModel.selectDate(date)
-            onPendingSelectedDateConsumed()
+            openDate = date
+            onPendingOpenDateConsumed()
         }
     }
 
@@ -82,15 +81,17 @@ fun CalendarScreen(
         }
     }
 
-    val selectedDateMillis = remember(uiState.selectedDate) {
-        val localDayStart = uiState.selectedDate
+    val initialDateMillis = remember(openDate) {
+        val date = openDate ?: Clock.System.now()
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .date
+        val localDayStart = date
             .atStartOfDayIn(TimeZone.currentSystemDefault())
             .toEpochMilliseconds()
         DateUtils.toUtcDayStartMillis(localDayStart)
     }
 
     val openTransactionDetails: (Transaction) -> Unit = { transaction ->
-        showExpandSheet = false
         showTransactionForm = false
         editingTransaction = null
         selectedTransaction = transaction
@@ -109,95 +110,66 @@ fun CalendarScreen(
             .background(colors.bgPrimary)
             .padding(spacing.spacing4),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-        ) {
-            BcHeader(
-                title = "Calendar",
-                modifier = Modifier.fillMaxWidth(),
-                actionContent = {
-                    BcNotificationBell(
-                        unreadCount = unreadCount,
-                        onClick = onBellClick,
-                    )
-                },
-            )
-
-            MonthNavigationRow(
-                currentMonth = uiState.currentMonth,
-                onPreviousMonth = { viewModel.navigateMonth(-1) },
-                onNextMonth = { viewModel.navigateMonth(1) },
-            )
-
-            EndOfMonthProjectionPill(
-                projectionAmount = uiState.endOfMonthProjection,
-                isLoading = uiState.isProjectionLoading,
-                errorMessage = uiState.projectionError,
-                onRetry = viewModel::retryProjection,
-                modifier = Modifier.padding(top = spacing.spacing2),
-            )
-
-            CalendarGrid(
-                days = uiState.calendarMonth?.days.orEmpty(),
-                onDateSelected = viewModel::selectDate,
-                modifier = Modifier.weight(1f),
-            )
-
-            uiState.monthError?.let { errorMessage ->
-                CalendarInlineError(
-                    message = errorMessage,
-                    retryContentDescription = "Retry loading ${uiState.currentMonth} calendar",
-                    onRetry = { viewModel.loadMonth(uiState.currentMonth) },
-                    modifier = Modifier.fillMaxWidth(),
+        BcHeader(
+            title = "Calendar",
+            modifier = Modifier.fillMaxWidth(),
+            actionContent = {
+                BcNotificationBell(
+                    unreadCount = unreadCount,
+                    onClick = onBellClick,
                 )
-            }
+            },
+        )
 
-            DayTransactionSectionHeader(
-                selectedDate = uiState.selectedDate,
-                onExpand = {
-                    showTransactionForm = false
-                    editingTransaction = null
-                    showExpandSheet = true
-                },
+        MonthNavigationRow(
+            currentMonth = uiState.currentMonth,
+            onPreviousMonth = { viewModel.navigateMonth(-1) },
+            onNextMonth = { viewModel.navigateMonth(1) },
+        )
+
+        EndOfMonthProjectionPill(
+            projectionAmount = uiState.endOfMonthProjection,
+            isLoading = uiState.isProjectionLoading,
+            errorMessage = uiState.projectionError,
+            onRetry = viewModel::retryProjection,
+            modifier = Modifier.padding(top = spacing.spacing2),
+        )
+
+        CalendarGrid(
+            days = uiState.calendarMonth?.days.orEmpty(),
+            onDateSelected = { date ->
+                viewModel.selectDate(date)
+                openDate = date
+            },
+            modifier = Modifier.weight(1f),
+        )
+
+        uiState.monthError?.let { errorMessage ->
+            CalendarInlineError(
+                message = errorMessage,
+                retryContentDescription = "Retry loading ${uiState.currentMonth} calendar",
+                onRetry = { viewModel.loadMonth(uiState.currentMonth) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-
-        DayTransactionList(
-            transactions = uiState.selectedDayTransactions,
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = spacing.spacing12),
-            accountNameProvider = { accountId ->
-                uiState.accountNamesById[accountId] ?: "Account #$accountId"
-            },
-            maxItems = 1,
-            density = TransactionItemDensity.Compact,
-            isLoading = uiState.isSelectedDayLoading,
-            errorMessage = uiState.selectedDayError,
-            onRetry = { viewModel.selectDate(uiState.selectedDate) },
-            onTransactionTap = openTransactionDetails,
-        )
     }
 
-    if (showExpandSheet) {
+    openDate?.takeIf { selectedTransaction == null && !showTransactionForm }?.let { date ->
         BcSheetShell(
-            title = formatDayTransactionHeaderLabel(selectedDate = uiState.selectedDate),
-            onDismissRequest = { showExpandSheet = false },
+            title = formatDayTransactionHeaderLabel(selectedDate = date),
+            onDismissRequest = { openDate = null },
             bodyScrollable = false,
             body = {
                 DayTransactionList(
-                transactions = uiState.selectedDayTransactions,
-                modifier = Modifier.weight(1f),
-                accountNameProvider = { accountId ->
-                    uiState.accountNamesById[accountId] ?: "Account #$accountId"
-                },
-                density = TransactionItemDensity.Compact,
-                isLoading = uiState.isSelectedDayLoading,
-                errorMessage = uiState.selectedDayError,
-                onRetry = { viewModel.selectDate(uiState.selectedDate) },
+                    transactions = uiState.selectedDayTransactions,
+                    modifier = Modifier.weight(1f),
+                    accountNameProvider = { accountId ->
+                        uiState.accountNamesById[accountId] ?: "Account #$accountId"
+                    },
+                    density = TransactionItemDensity.Compact,
+                    isLoading = uiState.isSelectedDayLoading,
+                    errorMessage = uiState.selectedDayError,
+                    onRetry = { viewModel.selectDate(date) },
                     onTransactionTap = openTransactionDetails,
                 )
             },
@@ -207,7 +179,7 @@ fun CalendarScreen(
     TransactionFormSheet(
         isVisible = showTransactionForm,
         uiState = transactionFormUiState,
-        initialDateMillis = selectedDateMillis,
+        initialDateMillis = initialDateMillis,
         initialData = editingTransaction,
         onSetType = transactionFormViewModel::setType,
         onSave = { request ->
