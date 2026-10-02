@@ -26,7 +26,7 @@ App shell bottom navigation remains outside page content.
 - Single-column vertical flow.
 - Header title: `Calendar`.
 - Header action: `BcNotificationBell`.
-- Previous/next month buttons are primary navigation. Horizontal swipe is an optional equivalent gesture, never the only path.
+- Previous/next month buttons and adjacent-month cell taps navigate Calendar dates. App-shell horizontal swipes change adjacent tabs; they never navigate Calendar months.
 - Do not wrap entire Calendar in a new card.
 
 ## Composition
@@ -99,7 +99,7 @@ CalendarSelectedDayTransactions.onViewAllClick(selectedDate)
 
 - Month navigation updates month data and projection.
 - Day selection updates selected-day list without changing projection.
-- Swipe navigation and arrow buttons use the same month navigation callback.
+- App-shell tab swipes do not change Calendar month. Use month arrows or adjacent-month cell taps for month/date navigation.
 - Details, edit, delete, and form state remain owned by their sheets/ViewModels.
 
 ## Home handoff

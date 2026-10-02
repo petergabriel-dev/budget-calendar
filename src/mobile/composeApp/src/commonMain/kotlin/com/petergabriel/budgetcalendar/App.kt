@@ -74,6 +74,7 @@ fun App() {
         var selectedTab by rememberSaveable { mutableStateOf(AppTab.HOME) }
         var pendingCalendarDate by rememberSaveable { mutableStateOf<String?>(null) }
         var isThresholdInputFocused by remember { mutableStateOf(false) }
+        var isSandboxMode by remember { mutableStateOf(false) }
         var showAddForm by remember { mutableStateOf(false) }
         var showNotificationCenter by remember { mutableStateOf(false) }
         var hasSkippedFirstResume by remember { mutableStateOf(false) }
@@ -91,6 +92,9 @@ fun App() {
         val coroutineScope = rememberCoroutineScope()
         val spacing = BudgetCalendarTheme.spacing
         val tabSwipeThresholdPx = with(LocalDensity.current) { tabSwipeThreshold.toPx() }
+        val isTabSwipeEnabled =
+            (selectedTab != AppTab.ME || !isThresholdInputFocused) &&
+                (selectedTab != AppTab.HOME || !isSandboxMode)
 
         LaunchedEffect(transactionFormViewModel) {
             transactionFormViewModel.effects.collect { effect ->
@@ -173,8 +177,8 @@ fun App() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(selectedTab, tabSwipeThresholdPx, isThresholdInputFocused) {
-                        if (selectedTab != AppTab.ME || !isThresholdInputFocused) {
+                    .pointerInput(selectedTab, tabSwipeThresholdPx, isTabSwipeEnabled) {
+                        if (isTabSwipeEnabled) {
                             var horizontalDragTotal = 0f
                             detectHorizontalDragGestures(
                                 onHorizontalDrag = { _, dragAmount ->
@@ -225,6 +229,7 @@ fun App() {
                                 pendingCalendarDate = nextNavigation.pendingCalendarDate
                                 selectedTab = nextNavigation.selectedTab
                             },
+                            onSandboxModeChanged = { isSandboxMode = it },
                         )
 
                         AppTab.CALENDAR -> CalendarScreen(

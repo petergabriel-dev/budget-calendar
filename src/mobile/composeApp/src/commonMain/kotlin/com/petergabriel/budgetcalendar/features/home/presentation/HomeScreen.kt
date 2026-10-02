@@ -63,6 +63,7 @@ fun HomeScreen(
     unreadCount: Int,
     onBellClick: () -> Unit,
     onViewAllSelected: (LocalDate) -> Unit = {},
+    onSandboxModeChanged: (Boolean) -> Unit = {},
     homeViewModel: HomeViewModel = koinViewModel(),
     budgetViewModel: BudgetViewModel = koinViewModel(),
     transactionViewModel: TransactionViewModel = koinViewModel(),
@@ -181,7 +182,10 @@ fun HomeScreen(
     }
 
     DisposableEffect(Unit) {
-        onDispose { sandboxViewModel.setSandboxMode(false) }
+        onDispose {
+            sandboxViewModel.setSandboxMode(false)
+            onSandboxModeChanged(false)
+        }
     }
 
     LazyColumn(
@@ -214,7 +218,9 @@ fun HomeScreen(
                 options = listOf("Live Budget", "Sandbox"),
                 selectedIndex = if (sandboxState.isSandboxMode) 1 else 0,
                 onSelectedIndexChange = { index ->
-                    sandboxViewModel.setSandboxMode(index == 1)
+                    val isSandboxMode = index == 1
+                    sandboxViewModel.setSandboxMode(isSandboxMode)
+                    onSandboxModeChanged(isSandboxMode)
                 },
                 modifier = Modifier.fillMaxWidth(),
             )

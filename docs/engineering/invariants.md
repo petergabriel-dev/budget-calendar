@@ -35,13 +35,14 @@ Must-not-break rules below are verified from current code only.
 
 ## Global window insets and notification centre
 
-- `App.kt` root `Scaffold` is sole system-window-inset owner. Screens receive its `innerPadding`; Calendar must not add `safeDrawingPadding()`, and Accounts' snackbar-only nested `Scaffold` uses zero `contentWindowInsets`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:129-179`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:105-110`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-72`.
-- `App.kt` owns exactly one `NotificationCenterViewModel`, unread-count collection, visible state, and `NotificationCenterSheet`; each tab receives the same count and open callback: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:72-85`, `:155-177`, `:207-211`.
+- `App.kt` root `Scaffold` is sole system-window-inset owner. Screens receive its `innerPadding`; Calendar must not add `safeDrawingPadding()`, and Accounts' snackbar-only nested `Scaffold` uses zero `contentWindowInsets`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:147-176`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:106-110`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-72`.
+- `App.kt` owns exactly one `NotificationCenterViewModel`, unread-count collection, visible state, and `NotificationCenterSheet`; each tab receives the same count and open callback: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:82-90`, `:220-258`, `:290-294`.
 
 ## UI composition and state isolation
 
-- App navigation remains exactly `Home`, `Calendar`, `Accounts`, and `Me`; Sandbox is a Home mode, and `BudgetScreen`/`RecurringScreen` remain inactive: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/AppNavigationState.kt:11-16`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:153-192`.
-- Home `View all` must preserve exact selected date through `AppNavigationState.openCalendarOn`; Calendar consumes the pending date only after applying it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/AppNavigationState.kt:18-31`.
+- App navigation remains exactly `Home`, `Calendar`, `Accounts`, and `Me`; Sandbox is a Home mode, and `BudgetScreen`/`RecurringScreen` remain inactive: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/AppNavigationState.kt:11-16`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:219-263`.
+- Horizontal swipes on tab content are App-shell adjacent-tab navigation: left advances, right returns, and ends never wrap. Threshold is 64dp; directional slide is 250ms. `BcTabBarPill` remains primary nav and outside gesture region. Swipes are disabled in Home Sandbox and while Me threshold input is focused; screens must not add horizontal navigation drags. Calendar month changes use previous/next arrows or adjacent-month cell taps, never swipes: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:95-97`, `:155-201`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:184-189`, `:216-224`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:128-145`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/MonthNavigationRow.kt:43-57`.
+- Home `View all` must preserve exact selected date through `AppNavigationState.openCalendarOn`; Calendar consumes the pending date only after applying it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/AppNavigationState.kt:25-34`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:224-245`.
 - Feature errors stay scoped to their operation. Snapshot/projection/transaction/mutation errors must not clear unrelated Sandbox content; leaving Sandbox clears sheet-local state: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/SandboxHomeUiState.kt:3-29`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/SandboxViewModel.kt:52-79`.
 - Mutating sheets preserve entered values and remain open on failure; success effects/callbacks close them. Destructive flows require explicit confirmation with a safe Cancel/Keep editing path: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcSheetShell.kt:33-54`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcConfirmDialog.kt:14-50`.
 - System appearance is the only theme input. `BudgetCalendarTheme` maps semantic `BcColors` to Material light/dark schemes; no persisted theme preference exists: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/theme/BudgetCalendarTheme.kt:16-39`.
@@ -49,10 +50,10 @@ Must-not-break rules below are verified from current code only.
 
 ## App lifecycle recompute sites
 
-- `App()` injects overdue, projection, STS, settings, and notification use cases: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:72-82`.
-- Initial launch runs `refreshNotifications(...)` from `LaunchedEffect(Unit)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:84-95`.
-- Later `ON_RESUME` events also run `refreshNotifications(...)` after the first resume is skipped: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:97-120`.
-- `refreshNotifications` first marks overdue, then reads overdue transactions, projection, STS, settings, and generates notifications: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:196-226`.
+- `App()` injects overdue, projection, STS, settings, and notification use cases: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:81-88`.
+- Initial launch runs `refreshNotifications(...)` from `LaunchedEffect(Unit)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:107-118`.
+- Later `ON_RESUME` events also run `refreshNotifications(...)` after the first resume is skipped: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:120-145`.
+- `refreshNotifications` first marks overdue, then reads overdue transactions, projection, STS, settings, and generates notifications: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:298-328`.
 
 ## Credit cards require inline setup and never enter the spending pool
 
@@ -71,20 +72,20 @@ Must-not-break rules below are verified from current code only.
 
 ## Calendar transaction interaction
 
-- Calendar transaction rows, inline and expanded, open read-only `TransactionDetailsSheet`; they do not open `TransactionFormSheet` directly: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:71-83`, `:159-168`, `:210-219`, `:247-261`.
+- Calendar transaction rows, inline and expanded, open read-only `TransactionDetailsSheet`; they do not open `TransactionFormSheet` directly: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:92-97`, `:168-182`, `:185-205`, `:228-241`.
 - Calendar row gestures remain tap-only. Do not reintroduce `combinedClickable`, a long-press callback, or long-press deletion: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionListItem.kt:27-33`, `:65-73`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/DayTransactionList.kt:20-59`.
 - Calendar Edit and Delete are reachable only through details overflow. Edit opens the prefilled form; Delete must require confirmation, and Cancel performs no delete: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionDetailsSheet.kt:100-126`, `:180-211`.
 
 ## Calendar selection is independent of displayed month
 
-- Month navigation never changes `selectedDate`. Day panel and new-transaction prefill always follow it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarViewModel.kt:44-75`, `:131-138`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:67-69`, `:128-168`, `:224-228`.
+- Month navigation never changes `selectedDate`. Day panel and new-transaction prefill always follow it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarViewModel.kt:44-75`, `:131-138`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:68-73`, `:128-145`, `:157-182`, `:207-226`.
 - When selection is outside displayed month, dedicated selected-day flow supplies its rows. Resolve through `BuildCalendarMonthUseCase`; do not duplicate its `CANCELLED` exclusion or timezone grouping: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarViewModel.kt:75-100`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCase.kt:27-39`.
 
 ## Calendar grid is fixed and non-scrollable
 
 - Calendar month construction always emits 42 contiguous dates, beginning Sunday on or before month start. Exactly target-month days have `isCurrentMonth = true`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCase.kt:48-65`; regression coverage: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCaseTest.kt:18-57`.
 - Calendar UI renders six weighted rows with weighted, full-height cells; no calendar lazy layout or scroll state is allowed: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarGrid.kt:45-60`.
-- Parent layouts must allocate calendar from leftover space; do not hardcode day-cell height. `CalendarScreen` weights calendar region and grid: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:112-115`, `:142-145`.
+- Parent layouts must allocate calendar from leftover space; do not hardcode day-cell height. `CalendarScreen` weights calendar region and grid: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:112-116`, `:142-145`.
 
 ## Transfers are paired rows
 

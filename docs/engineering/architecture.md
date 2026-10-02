@@ -6,15 +6,16 @@ Source of truth: current code. Package root: `com.petergabriel.budgetcalendar` (
 
 - Kotlin Multiplatform + Compose shared UI. Android calls `App()` from `MainActivity`: `src/mobile/composeApp/src/androidMain/kotlin/com/petergabriel/budgetcalendar/MainActivity.kt:13-26`.
 - iOS embeds the same Kotlin UI through `MainViewController()` -> `App()`: `src/mobile/composeApp/src/iosMain/kotlin/com/petergabriel/budgetcalendar/MainViewController.kt:7-12`; host wrapper: `src/mobile/iosApp/iosApp/ContentView.swift:5-17`.
-- `App()` owns tab shell and routes to Home, Calendar, Accounts, Me screens: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:66-193`.
+- `App()` owns tab shell and routes to Home, Calendar, Accounts, Me screens: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:72-296`.
 
 ## UI shell and state ownership
 
-- `App()` owns exactly four tabs (`Home`, `Calendar`, `Accounts`, `Me`), the shared `BcTabBarPill`, one global `NotificationCenterViewModel`, and shared transaction/notification overlays: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:60-78`, `:128-224`.
+- `App()` owns exactly four tabs (`Home`, `Calendar`, `Accounts`, `Me`), the shared `BcTabBarPill`, one global `NotificationCenterViewModel`, and shared transaction/notification overlays: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:72-90`, `:147-263`, `:290-294`.
+- App shell owns horizontal tab-content swipe and ordinal-directed 250ms slide transitions. Left advances, right returns, with no wrap; swipes are disabled in Home Sandbox and while the Me threshold input is focused. `BcTabBarPill` remains primary navigation; screens do not own tab/month swipe: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:95-97`, `:155-218`; `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/home/presentation/HomeScreen.kt:184-189`, `:216-224`.
 - Home Sandbox is a mode inside Home, not a route. `SandboxViewModel` owns snapshot, projection, transaction, mutation, retry, and mode-reset state: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/SandboxViewModel.kt:32-50`, `:52-79`.
-- Home-to-Calendar handoff stores an exact `LocalDate` string, applies it to the containing month, then consumes it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/AppNavigationState.kt:18-31`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:154-179`.
+- Home-to-Calendar handoff stores an exact `LocalDate` string, applies it to the containing month, then consumes it: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/AppNavigationState.kt:25-34`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:224-245`.
 - Shared visual/layout ownership lives in `core/designsystem`: `BcMetricHero`, `BcSheetShell`/header/footer, `BcConfirmDialog`, `BcBadge`, `BcButton`, `BcSegmentedControl`, `BcTabBarPill`, and form primitives. Feature ViewModels retain domain state and mutation lifecycle: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/designsystem/component/BcSheetShell.kt:33-184`.
-- Root `Scaffold` owns system insets. Screens consume its `innerPadding`; nested Accounts snackbar `Scaffold` explicitly uses zero insets: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:128-169`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-78`.
+- Root `Scaffold` owns system insets. Screens consume its `innerPadding`; nested Accounts snackbar `Scaffold` explicitly uses zero insets: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:147-176`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-78`.
 
 ## Layer flow
 
