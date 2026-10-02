@@ -15,6 +15,8 @@ enum class AppTab(val label: String, val icon: ImageVector) {
     ME("Me", Icons.Outlined.Person),
 }
 
+fun AppTab.neighbor(offset: Int): AppTab = AppTab.entries.getOrNull(ordinal + offset) ?: this
+
 data class AppNavigationState(
     val selectedTab: AppTab = AppTab.HOME,
     val pendingCalendarDate: String? = null,
