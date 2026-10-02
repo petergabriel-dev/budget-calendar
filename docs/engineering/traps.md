@@ -6,7 +6,7 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 
 - Symptom: Calendar and Accounts headers sat roughly one status-bar height below Home and Settings.
 - Root cause: Calendar added `safeDrawingPadding()` after root `Scaffold` padding; Accounts' nested snackbar `Scaffold` consumed system bars again.
-- Resolution: root `App.kt` `Scaffold` owns system insets; Calendar only consumes passed padding, and Accounts sets nested `contentWindowInsets = WindowInsets(0, 0, 0, 0)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:129-179`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:105-110`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-72`.
+- Resolution: root `App.kt` `Scaffold` owns system insets; Calendar only consumes passed padding, and Accounts sets nested `contentWindowInsets = WindowInsets(0, 0, 0, 0)`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:129-179`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/App.kt:235-237`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:108-112`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/accounts/presentation/AccountScreen.kt:64-72`.
 
 ## Unweighted headers hide actions
 
@@ -143,26 +143,26 @@ Current-code guards for bugs this project has already hit. `docs/engineering/` a
 - Resolution: convert local day start -> UTC for DatePicker input, then UTC -> local day start on confirm.
 - Current guard: `DateUtils.toUtcDayStartMillis` and `toLocalDayStartMillis` bridge local day-start and DatePicker UTC millis: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/core/utils/DateUtils.kt:80-90`; transaction form and sandbox sheet use them: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/transactions/presentation/components/TransactionFormSheet.kt:343-356`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/sandbox/presentation/components/AddSandboxTransactionSheet.kt:331-343`.
 
-## Month-scoped calendar cache loses off-month selection rows
+## Calendar day sheet date must stay in displayed month
 
-- Symptom: day panel reports no transactions for selected day after displayed month changes.
-- Root cause: `GetMonthTransactionsUseCase` returns only requested month, so displayed month's `transactionsByDate[selectedDate]` lacks off-month rows: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/GetMonthTransactionsUseCase.kt:15-30`.
-- Resolution: keep selection independent of displayed month. Cancel old selected-day job on each load; when selection is off-month, collect selected month and resolve through `BuildCalendarMonthUseCase`.
-- Current guard: `CalendarViewModel` owns job cancellation and off-month resolution: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarViewModel.kt:43-100`, `:138-144`, `:164-196`; regression coverage includes liveness and cancelled exclusion: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarViewModelTest.kt:48-108`.
+- Symptom: sheet asks the displayed month's map for an adjacent date and shows empty or stale rows.
+- Root cause: month transaction maps cover only the requested month; day-sheet rows come only from displayed `transactionsByDate`, with no off-month collector.
+- Resolution: call `showMonthContaining(date)` before setting `openDate`; keep sheet date inside displayed month. In-month calls do not reload; adjacent taps and Home handoffs switch month first.
+- Current guard: pending/cell handlers call `showMonthContaining` before opening: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:66-71`, `:137-143`; the ViewModel loads only for a different month: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarViewModel.kt:92-95`; rows come from `CalendarUiState.transactionsOn`: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarUiState.kt:22-23`; tests cover no-reload, adjacent-month, live-write, and cancelled-row cases: `src/mobile/composeApp/src/commonTest/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarViewModelTest.kt:61-105`.
 
-## Calendar day visual-state conflicts
+## Calendar day visual-state rules
 
 - Symptom: today with negative net rendered contradictory red border + green background (`bug-reports/calendar-view/2026-04-05_1300_today-cell-conflicting-visual-states.md:9-20`).
-- Root cause: background and border were independent channels with no shared `isToday` x `netAmount` rule (`bug-reports/calendar-view/2026-04-05_1300_today-cell-conflicting-visual-states.md:44-68`).
-- Resolution: today border always dark; backgrounds carry net tint; selected state wins.
-- Current guard: background resolver orders selected, today-negative, today, non-today positive/negative; border resolver only colors today: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarDayCell.kt:106-132`.
+- Root cause: background and border are independent channels; selected-cell override has since been removed.
+- Resolution: today border marks today; background carries net tint. No selected-cell visual or selected semantics remain.
+- Current guard: background resolver handles today-negative before today and non-today net cases; border resolver colors only today: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarDayCell.kt:132-154`.
 
 ## Calendar grid height drift created hidden lazy-grid scroll
 
 - Symptom: August 2026 lost its last row on first paint; navigating Aug → Jul → Aug left the grid clipped under weekday labels.
 - Root cause: parent `CalendarGrid` duplicated a 66.dp day-cell height while `CalendarDayCell` rendered at least 80.dp including padding. Overflow gave its `LazyVerticalGrid` a scroll range; `userScrollEnabled = false` blocks gestures, not lazy-state restoration by item key.
 - Resolution: build 42 dates and render six weighted `Row`s in a plain `Column`; parent and grid divide leftover height instead of sharing a cell-height constant.
-- Current guard: `BuildCalendarMonthUseCase` fixes `totalCells = 42`, and `CalendarGrid` has weighted rows/cells with no lazy layout: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCase.kt:48-56`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarGrid.kt:45-60`. `CalendarScreen` weights both calendar region and grid: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:112-115`, `:142-145`.
+- Current guard: `BuildCalendarMonthUseCase` fixes `totalCells = 42`, and `CalendarGrid` has weighted rows/cells with no lazy layout: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/domain/usecase/BuildCalendarMonthUseCase.kt:46-62`, `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/components/CalendarGrid.kt:54-67`. `CalendarScreen` weights `CalendarGrid` in its root column: `src/mobile/composeApp/src/commonMain/kotlin/com/petergabriel/budgetcalendar/features/calendar/presentation/CalendarScreen.kt:137-145`.
 
 ## Overdue transactions must open edit mode, not create mode
 
