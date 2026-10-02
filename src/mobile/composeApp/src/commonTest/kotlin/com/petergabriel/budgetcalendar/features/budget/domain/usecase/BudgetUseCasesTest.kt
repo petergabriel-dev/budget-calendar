@@ -1,6 +1,5 @@
 package com.petergabriel.budgetcalendar.features.budget.domain.usecase
 
-import com.petergabriel.budgetcalendar.features.budget.domain.model.CreditCardReservation
 import com.petergabriel.budgetcalendar.features.budget.testutil.FakeBudgetRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -13,14 +12,12 @@ class BudgetUseCasesTest {
     private lateinit var budgetRepository: FakeBudgetRepository
 
     private lateinit var calculateSafeToSpendUseCase: CalculateSafeToSpendUseCase
-    private lateinit var getCreditCardReservationsUseCase: GetCreditCardReservationsUseCase
 
     @BeforeTest
     fun setUp() {
         budgetRepository = FakeBudgetRepository()
 
         calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(budgetRepository)
-        getCreditCardReservationsUseCase = GetCreditCardReservationsUseCase(budgetRepository)
     }
 
     @Test
@@ -109,59 +106,6 @@ class BudgetUseCasesTest {
 
         val afterPayment = calculateSafeToSpendUseCase().first()
         assertEquals(9_000L, afterPayment.availableToSpend)
-    }
-
-    @Test
-    fun getCreditCardReservations_ccWithPendingExpenseReturnsReservedAmount() = runBlocking {
-        budgetRepository.setCreditCardReservations(
-            listOf(
-                CreditCardReservation(
-                    accountId = 7L,
-                    accountName = "Visa",
-                    reservedAmount = 3_250L,
-                    pendingTransactions = emptyList(),
-                ),
-            ),
-        )
-
-        val reservations = getCreditCardReservationsUseCase().first()
-
-        assertEquals(1, reservations.size)
-        assertEquals(3_250L, reservations.first().reservedAmount)
-    }
-
-    @Test
-    fun getCreditCardReservations_ccWithNoPendingReturnsZeroReserved() = runBlocking {
-        budgetRepository.setCreditCardReservations(
-            listOf(
-                CreditCardReservation(
-                    accountId = 8L,
-                    accountName = "Mastercard",
-                    reservedAmount = 0L,
-                    pendingTransactions = emptyList(),
-                ),
-            ),
-        )
-
-        val reservations = getCreditCardReservationsUseCase().first()
-
-        assertEquals(1, reservations.size)
-        assertEquals(0L, reservations.first().reservedAmount)
-    }
-
-    @Test
-    fun getCreditCardReservations_multipleAccountsRemainSeparated() = runBlocking {
-        budgetRepository.setCreditCardReservations(
-            listOf(
-                CreditCardReservation(1L, "Visa", 2_000L, emptyList()),
-                CreditCardReservation(2L, "Amex", 1_100L, emptyList()),
-            ),
-        )
-
-        val reservations = getCreditCardReservationsUseCase().first()
-
-        assertEquals(2, reservations.size)
-        assertEquals(setOf(1L, 2L), reservations.map { reservation -> reservation.accountId }.toSet())
     }
 
     // ========== Bugfix Reproduction Tests (2026-04-01) ==========

@@ -14,7 +14,6 @@ import com.petergabriel.budgetcalendar.features.budget.data.mapper.BudgetMapper
 import com.petergabriel.budgetcalendar.features.budget.data.repository.BudgetRepositoryImpl
 import com.petergabriel.budgetcalendar.features.budget.domain.repository.IBudgetRepository
 import com.petergabriel.budgetcalendar.features.budget.domain.usecase.CalculateSafeToSpendUseCase
-import com.petergabriel.budgetcalendar.features.budget.domain.usecase.GetCreditCardReservationsUseCase
 import com.petergabriel.budgetcalendar.features.budget.presentation.BudgetViewModel
 import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.BuildCalendarMonthUseCase
 import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.CalculateMonthProjectionUseCase
@@ -124,7 +123,6 @@ val useCaseModule = module {
     factory { GetPendingAndOverdueExpensesByAccountUseCase(get()) }
 
     factory { CalculateSafeToSpendUseCase(get()) }
-    factory { GetCreditCardReservationsUseCase(get()) }
 
     factory { GetMonthTransactionsUseCase(get()) }
     factory { CalculateDaySummaryUseCase() }

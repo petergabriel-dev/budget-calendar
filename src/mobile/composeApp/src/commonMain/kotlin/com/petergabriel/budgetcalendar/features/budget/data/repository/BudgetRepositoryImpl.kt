@@ -5,7 +5,6 @@ import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOne
 import com.petergabriel.budgetcalendar.core.database.BudgetCalendarDatabase
 import com.petergabriel.budgetcalendar.features.budget.data.mapper.BudgetMapper
-import com.petergabriel.budgetcalendar.features.budget.domain.model.CreditCardReservation
 import com.petergabriel.budgetcalendar.features.budget.domain.repository.IBudgetRepository
 import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
 import com.petergabriel.budgetcalendar.features.transactions.domain.repository.ITransactionRepository
@@ -75,12 +74,4 @@ class BudgetRepositoryImpl(
         }
     }
 
-    override fun getCreditCardReservations(): Flow<List<CreditCardReservation>> {
-        return transactionChangedTrigger.flatMapLatest {
-            database.budgetQueries
-                .getCreditCardReservations(budgetMapper::toCreditCardReservation)
-                .asFlow()
-                .mapToList(dispatcher)
-        }
-    }
 }

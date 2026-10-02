@@ -929,13 +929,6 @@ class BudgetFlowObservationIntegrationTest {
                 ),
             ).getOrThrow()
 
-            val reservations = fixture.database.budgetQueries
-                .getCreditCardReservations()
-                .executeAsList()
-                .associate { reservation -> reservation.account_id to reservation.reserved_amount }
-            assertEquals(0L, reservations[card.id])
-            assertEquals(50_00L, reservations[cardWithDebt.id])
-            assertEquals(0L, reservations[overpaidCard.id])
             assertEquals(50_00L, fixture.database.budgetQueries.getCreditCardReservedAmount().executeAsOne())
             assertEquals(
                 -50_00L,

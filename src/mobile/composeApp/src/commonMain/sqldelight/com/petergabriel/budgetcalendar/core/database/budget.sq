@@ -37,22 +37,3 @@ FROM (
   WHERE a.type = 'credit_card'
   GROUP BY a.id, a.initial_balance
 );
-
-getCreditCardReservations:
-SELECT
-  a.id AS account_id,
-  a.name AS account_name,
-  CAST(
-    CASE
-      WHEN a.initial_balance + COALESCE(SUM(t.signed_amount), 0) < 0
-        THEN -(a.initial_balance + COALESCE(SUM(t.signed_amount), 0))
-      ELSE 0
-    END AS INTEGER
-  ) AS reserved_amount
-FROM accounts a
-LEFT JOIN transactions t
-  ON t.account_id = a.id
-  AND t.status != 'cancelled'
-WHERE a.type = 'credit_card'
-GROUP BY a.id, a.name, a.initial_balance
-ORDER BY a.name ASC;
