@@ -12,14 +12,9 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.UpdateAc
 import com.petergabriel.budgetcalendar.features.accounts.presentation.AccountViewModel
 import com.petergabriel.budgetcalendar.features.budget.data.mapper.BudgetMapper
 import com.petergabriel.budgetcalendar.features.budget.data.repository.BudgetRepositoryImpl
-import com.petergabriel.budgetcalendar.features.budget.data.repository.MonthlyRolloverRepositoryImpl
 import com.petergabriel.budgetcalendar.features.budget.domain.repository.IBudgetRepository
-import com.petergabriel.budgetcalendar.features.budget.domain.repository.IMonthlyRolloverRepository
-import com.petergabriel.budgetcalendar.features.budget.domain.usecase.CalculateMonthEndRolloverUseCase
 import com.petergabriel.budgetcalendar.features.budget.domain.usecase.CalculateSafeToSpendUseCase
 import com.petergabriel.budgetcalendar.features.budget.domain.usecase.GetCreditCardReservationsUseCase
-import com.petergabriel.budgetcalendar.features.budget.domain.usecase.GetRolloverHistoryUseCase
-import com.petergabriel.budgetcalendar.features.budget.domain.usecase.SaveMonthlyRolloverUseCase
 import com.petergabriel.budgetcalendar.features.budget.presentation.BudgetViewModel
 import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.BuildCalendarMonthUseCase
 import com.petergabriel.budgetcalendar.features.calendar.domain.usecase.CalculateMonthProjectionUseCase
@@ -106,7 +101,6 @@ val repositoryModule = module {
     single { AccountRepositoryImpl(get(), get(), get(), get()) } bind IAccountRepository::class
     single { TransactionRepositoryImpl(get(), get()) } bind ITransactionRepository::class
     single { BudgetRepositoryImpl(get(), get(), get()) } bind IBudgetRepository::class
-    single { MonthlyRolloverRepositoryImpl(get(), get()) } bind IMonthlyRolloverRepository::class
     single { SandboxRepositoryImpl(get(), get()) } bind ISandboxRepository::class
     single { CreditCardRepositoryImpl(get(), get()) } bind ICreditCardRepository::class
     single { NotificationRepositoryImpl(get(), get()) } bind INotificationRepository::class
@@ -129,11 +123,8 @@ val useCaseModule = module {
     factory { MarkOverdueTransactionsUseCase(get()) }
     factory { GetPendingAndOverdueExpensesByAccountUseCase(get()) }
 
-    factory { CalculateSafeToSpendUseCase(get(), get(), get()) }
+    factory { CalculateSafeToSpendUseCase(get()) }
     factory { GetCreditCardReservationsUseCase(get()) }
-    factory { SaveMonthlyRolloverUseCase(get()) }
-    factory { GetRolloverHistoryUseCase(get()) }
-    factory { CalculateMonthEndRolloverUseCase(get(), get()) }
 
     factory { GetMonthTransactionsUseCase(get()) }
     factory { CalculateDaySummaryUseCase() }

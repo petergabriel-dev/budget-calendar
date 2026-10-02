@@ -108,14 +108,6 @@ WHERE t.status IN ('pending', 'overdue')
   AND a.type IN ('checking', 'cash')
 ORDER BY t.date ASC;
 
-getConfirmedTransactionsByDateRange:
-SELECT id, account_id, destination_account_id, amount, signed_amount, date, type, status, description, category, linked_transaction_id, created_at, updated_at
-FROM transactions
-WHERE status = 'confirmed'
-
-  AND date BETWEEN ? AND ?
-ORDER BY date ASC;
-
 getPendingAndOverdueExpensesByAccount:
 SELECT id, account_id, destination_account_id, amount, signed_amount, date, type, status, description, category, linked_transaction_id, created_at, updated_at
 FROM transactions

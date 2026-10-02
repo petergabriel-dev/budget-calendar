@@ -10,7 +10,6 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAcco
 import com.petergabriel.budgetcalendar.features.accounts.domain.usecase.CreateAccountUseCase
 import com.petergabriel.budgetcalendar.features.budget.data.mapper.BudgetMapper
 import com.petergabriel.budgetcalendar.features.budget.data.repository.BudgetRepositoryImpl
-import com.petergabriel.budgetcalendar.features.budget.data.repository.MonthlyRolloverRepositoryImpl
 import com.petergabriel.budgetcalendar.features.creditcard.data.mapper.CreditCardMapper
 import com.petergabriel.budgetcalendar.features.creditcard.data.repository.CreditCardRepositoryImpl
 import com.petergabriel.budgetcalendar.features.creditcard.domain.model.CreditCardSummary
@@ -326,13 +325,11 @@ class BudgetFlowObservationIntegrationTest {
             val summary = withTimeout(5_000) {
                 fixture.calculateSafeToSpendUseCase().first { sts ->
                     sts.pendingReservations == 0L &&
-                        sts.availableToSpend == 425_00L &&
-                        sts.confirmedSpending == 75_00L
+                        sts.availableToSpend == 425_00L
                 }
             }
 
             assertEquals(425_00L, summary.availableToSpend)
-            assertEquals(75_00L, summary.confirmedSpending)
             assertEquals(425_00L, fixture.accountRepository.getAccountById(account.id)?.balance)
         } finally {
             fixture.driver.close()
@@ -383,7 +380,6 @@ class BudgetFlowObservationIntegrationTest {
             }
 
             assertEquals(425_00L, confirmedSummary.availableToSpend)
-            assertEquals(75_00L, confirmedSummary.confirmedSpending)
             assertEquals(425_00L, fixture.accountRepository.getAccountById(account.id)?.balance)
         } finally {
             fixture.driver.close()
@@ -998,7 +994,6 @@ class BudgetFlowObservationIntegrationTest {
         val accountRepository = AccountRepositoryImpl(database, AccountMapper(), transactionRepository, creditCardRepository)
         val budgetMapper = BudgetMapper()
         val budgetRepository = BudgetRepositoryImpl(database, budgetMapper, transactionRepository)
-        val monthlyRolloverRepository = MonthlyRolloverRepositoryImpl(database, budgetMapper)
         val notificationRepository = NotificationRepositoryImpl(database, NotificationMapper())
         val createTransactionUseCase = CreateTransactionUseCase(transactionRepository)
 
@@ -1021,11 +1016,7 @@ class BudgetFlowObservationIntegrationTest {
             updateTransactionStatusUseCase = UpdateTransactionStatusUseCase(transactionRepository),
             markOverdueTransactionsUseCase = MarkOverdueTransactionsUseCase(transactionRepository),
             generateNotificationsUseCase = GenerateNotificationsUseCase(notificationRepository),
-            calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(
-                budgetRepository,
-                monthlyRolloverRepository,
-                transactionRepository,
-            ),
+            calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(budgetRepository),
         )
     }
 

@@ -6,7 +6,6 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAcco
 import com.petergabriel.budgetcalendar.features.accounts.testutil.FakeAccountRepository
 import com.petergabriel.budgetcalendar.features.budget.domain.usecase.CalculateSafeToSpendUseCase
 import com.petergabriel.budgetcalendar.features.budget.testutil.FakeBudgetRepository
-import com.petergabriel.budgetcalendar.features.budget.testutil.FakeMonthlyRolloverRepository
 import com.petergabriel.budgetcalendar.features.sandbox.domain.model.AddSandboxTransactionRequest
 import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxSnapshot
 import com.petergabriel.budgetcalendar.features.sandbox.domain.usecase.AddSimulationTransactionUseCase
@@ -48,7 +47,6 @@ class SandboxViewModelTest {
     private lateinit var accountRepository: FakeAccountRepository
     private lateinit var transactionRepository: FakeTransactionRepository
     private lateinit var budgetRepository: FakeBudgetRepository
-    private lateinit var monthlyRolloverRepository: FakeMonthlyRolloverRepository
 
     private lateinit var viewModel: SandboxViewModel
     private var accountId: Long = 0L
@@ -64,7 +62,6 @@ class SandboxViewModelTest {
             transactionChangedTrigger = transactionRepository.transactionChangedTrigger,
         )
         budgetRepository = FakeBudgetRepository()
-        monthlyRolloverRepository = FakeMonthlyRolloverRepository()
 
         val account = accountRepository.createAccount(
             CreateAccountRequest(
@@ -79,11 +76,7 @@ class SandboxViewModelTest {
         budgetRepository.setPendingReservations(0L)
         budgetRepository.setOverdueReservations(0L)
 
-        val calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(
-            budgetRepository,
-            monthlyRolloverRepository,
-            transactionRepository,
-        )
+        val calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(budgetRepository)
         val getSandboxSafeToSpendUseCase = GetSandboxSafeToSpendUseCase(sandboxRepository)
 
         viewModel = SandboxViewModel(

@@ -1,50 +1,26 @@
 package com.petergabriel.budgetcalendar.features.budget.domain.usecase
 
-import com.petergabriel.budgetcalendar.core.utils.DateUtils
 import com.petergabriel.budgetcalendar.features.budget.domain.model.CreditCardReservation
 import com.petergabriel.budgetcalendar.features.budget.testutil.FakeBudgetRepository
-import com.petergabriel.budgetcalendar.features.budget.testutil.FakeMonthlyRolloverRepository
-import com.petergabriel.budgetcalendar.features.transactions.domain.model.CreateTransactionRequest
-import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionStatus
-import com.petergabriel.budgetcalendar.features.transactions.domain.model.TransactionType
-import com.petergabriel.budgetcalendar.features.transactions.testutil.FakeTransactionRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class BudgetUseCasesTest {
     private lateinit var budgetRepository: FakeBudgetRepository
-    private lateinit var monthlyRolloverRepository: FakeMonthlyRolloverRepository
-    private lateinit var transactionRepository: FakeTransactionRepository
 
     private lateinit var calculateSafeToSpendUseCase: CalculateSafeToSpendUseCase
     private lateinit var getCreditCardReservationsUseCase: GetCreditCardReservationsUseCase
-    private lateinit var saveMonthlyRolloverUseCase: SaveMonthlyRolloverUseCase
-    private lateinit var getRolloverHistoryUseCase: GetRolloverHistoryUseCase
-    private lateinit var calculateMonthEndRolloverUseCase: CalculateMonthEndRolloverUseCase
 
     @BeforeTest
     fun setUp() {
         budgetRepository = FakeBudgetRepository()
-        monthlyRolloverRepository = FakeMonthlyRolloverRepository()
-        transactionRepository = FakeTransactionRepository()
 
-        calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(
-            budgetRepository,
-            monthlyRolloverRepository,
-            transactionRepository,
-        )
+        calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(budgetRepository)
         getCreditCardReservationsUseCase = GetCreditCardReservationsUseCase(budgetRepository)
-        saveMonthlyRolloverUseCase = SaveMonthlyRolloverUseCase(monthlyRolloverRepository)
-        getRolloverHistoryUseCase = GetRolloverHistoryUseCase(monthlyRolloverRepository)
-        calculateMonthEndRolloverUseCase = CalculateMonthEndRolloverUseCase(budgetRepository, transactionRepository)
     }
 
     @Test
@@ -108,27 +84,15 @@ class BudgetUseCasesTest {
     }
 
     @Test
-    fun calculateSafeToSpend_creditCardPaymentTransferDoesNotDoubleDeduct() = runBlocking {
+    fun calculateSafeToSpend_subtractsCardReserveAndReservations() = runBlocking {
         budgetRepository.setTotalSpendingPoolBalance(12_000L)
         budgetRepository.setPendingReservations(1_000L)
         budgetRepository.setOverdueReservations(0L)
         budgetRepository.setCreditCardReservedAmount(2_000L)
 
-        transactionRepository.createTransaction(
-            CreateTransactionRequest(
-                accountId = 1L,
-                destinationAccountId = 9L,
-                amount = 2_000L,
-                date = localDateMillis(2026, 3, 11),
-                type = TransactionType.TRANSFER,
-                status = TransactionStatus.CONFIRMED,
-            ),
-        )
-
         val summary = calculateSafeToSpendUseCase().first()
 
         assertEquals(9_000L, summary.availableToSpend)
-        assertEquals(0L, summary.confirmedSpending)
     }
 
     @Test
@@ -200,88 +164,6 @@ class BudgetUseCasesTest {
         assertEquals(setOf(1L, 2L), reservations.map { reservation -> reservation.accountId }.toSet())
     }
 
-    @Test
-    fun saveMonthlyRollover_validYearAndMonthArePersisted() = runBlocking {
-        val result = saveMonthlyRolloverUseCase(year = 2026, month = 3, amount = 4_000L)
-
-        assertTrue(result.isSuccess)
-
-        val saved = monthlyRolloverRepository.getRolloverForMonth(2026, 3).getOrNull()
-        assertNotNull(saved)
-        assertEquals(4_000L, saved.rolloverAmount)
-    }
-
-    @Test
-    fun saveMonthlyRollover_invalidMonthFailsValidation() = runBlocking {
-        assertTrue(saveMonthlyRolloverUseCase(year = 2026, month = 0, amount = 10L).isFailure)
-        assertTrue(saveMonthlyRolloverUseCase(year = 2026, month = 13, amount = 10L).isFailure)
-    }
-
-    @Test
-    fun saveMonthlyRollover_yearBefore2000FailsValidation() = runBlocking {
-        val result = saveMonthlyRolloverUseCase(year = 1999, month = 12, amount = 20L)
-
-        assertTrue(result.isFailure)
-    }
-
-    @Test
-    fun saveMonthlyRollover_savingSameMonthTwiceUpserts() = runBlocking {
-        saveMonthlyRolloverUseCase(year = 2026, month = 4, amount = 150L)
-        saveMonthlyRolloverUseCase(year = 2026, month = 4, amount = 325L)
-
-        val allRollovers = getRolloverHistoryUseCase().first()
-
-        assertEquals(1, allRollovers.count { rollover -> rollover.year == 2026 && rollover.month == 4 })
-        assertEquals(325L, allRollovers.first().rolloverAmount)
-    }
-
-    @Test
-    fun calculateMonthEndRollover_rolloverEqualsPoolMinusConfirmedExpenses() = runBlocking {
-        budgetRepository.setTotalSpendingPoolBalance(20_000L)
-
-        transactionRepository.createTransaction(
-            CreateTransactionRequest(
-                accountId = 1L,
-                amount = 5_500L,
-                date = localDateMillis(2026, 3, 10),
-                type = TransactionType.EXPENSE,
-                status = TransactionStatus.CONFIRMED,
-            ),
-        )
-
-        val rollover = calculateMonthEndRolloverUseCase(2026, 3)
-
-        assertEquals(14_500L, rollover)
-    }
-
-    @Test
-    fun calculateMonthEndRollover_negativeResultIsClampedToZero() = runBlocking {
-        budgetRepository.setTotalSpendingPoolBalance(3_000L)
-
-        transactionRepository.createTransaction(
-            CreateTransactionRequest(
-                accountId = 1L,
-                amount = 4_500L,
-                date = localDateMillis(2026, 3, 5),
-                type = TransactionType.EXPENSE,
-                status = TransactionStatus.CONFIRMED,
-            ),
-        )
-
-        val rollover = calculateMonthEndRolloverUseCase(2026, 3)
-
-        assertEquals(0L, rollover)
-    }
-
-    @Test
-    fun calculateMonthEndRollover_monthWithNoConfirmedExpensesReturnsFullBalance() = runBlocking {
-        budgetRepository.setTotalSpendingPoolBalance(6_250L)
-
-        val rollover = calculateMonthEndRolloverUseCase(2026, 3)
-
-        assertEquals(6_250L, rollover)
-    }
-
     // ========== Bugfix Reproduction Tests (2026-04-01) ==========
     
     /**
@@ -296,15 +178,13 @@ class BudgetUseCasesTest {
      * 3. Confirm the expense:
      *    - pendingReservations goes to $0 (no longer pending)
      *    - totalBalance becomes $425 (account balance adjusted)
-     *    - confirmedSpending = $75 (tracked metric only)
+     *    - confirmed expense is already reflected in the lower pool balance
      *    - STS = $425 - $0 = $425 (stable)
      * 4. Add another $50 PENDING expense → STS = $425 - $50 = $375
      * 5. Confirm → totalBalance becomes $375, STS = $375 - $0 = $375 (stable)
      */
     @Test
     fun calculateSafeToSpend_confirmedExpenseDoesNotIncreaseSTS() = runBlocking {
-        val inMonth = DateUtils.currentMonthBounds().first
-
         // Step 1: Initial state
         budgetRepository.setTotalSpendingPoolBalance(500_00L)  // $500.00
         budgetRepository.setPendingReservations(0L)
@@ -318,27 +198,14 @@ class BudgetUseCasesTest {
         val stsWithPending = calculateSafeToSpendUseCase().first()
         assertEquals(425_00L, stsWithPending.availableToSpend, "STS should reduce by pending amount")
         assertEquals(75_00L, stsWithPending.pendingReservations)
-        assertEquals(0L, stsWithPending.confirmedSpending)
         
         // Step 3: Confirm the expense
         // After confirmation: pending goes to 0 and account balance decreases to $425
         budgetRepository.setPendingReservations(0L)
         budgetRepository.setTotalSpendingPoolBalance(425_00L)
         
-        // Create confirmed expense in repository
-        transactionRepository.createTransaction(
-            CreateTransactionRequest(
-                accountId = 1L,
-                amount = 75_00L,
-                date = inMonth,
-                type = TransactionType.EXPENSE,
-                status = TransactionStatus.CONFIRMED,
-            ),
-        )
-        
         val stsAfterConfirm = calculateSafeToSpendUseCase().first()
         assertEquals(425_00L, stsAfterConfirm.availableToSpend, "STS should remain stable after confirming")
-        assertEquals(75_00L, stsAfterConfirm.confirmedSpending, "Confirmed spending should be tracked")
         
         // Step 4: Add another $50 PENDING expense
         budgetRepository.setPendingReservations(50_00L)
@@ -347,30 +214,13 @@ class BudgetUseCasesTest {
         // STS = 425 - 50(pending) = 375
         assertEquals(375_00L, stsWithNewPending.availableToSpend, "STS should reduce by new pending amount")
         assertEquals(50_00L, stsWithNewPending.pendingReservations)
-        assertEquals(75_00L, stsWithNewPending.confirmedSpending)
         
         // Step 5: Confirm the second expense
         budgetRepository.setPendingReservations(0L)
         budgetRepository.setTotalSpendingPoolBalance(375_00L)
-        transactionRepository.createTransaction(
-            CreateTransactionRequest(
-                accountId = 1L,
-                amount = 50_00L,
-                date = inMonth,
-                type = TransactionType.EXPENSE,
-                status = TransactionStatus.CONFIRMED,
-            ),
-        )
-        
         val stsAfterSecondConfirm = calculateSafeToSpendUseCase().first()
         // STS = 375 - 0 = 375
         assertEquals(375_00L, stsAfterSecondConfirm.availableToSpend, "STS should remain stable after confirming second expense")
-        assertEquals(125_00L, stsAfterSecondConfirm.confirmedSpending, "Total confirmed spending should be $125")
     }
 
-    private fun localDateMillis(year: Int, month: Int, day: Int): Long {
-        return LocalDate(year, month, day)
-            .atStartOfDayIn(TimeZone.currentSystemDefault())
-            .toEpochMilliseconds()
-    }
 }

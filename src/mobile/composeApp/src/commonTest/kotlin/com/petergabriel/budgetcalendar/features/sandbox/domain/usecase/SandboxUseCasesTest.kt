@@ -6,7 +6,6 @@ import com.petergabriel.budgetcalendar.features.accounts.domain.model.CreateAcco
 import com.petergabriel.budgetcalendar.features.accounts.testutil.FakeAccountRepository
 import com.petergabriel.budgetcalendar.features.budget.domain.usecase.CalculateSafeToSpendUseCase
 import com.petergabriel.budgetcalendar.features.budget.testutil.FakeBudgetRepository
-import com.petergabriel.budgetcalendar.features.budget.testutil.FakeMonthlyRolloverRepository
 import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxSnapshot
 import com.petergabriel.budgetcalendar.features.sandbox.domain.model.SandboxTransaction
 import com.petergabriel.budgetcalendar.features.sandbox.testutil.FakeSandboxRepository
@@ -36,7 +35,6 @@ class SandboxUseCasesTest {
     private lateinit var accountRepository: FakeAccountRepository
     private lateinit var transactionRepository: FakeTransactionRepository
     private lateinit var budgetRepository: FakeBudgetRepository
-    private lateinit var monthlyRolloverRepository: FakeMonthlyRolloverRepository
 
     private lateinit var calculateSafeToSpendUseCase: CalculateSafeToSpendUseCase
     private lateinit var createSandboxUseCase: CreateSandboxUseCase
@@ -53,13 +51,8 @@ class SandboxUseCasesTest {
             accountRepository = FakeAccountRepository()
             transactionRepository = FakeTransactionRepository()
             budgetRepository = FakeBudgetRepository()
-            monthlyRolloverRepository = FakeMonthlyRolloverRepository()
 
-            calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(
-                budgetRepository,
-                monthlyRolloverRepository,
-                transactionRepository,
-            )
+            calculateSafeToSpendUseCase = CalculateSafeToSpendUseCase(budgetRepository)
             createSandboxUseCase = CreateSandboxUseCase(
                 sandboxRepository,
                 calculateSafeToSpendUseCase,

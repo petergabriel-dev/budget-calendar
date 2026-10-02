@@ -17,7 +17,6 @@ interface ITransactionRepository {
     fun getOverdueTransactions(): Flow<List<Transaction>>
     fun getMonthProjectionTransactions(startMillis: Long, endMillis: Long): Flow<List<Transaction>>
     fun getPendingAndOverdueExpensesByAccount(accountId: Long): Flow<List<Transaction>>
-    fun getConfirmedTransactionsByDateRange(startDate: Long, endDate: Long): Flow<List<Transaction>>
 
     suspend fun getTransactionById(id: Long): Transaction?
     suspend fun createTransaction(request: CreateTransactionRequest): Transaction

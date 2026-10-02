@@ -93,14 +93,6 @@ class TransactionRepositoryImpl(
             .map { entities -> entities.map(transactionMapper::toDomain) }
     }
 
-    override fun getConfirmedTransactionsByDateRange(startDate: Long, endDate: Long): Flow<List<Transaction>> {
-        return database.transactionsQueries
-            .getConfirmedTransactionsByDateRange(startDate, endDate, ::toEntity)
-            .asFlow()
-            .mapToList(dispatcher)
-            .map { entities -> entities.map(transactionMapper::toDomain) }
-    }
-
     override suspend fun getTransactionById(id: Long): Transaction? {
         return database.transactionsQueries
             .getTransactionById(id, ::toEntity)

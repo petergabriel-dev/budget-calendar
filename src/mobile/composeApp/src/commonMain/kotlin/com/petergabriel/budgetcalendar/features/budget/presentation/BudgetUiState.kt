@@ -14,9 +14,7 @@ private fun emptyBudgetSummary(): BudgetSummary {
         totalLiquidAssets = 0L,
         pendingReservations = 0L,
         overdueReservations = 0L,
-        confirmedSpending = 0L,
         availableToSpend = 0L,
-        rolloverAmount = 0L,
         creditCardReserved = 0L,
         lastCalculatedAt = DateUtils.nowMillis(),
     )

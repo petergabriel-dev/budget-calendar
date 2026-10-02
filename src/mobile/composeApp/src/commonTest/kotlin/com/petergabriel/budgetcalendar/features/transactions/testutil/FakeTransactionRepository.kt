@@ -94,17 +94,6 @@ class FakeTransactionRepository : ITransactionRepository {
         }
     }
 
-    override fun getConfirmedTransactionsByDateRange(startDate: Long, endDate: Long): Flow<List<Transaction>> {
-        return transactionsFlow.map { allTransactions ->
-            allTransactions
-                .filter { transaction ->
-                        transaction.status == TransactionStatus.CONFIRMED &&
-                        transaction.date in startDate..endDate
-                }
-                .sortedBy { transaction -> transaction.date }
-        }
-    }
-
     override suspend fun getTransactionById(id: Long): Transaction? {
         return transactions.firstOrNull { transaction -> transaction.id == id }
     }
